@@ -1,4 +1,6 @@
+import {supabase} from '@/services/supabase';
 import {MaterialCommunityIcons} from '@expo/vector-icons';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
 import {useRouter} from 'expo-router';
 import {useState} from 'react';
@@ -34,16 +36,18 @@ export default function Step4Screen() {
     });
 
     if (!result.canceled) {
+      const asset = result.assets[0];
+      const newPath = `${FileSystem.documentDirectory}${
+        asset.fileName ?? `gallery-${Date.now()}.jpg`
+      }`;
+
+      await FileSystem.copyAsync({from: asset.uri, to: newPath});
+
       setStep4({
         ...data,
-        photos: [
-          ...data.photos,
-          {
-            uri: result.assets[0].uri,
-            type: 'van'
-          }
-        ]
+        photos: [...data.photos, {uri: newPath, type: 'van'}]
       });
+
       showToast('success', 'Success', 'Photo added');
     }
   };
@@ -63,7 +67,11 @@ export default function Step4Screen() {
 
     setLoading(true);
     try {
-      const userId = 'temp-user'; // Get from auth context
+      const {
+        data: {user}
+      } = await supabase.auth.getUser();
+      const userId = user?.id;
+      if (!userId) throw new Error('No authenticated user found');
 
       // Upload all photos
       const uploadPromises = data.photos.map((photo, index) =>
@@ -71,13 +79,70 @@ export default function Step4Screen() {
       );
 
       const uploadResults = await Promise.all(uploadPromises);
-      const allSuccess = uploadResults.every(result => result.success);
 
+      const updatedPhotos = uploadResults
+        .map((result, i) =>
+          result.success ? {uri: result.url, type: data.photos[i].type} : null
+        )
+        .filter(photo => photo !== null) as {
+        uri: string;
+        type: 'van' | 'travel' | 'lifestyle';
+      }[];
+
+      setStep4({...data, photos: updatedPhotos});
+
+      const allSuccess = uploadResults.every(r => r.success);
       if (!allSuccess) {
         showToast('error', 'Error', 'Failed to upload some photos');
         setLoading(false);
         return;
       }
+
+      // Save complete profile data to Supabase
+      const {step1, step2, step3} = useProfileStore.getState();
+
+      const profileData = {
+        nomad_type: step1.nomad_type,
+        travel_style: step1.travel_style,
+        relationship_intent: step1.relationship_intent,
+        current_location: step1.current_location,
+        movement_pattern: step1.movement_pattern,
+        age: step2.age,
+        gender: step2.gender,
+        pronouns: step2.pronouns,
+        bio: step2.bio,
+        years_in_van_life: step2.years_in_van_life,
+        profile_picture_url: step2.profile_picture_url,
+        hobbies: step3.hobbies,
+        skills: step3.skills,
+        lifestyle_tags: step3.lifestyle_tags,
+        favorite_activities: step3.favorite_activities
+      };
+
+      // Check if profile exists
+      const {data: existingProfile} = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', userId)
+        .single();
+
+      let error;
+      if (existingProfile) {
+        // Update existing profile
+        const {error: updateError} = await supabase
+          .from('profiles')
+          .update(profileData)
+          .eq('id', userId);
+        error = updateError;
+      } else {
+        // Create new profile
+        const {error: insertError} = await supabase
+          .from('profiles')
+          .insert([{id: userId, ...profileData}]);
+        error = insertError;
+      }
+
+      if (error) throw error;
 
       showToast('success', 'Success', 'Profile created successfully');
       router.replace('/(app)/dashboard');
@@ -155,19 +220,6 @@ export default function Step4Screen() {
               : '(Max)'}
           </Text>
         </TouchableOpacity>
-
-        <View style={styles.photoTypes}>
-          <Text style={styles.photoTypeTitle}>Photo Categories:</Text>
-          <Text style={styles.photoTypeItem}>
-            🚐 Your Rig: Van interior, setup, gear
-          </Text>
-          <Text style={styles.photoTypeItem}>
-            ✈️ Travel Shots: Destinations, landscapes
-          </Text>
-          <Text style={styles.photoTypeItem}>
-            🎨 Lifestyle: Cooking, pets, hobbies
-          </Text>
-        </View>
       </View>
 
       <View style={styles.buttonContainer}>
@@ -183,10 +235,7 @@ export default function Step4Screen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff'
-  },
+  container: {flex: 1, backgroundColor: '#fff'},
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -201,97 +250,33 @@ const styles = StyleSheet.create({
     color: '#999',
     marginRight: 24
   },
-  content: {
-    paddingHorizontal: 20,
-    paddingVertical: 20
-  },
+  content: {paddingHorizontal: 20, paddingVertical: 20},
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 8
   },
-  subtitle: {
-    fontSize: 12,
-    color: '#999',
-    marginBottom: 16
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 12
-  },
-  photoGrid: {
-    justifyContent: 'space-between',
-    marginBottom: 12
-  },
-  photoItem: {
-    width: '32%',
-    aspectRatio: 1,
-    borderRadius: 8,
-    overflow: 'hidden',
-    position: 'relative'
-  },
-  photo: {
-    width: '100%',
-    height: '100%'
-  },
+  subtitle: {fontSize: 14, color: '#666', marginBottom: 16},
+  label: {fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 12},
+  photoGrid: {justifyContent: 'flex-start'},
+  photoItem: {margin: 4, position: 'relative'},
+  photo: {width: 100, height: 100, borderRadius: 8},
   removeButton: {
     position: 'absolute',
     top: 4,
     right: 4,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: '#0008',
     borderRadius: 12,
-    padding: 4
+    padding: 2
   },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 40,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 8,
-    marginBottom: 16
-  },
-  emptyText: {
-    color: '#999',
-    fontSize: 14,
-    marginTop: 8
-  },
+  emptyState: {alignItems: 'center', marginVertical: 20},
+  emptyText: {color: '#999', marginTop: 8},
   addPhotoButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    borderWidth: 2,
-    borderColor: '#4a90e2',
-    borderStyle: 'dashed',
-    borderRadius: 8,
-    marginBottom: 24,
-    gap: 8
+    marginTop: 16
   },
-  addPhotoText: {
-    color: '#4a90e2',
-    fontSize: 14,
-    fontWeight: '500'
-  },
-  photoTypes: {
-    backgroundColor: '#f9f9f9',
-    padding: 12,
-    borderRadius: 8
-  },
-  photoTypeTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 8
-  },
-  photoTypeItem: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 4
-  },
-  buttonContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 40
-  }
+  addPhotoText: {marginLeft: 8, color: '#4a90e2', fontWeight: '600'},
+  buttonContainer: {paddingHorizontal: 20, paddingBottom: 40}
 });

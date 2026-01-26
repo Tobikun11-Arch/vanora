@@ -1,3 +1,4 @@
+import {supabase} from '@/services/supabase';
 import {MaterialCommunityIcons} from '@expo/vector-icons';
 import {useRouter} from 'expo-router';
 import {useState} from 'react';
@@ -52,7 +53,32 @@ export default function LoginScreen() {
 
     if (result.success) {
       showToast('success', 'Success', 'Login successful');
-      router.replace('/(profile)/step-1');
+
+      // Check if user has a profile
+      try {
+        const {
+          data: {user}
+        } = await supabase.auth.getUser();
+
+        if (user) {
+          const {data} = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+
+          if (data) {
+            router.replace('/(app)/dashboard');
+          } else {
+            router.replace('/(profile)/step-1');
+          }
+        } else {
+          router.replace('/(profile)/step-1');
+        }
+      } catch (error) {
+        console.error('Error checking profile:', error);
+        router.replace('/(profile)/step-1');
+      }
     } else {
       if (result.error?.includes('Invalid login credentials')) {
         showToast('error', 'Error', 'Invalid email or password');
@@ -84,7 +110,7 @@ export default function LoginScreen() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.appName}>Vandora</Text>
+        <Text style={styles.appName}>Vanora</Text>
         <Text style={styles.welcomeText}>Welcome back</Text>
       </View>
 
@@ -143,7 +169,7 @@ export default function LoginScreen() {
       </View>
 
       <View style={styles.footer}>
-        <Text style={styles.footerText}>Don't have an account? </Text>
+        <Text style={styles.footerText}>Don&apos;t have an account? </Text>
         <TouchableOpacity onPress={() => router.push('/(auth)/signup')}>
           <Text style={styles.signupLink}>Sign up</Text>
         </TouchableOpacity>

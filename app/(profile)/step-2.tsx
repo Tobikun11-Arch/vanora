@@ -1,8 +1,10 @@
+import {supabase} from '@/services/supabase';
 import {MaterialCommunityIcons} from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import {useRouter} from 'expo-router';
 import {useState} from 'react';
 import {
+  ActivityIndicator,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -18,6 +20,7 @@ import {showToast} from '../../components/Toast';
 import {profileService} from '../../services/profile.service';
 import {useProfileStore} from '../../store/profileStore';
 import {GENDERS} from '../../utils/constants';
+import * as FileSystem from 'expo-file-system/legacy';
 
 export default function Step2Screen() {
   const router = useRouter();
@@ -34,17 +37,37 @@ export default function Step2Screen() {
 
     if (!result.canceled) {
       setUploadingPhoto(true);
-      const userId = 'temp-user'; // Get from auth context
+
+      const {
+        data: {user}
+      } = await supabase.auth.getUser();
+      const userId = user?.id;
+      if (!userId) {
+        showToast('error', 'Error', 'No authenticated user found');
+        setUploadingPhoto(false);
+        return;
+      }
+
+      // Copy file to a permanent location
+      const asset = result.assets[0];
+      const newPath = `${FileSystem.documentDirectory}${
+        asset.fileName ?? 'profile.jpg'
+      }`;
+      await FileSystem.copyAsync({
+        from: asset.uri,
+        to: newPath
+      });
+
       const uploadResult = await profileService.uploadProfilePhoto(
         userId,
-        result.assets[0].uri,
+        newPath,
         1
       );
 
-      if (uploadResult.success) {
+      if (uploadResult.success && uploadResult.url) {
         setStep2({
           ...data,
-          profile_picture_url: result.assets[0].uri
+          profile_picture_url: uploadResult.url
         });
         showToast('success', 'Success', 'Photo uploaded');
       } else {
@@ -99,6 +122,7 @@ export default function Step2Screen() {
           <TouchableOpacity
             style={styles.profilePictureContainer}
             onPress={pickImage}
+            disabled={uploadingPhoto}
           >
             {data.profile_picture_url ? (
               <Image
@@ -112,6 +136,12 @@ export default function Step2Screen() {
                   size={40}
                   color="#4a90e2"
                 />
+              </View>
+            )}
+
+            {uploadingPhoto && (
+              <View style={styles.loadingOverlay}>
+                <ActivityIndicator size="large" color="#4a90e2" />
               </View>
             )}
           </TouchableOpacity>
@@ -219,7 +249,8 @@ const styles = StyleSheet.create({
   },
   profilePictureContainer: {
     alignItems: 'center',
-    marginBottom: 24
+    marginBottom: 24,
+    position: 'relative'
   },
   profilePicture: {
     width: 120,
@@ -236,6 +267,17 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#ddd',
     borderStyle: 'dashed'
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    borderRadius: 60
   },
   label: {
     fontSize: 14,

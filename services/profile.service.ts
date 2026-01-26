@@ -1,3 +1,4 @@
+import * as FileSystem from 'expo-file-system/legacy';
 import {supabase} from './supabase';
 
 export const profileService = {
@@ -54,24 +55,38 @@ export const profileService = {
   async uploadProfilePhoto(userId: string, photoUri: string, step: number) {
     try {
       const fileName = `${userId}/${step}-${Date.now()}.jpg`;
-      const response = await fetch(photoUri);
-      const blob = await response.blob();
 
+      // Read file as base64
+      const base64 = await FileSystem.readAsStringAsync(photoUri, {
+        encoding: FileSystem.EncodingType.Base64
+      });
+
+      // Convert base64 → Uint8Array
+      const byteArray = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+
+      // Upload binary data
       const {error} = await supabase.storage
         .from('profile-photos')
-        .upload(fileName, blob, {cacheControl: '3600', upsert: false});
+        .upload(fileName, byteArray, {
+          contentType: 'image/jpeg',
+          upsert: false
+        });
 
       if (error) throw error;
 
-      const {data: publicUrlData} = supabase.storage
+      // Get public URL
+      const {data} = supabase.storage
         .from('profile-photos')
         .getPublicUrl(fileName);
 
+      const publicUrl = data.publicUrl;
+
+      // Save reference in DB
       await supabase
         .from('profile_photos')
-        .insert([{user_id: userId, step, photo_url: publicUrlData.publicUrl}]);
+        .insert([{user_id: userId, step, photo_url: publicUrl}]);
 
-      return {success: true, fileName, url: publicUrlData.publicUrl};
+      return {success: true, fileName, url: publicUrl};
     } catch (error: any) {
       return {success: false, error: error.message};
     }
@@ -80,22 +95,31 @@ export const profileService = {
   async uploadGalleryPhoto(userId: string, photoUri: string, index: number) {
     try {
       const fileName = `${userId}/gallery-${index}-${Date.now()}.jpg`;
-      const response = await fetch(photoUri);
-      const blob = await response.blob();
-
-      const {error} = await supabase.storage
+  
+      // Read file as binary (not base64)
+      const fileData = await FileSystem.readAsStringAsync(photoUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+  
+      // Convert base64 → Uint8Array
+      const byteArray = Uint8Array.from(atob(fileData), c => c.charCodeAt(0));
+  
+      const { error } = await supabase.storage
         .from('gallery-photos')
-        .upload(fileName, blob, {cacheControl: '3600', upsert: false});
-
+        .upload(fileName, byteArray, {
+          contentType: 'image/jpeg',
+          upsert: false,
+        });
+  
       if (error) throw error;
-
-      const {data: publicUrlData} = supabase.storage
+  
+      const { data } = supabase.storage
         .from('gallery-photos')
         .getPublicUrl(fileName);
-
-      return {success: true, url: publicUrlData.publicUrl};
+  
+      return { success: true, url: data.publicUrl };
     } catch (error: any) {
-      return {success: false, error: error.message};
+      return { success: false, error: error.message };
     }
   },
 

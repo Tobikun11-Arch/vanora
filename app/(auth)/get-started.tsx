@@ -8,7 +8,7 @@ export default function GetStartedScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.appName}>Vandora</Text>
+        <Text style={styles.appName}>Vanora</Text>
         <Text style={styles.subtitle}>
           Community for Nomads, Van Lifers & Travelers
         </Text>
