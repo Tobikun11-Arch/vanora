@@ -1,36 +1,59 @@
 import {supabase} from '@/services/supabase';
-import {MaterialCommunityIcons} from '@expo/vector-icons';
+import {Feather} from '@expo/vector-icons';
 import {useRouter} from 'expo-router';
 import {useEffect, useState} from 'react';
 import {
   ActivityIndicator,
-  Image,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View
 } from 'react-native';
 import {showToast} from '../../components/Toast';
-import {authService} from '../../services/auth.service';
+import {
+  ExploreTab,
+  FindTechTab,
+  HomeTab,
+  NotificationsTab,
+  ProfileTab
+} from '../../components/tabs';
+
+type TabType = 'findtech' | 'explore' | 'home' | 'notifications' | 'profile';
+
+interface GalleryPhoto {
+  id: string;
+  photo_url: string;
+  photo_type: string;
+  created_at: string;
+}
 
 interface UserProfile {
   id: string;
-  user_id: string;
   nomad_type: string;
   travel_style: string;
+  relationship_intent: string[];
+  current_location: string;
+  movement_pattern: string;
   age: number;
   gender: string;
+  pronouns: string | null;
   bio: string;
-  profile_picture_url: string;
-  current_location: string;
+  profile_picture_url: string | null;
+  years_in_van_life: number;
   hobbies: string[];
+  skills: string[];
+  lifestyle_tags: string[];
+  favorite_activities: string[];
+  created_at: string;
+  updated_at: string;
+  gallery_photos?: GalleryPhoto[];
 }
 
 export default function DashboardScreen() {
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<TabType>('home');
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -43,14 +66,25 @@ export default function DashboardScreen() {
           return;
         }
 
-        const {data, error} = await supabase
+        const {data: profileData, error: profileError} = await supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
           .single();
 
-        if (error) throw error;
-        setProfile(data);
+        if (profileError) throw profileError;
+
+        // Fetch gallery photos
+        const {data: photosData} = await supabase
+          .from('profile_photos')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', {ascending: false});
+
+        setProfile({
+          ...profileData,
+          gallery_photos: photosData || []
+        });
       } catch (error: any) {
         console.error('Error fetching profile:', error);
         showToast('error', 'Error', 'Failed to load profile');
@@ -62,17 +96,30 @@ export default function DashboardScreen() {
     fetchUserProfile();
   }, [router]);
 
-  const handleLogout = async () => {
-    const result = await authService.signOut();
-    if (result.success) {
-      showToast('success', 'Success', 'Logged out successfully');
-      router.replace('/(auth)/get-started');
+  const handleTabPress = (tab: TabType) => {
+    setActiveTab(tab);
+  };
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'findtech':
+        return <FindTechTab />;
+      case 'explore':
+        return <ExploreTab />;
+      case 'home':
+        return profile ? <HomeTab profile={profile} /> : null;
+      case 'notifications':
+        return <NotificationsTab />;
+      case 'profile':
+        return profile ? <ProfileTab profile={profile} /> : null;
+      default:
+        return profile ? <HomeTab profile={profile} /> : null;
     }
   };
 
   if (loading) {
     return (
-      <View style={styles.container}>
+      <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#4a90e2" />
       </View>
     );
@@ -80,150 +127,135 @@ export default function DashboardScreen() {
 
   if (!profile) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Profile not found</Text>
+      <View style={styles.loadingContainer}>
+        <Text style={styles.errorText}>Profile not found</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Dashboard</Text>
-        <TouchableOpacity onPress={handleLogout}>
-          <MaterialCommunityIcons name="logout" size={24} color="#4a90e2" />
+    <View style={styles.mainContainer}>
+      {/* Tab Content */}
+      <View style={styles.contentContainer}>{renderTabContent()}</View>
+
+      {/* Bottom Navigation Bar */}
+      <View style={styles.bottomBar}>
+        <TouchableOpacity
+          style={styles.tabItem}
+          onPress={() => handleTabPress('findtech')}
+        >
+          <Feather
+            name="tool"
+            size={24}
+            color={activeTab === 'findtech' ? '#000' : '#9CA3AF'}
+          />
+        </TouchableOpacity>
+
+        <View style={styles.separator} />
+
+        <TouchableOpacity
+          style={styles.tabItem}
+          onPress={() => handleTabPress('explore')}
+        >
+          <Feather
+            name="compass"
+            size={24}
+            color={activeTab === 'explore' ? '#000' : '#9CA3AF'}
+          />
+        </TouchableOpacity>
+
+        <View style={styles.separator} />
+
+        <TouchableOpacity
+          style={styles.tabItem}
+          onPress={() => handleTabPress('home')}
+        >
+          <Feather
+            name="home"
+            size={24}
+            color={activeTab === 'home' ? '#000' : '#9CA3AF'}
+          />
+        </TouchableOpacity>
+
+        <View style={styles.separator} />
+
+        <TouchableOpacity
+          style={styles.tabItem}
+          onPress={() => handleTabPress('notifications')}
+        >
+          <Feather
+            name="bell"
+            size={24}
+            color={activeTab === 'notifications' ? '#000' : '#9CA3AF'}
+          />
+        </TouchableOpacity>
+
+        <View style={styles.separator} />
+
+        <TouchableOpacity
+          style={styles.tabItem}
+          onPress={() => handleTabPress('profile')}
+        >
+          <Feather
+            name="user"
+            size={24}
+            color={activeTab === 'profile' ? '#000' : '#9CA3AF'}
+          />
         </TouchableOpacity>
       </View>
-
-      <View style={styles.profileCard}>
-        {profile.profile_picture_url && (
-          <Image
-            source={{uri: profile.profile_picture_url}}
-            style={styles.profilePicture}
-          />
-        )}
-        <Text style={styles.profileName}>
-          {profile.age}, {profile.gender}
-        </Text>
-        <Text style={styles.location}>{profile.current_location}</Text>
-        <Text style={styles.bio}>{profile.bio}</Text>
-      </View>
-
-      <View style={styles.infoSection}>
-        <Text style={styles.sectionTitle}>Lifestyle</Text>
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>Nomad Type:</Text>
-          <Text style={styles.value}>{profile.nomad_type}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>Travel Style:</Text>
-          <Text style={styles.value}>{profile.travel_style}</Text>
-        </View>
-      </View>
-
-      <View style={styles.infoSection}>
-        <Text style={styles.sectionTitle}>Interests</Text>
-        <View style={styles.tagsContainer}>
-          {profile.hobbies?.map(hobby => (
-            <View key={hobby} style={styles.tag}>
-              <Text style={styles.tagText}>{hobby}</Text>
-            </View>
-          ))}
-        </View>
-      </View>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  mainContainer: {
     flex: 1,
     backgroundColor: '#fff'
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 20
+    backgroundColor: '#fff'
   },
-  title: {
-    fontSize: 24,
+  errorText: {
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#333'
   },
-  profileCard: {
+  contentContainer: {
+    flex: 1
+  },
+  bottomBar: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    backgroundColor: '#f9f9f9',
-    marginHorizontal: 20,
-    borderRadius: 12,
-    marginBottom: 20
-  },
-  profilePicture: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    marginBottom: 12
-  },
-  profileName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333'
-  },
-  location: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 4
-  },
-  bio: {
-    fontSize: 13,
-    color: '#666',
-    marginTop: 8,
-    textAlign: 'center'
-  },
-  infoSection: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    justifyContent: 'space-around',
+    backgroundColor: '#fff',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     borderTopWidth: 1,
-    borderTopColor: '#eee'
+    borderTopColor: '#E5E7EB',
+    borderRadius: 24,
+    marginHorizontal: 16,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -2
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 12
+  tabItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8
   },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8
-  },
-  label: {
-    fontSize: 14,
-    color: '#666'
-  },
-  value: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#333'
-  },
-  tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8
-  },
-  tag: {
-    backgroundColor: '#4a90e2',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 16
-  },
-  tagText: {
-    fontSize: 12,
-    color: '#fff',
-    fontWeight: '500'
+  separator: {
+    width: 1,
+    height: 24,
+    backgroundColor: '#E5E7EB'
   }
 });
