@@ -146,7 +146,7 @@ export default function GetStartedScreen() {
         <View style={styles.bottomSection}>
           <Button
             title="Get Started"
-            onPress={() => router.push("/(auth)/login")}
+            onPress={() => router.push("/(auth)/signup")}
           />
           <View style={styles.loginPrompt}>
             <Text style={styles.loginText}>Already have an account? </Text>
