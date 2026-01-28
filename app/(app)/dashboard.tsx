@@ -9,14 +9,14 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import {showToast} from '../../components/Toast';
+import {showToast} from '@/components/Toast';
 import {
   ExploreTab,
   FindTechTab,
   HomeTab,
   NotificationsTab,
   ProfileTab
-} from '../../components/tabs';
+} from '@/components/tabs/index';
 
 type TabType = 'findtech' | 'explore' | 'home' | 'notifications' | 'profile';
 
