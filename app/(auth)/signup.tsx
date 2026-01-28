@@ -1,52 +1,46 @@
-import {MaterialCommunityIcons} from '@expo/vector-icons';
-import {useRouter} from 'expo-router';
-import {useState} from 'react';
-import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
-} from 'react-native';
-import {Button} from '../../components/Button';
-import {InputField} from '../../components/InputField';
-import {showToast} from '../../components/Toast';
-import {authService} from '../../services/auth.service';
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Button } from "../../components/Button";
+import { InputField } from "../../components/InputField";
+import { showToast } from "../../components/Toast";
+import { authService } from "../../services/auth.service";
 
 export default function SignupScreen() {
   const router = useRouter();
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({
-    fullName: '',
-    email: '',
-    password: ''
+    fullName: "",
+    email: "",
+    password: "",
   });
 
   const validateForm = () => {
     let isValid = true;
-    const newErrors = {fullName: '', email: '', password: ''};
+    const newErrors = { fullName: "", email: "", password: "" };
 
     if (!fullName.trim()) {
-      newErrors.fullName = 'Full name is required';
+      newErrors.fullName = "Full name is required";
       isValid = false;
     }
 
     if (!email) {
-      newErrors.email = 'Email is required';
+      newErrors.email = "Email is required";
       isValid = false;
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = 'Please enter a valid email';
+      newErrors.email = "Please enter a valid email";
       isValid = false;
     }
 
     if (!password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = "Password is required";
       isValid = false;
     } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = "Password must be at least 6 characters";
       isValid = false;
     }
 
@@ -61,14 +55,14 @@ export default function SignupScreen() {
     const result = await authService.signUp(email, password, fullName);
 
     if (result.success) {
-      showToast('success', 'Success', 'Account created successfully');
-      router.replace('/(profile)/step-1');
+      showToast("success", "Success", "Account created successfully");
+      router.replace("/(profile)/step-1");
     } else {
-      if (result.error?.includes('already registered')) {
-        showToast('error', 'Error', 'Email already registered. Please login.');
-        router.push('/(auth)/login');
+      if (result.error?.includes("already registered")) {
+        showToast("error", "Error", "Email already registered. Please login.");
+        router.push("/(auth)/login");
       } else {
-        showToast('error', 'Signup Failed', result.error);
+        showToast("error", "Signup Failed", result.error);
       }
     }
 
@@ -78,169 +72,210 @@ export default function SignupScreen() {
   const handleGoogleSignup = async () => {
     setLoading(true);
     // TODO: Implement Google OAuth signup flow
-    showToast('info', 'Coming Soon', 'Google signup is being configured');
+    showToast("info", "Coming Soon", "Google signup is being configured");
     setLoading(false);
   };
 
   const handleAzureSignup = async () => {
     setLoading(true);
     // TODO: Implement Azure OAuth signup flow
-    showToast('info', 'Coming Soon', 'Azure signup is being configured');
+    showToast("info", "Coming Soon", "Azure signup is being configured");
     setLoading(false);
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color="#4a90e2" />
-        </TouchableOpacity>
-        <Text style={styles.title}>Create Account</Text>
+    <View style={styles.screen}>
+      <View style={styles.topBackground}>
+        <Text style={styles.appName}>Vanora</Text>
+        <Text style={styles.appSubtitle}>Connect. Roam. Belong.</Text>
       </View>
 
-      <View style={styles.form}>
-        <InputField
-          placeholder="Full Name"
-          value={fullName}
-          onChangeText={setFullName}
-          leftIcon="account-outline"
-          error={errors.fullName}
-        />
+      <View style={styles.cardContainer}>
+        <View style={styles.pullBar} />
+        <Text style={styles.cardTitle}>Create Account</Text>
+        <Text style={styles.cardSubtitle}>Start your nomadic journey</Text>
 
-        <InputField
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          leftIcon="email-outline"
-          keyboardType="email-address"
-          error={errors.email}
-        />
+        <View style={styles.inputsWrap}>
+          <InputField
+            placeholder="Full Name"
+            value={fullName}
+            onChangeText={setFullName}
+            leftIcon="account-outline"
+            error={errors.fullName}
+          />
 
-        <InputField
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          leftIcon="lock-outline"
-          rightIcon="eye"
-          error={errors.password}
-        />
+          <InputField
+            placeholder="Email"
+            value={email}
+            onChangeText={setEmail}
+            leftIcon="email-outline"
+            keyboardType="email-address"
+            error={errors.email}
+          />
 
-        <Button
-          title="Sign Up"
-          onPress={handleSignup}
-          loading={loading}
-          disabled={loading}
-        />
+          <InputField
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            leftIcon="lock-outline"
+            rightIcon="eye"
+            error={errors.password}
+          />
+
+          <View style={styles.signupButtonWrap}>
+            <Button
+              title="Sign Up"
+              onPress={handleSignup}
+              loading={loading}
+              disabled={loading}
+            />
+          </View>
+        </View>
+
+        <View style={styles.dividerRow}>
+          <View style={styles.line} />
+          <Text style={styles.dividerText}>OR SIGN UP WITH</Text>
+          <View style={styles.line} />
+        </View>
+
+        <View style={styles.socialRow}>
+          <TouchableOpacity
+            style={styles.socialBtn}
+            onPress={handleGoogleSignup}
+            disabled={loading}
+          >
+            <MaterialCommunityIcons name="google" size={18} color="#EA4335" />
+            <Text style={styles.socialText}>Google</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.socialBtn}
+            onPress={handleAzureSignup}
+            disabled={loading}
+          >
+            <MaterialCommunityIcons name="apple" size={18} color="#000" />
+            <Text style={styles.socialText}>Apple</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.loginRow}>
+          <Text style={styles.haveText}>Already have an account? </Text>
+          <TouchableOpacity onPress={() => router.push("/(auth)/login")}>
+            <Text style={styles.loginLink}>Log In</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-
-      <View style={styles.divider}>
-        <View style={styles.line} />
-        <Text style={styles.dividerText}>Or sign up with</Text>
-        <View style={styles.line} />
-      </View>
-
-      <View style={styles.oauthContainer}>
-        <TouchableOpacity
-          style={styles.oauthButton}
-          onPress={handleGoogleSignup}
-          disabled={loading}
-        >
-          <MaterialCommunityIcons name="google" size={24} color="#EA4335" />
-          <Text style={styles.oauthText}>Google</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.oauthButton}
-          onPress={handleAzureSignup}
-          disabled={loading}
-        >
-          <MaterialCommunityIcons name="microsoft" size={24} color="#0078D4" />
-          <Text style={styles.oauthText}>Azure</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>Already have an account? </Text>
-        <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
-          <Text style={styles.loginLink}>Login</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
-    backgroundColor: '#fff',
-    paddingHorizontal: 20
+    backgroundColor: "#fff",
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 40,
-    marginBottom: 32
+  topBackground: {
+    backgroundColor: "#2e7d64",
+    paddingTop: 50,
+    paddingBottom: 70,
+    alignItems: "center",
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    flex: 1,
-    textAlign: 'center',
-    marginRight: 24
+  appName: {
+    fontSize: 34,
+    fontWeight: "800",
+    color: "#fff",
   },
-  form: {
-    marginBottom: 24
+  appSubtitle: {
+    color: "rgba(255,255,255,0.9)",
+    marginTop: 6,
   },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 24
+  cardContainer: {
+    backgroundColor: "#fff",
+    borderRadius: 28,
+    paddingVertical: 30,
+    paddingHorizontal: 24,
+    marginTop: -20,
+    elevation: 6,
+    alignItems: "stretch",
+  },
+  pullBar: {
+    width: 48,
+    height: 6,
+    borderRadius: 4,
+    backgroundColor: "#ececec",
+    alignSelf: "center",
+    marginBottom: 18,
+  },
+  cardTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    textAlign: "center",
+    marginTop: 2,
+    marginBottom: 4,
+  },
+  cardSubtitle: {
+    textAlign: "center",
+    color: "#777",
+    marginBottom: 18,
+  },
+  inputsWrap: {
+    marginTop: 12,
+    width: "100%",
+  },
+  dividerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 16,
+    marginBottom: 8,
   },
   line: {
     flex: 1,
     height: 1,
-    backgroundColor: '#ddd'
+    backgroundColor: "#eee",
   },
   dividerText: {
     marginHorizontal: 12,
-    color: '#999',
-    fontSize: 12
+    color: "#999",
+    fontSize: 12,
   },
-  oauthContainer: {
-    flexDirection: 'row',
-    gap: 12
+  socialRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 18,
+    gap: 12,
   },
-  oauthButton: {
+  socialBtn: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
+    borderColor: "#eee",
     paddingVertical: 12,
-    gap: 8
+    borderRadius: 10,
+    gap: 8,
   },
-  oauthText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#333'
+  socialText: {
+    marginLeft: 8,
+    fontWeight: "600",
   },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 32,
-    marginBottom: 40
+  signupButtonWrap: {
+    marginTop: 16,
   },
-  footerText: {
-    color: '#666',
-    fontSize: 14
+  loginRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: 20,
+    paddingBottom: 12,
+  },
+  haveText: {
+    color: "#777",
   },
   loginLink: {
-    color: '#4a90e2',
-    fontSize: 14,
-    fontWeight: '600'
-  }
+    color: "#2e7d64",
+    fontWeight: "700",
+    marginLeft: 6,
+  },
 });
