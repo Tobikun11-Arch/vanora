@@ -1,5 +1,6 @@
 import {supabase} from '@/services/supabase';
 import {MaterialCommunityIcons} from '@expo/vector-icons';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
 import {useRouter} from 'expo-router';
 import {useState} from 'react';
@@ -20,7 +21,6 @@ import {showToast} from '../../components/Toast';
 import {profileService} from '../../services/profile.service';
 import {useProfileStore} from '../../store/profileStore';
 import {GENDERS} from '../../utils/constants';
-import * as FileSystem from 'expo-file-system/legacy';
 
 export default function Step2Screen() {
   const router = useRouter();
@@ -29,7 +29,7 @@ export default function Step2Screen() {
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'], // Updated from deprecated MediaTypeOptions.Images
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.7
@@ -71,7 +71,6 @@ export default function Step2Screen() {
         });
         showToast('success', 'Success', 'Photo uploaded');
       } else {
-        console.log('Upload error:', uploadResult.error);
         showToast('error', 'Error', uploadResult.error);
       }
       setUploadingPhoto(false);

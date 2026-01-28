@@ -1,6 +1,6 @@
 import {homeTabStyles as styles} from '@/styles';
 import {MaterialCommunityIcons} from '@expo/vector-icons';
-import {useState} from 'react';
+import {useCallback, useEffect, useState} from 'react';
 import {ScrollView, Text, TouchableOpacity, View} from 'react-native';
 import {NewPostModal} from '../newpost';
 import EventsTab from './home/EventsTab';
@@ -27,13 +27,30 @@ type TabType = 'findMatch' | 'feed' | 'events';
 export default function HomeTab({profile}: HomeTabProps) {
   const [activeTab, setActiveTab] = useState<TabType>('feed');
   const [showNewPostModal, setShowNewPostModal] = useState(false);
+  const [feedRefreshTrigger, setFeedRefreshTrigger] = useState(0);
+
+  // Auto-refetch every 1 minute
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (activeTab === 'feed') {
+        setFeedRefreshTrigger(prev => prev + 1);
+      }
+    }, 60000); // 60 seconds
+
+    return () => clearInterval(interval);
+  }, [activeTab]);
+
+  const handlePostSuccess = useCallback(() => {
+    setShowNewPostModal(false);
+    setFeedRefreshTrigger(prev => prev + 1);
+  }, []);
 
   const renderTabContent = () => {
     switch (activeTab) {
       case 'findMatch':
         return <FindMatchTab />;
       case 'feed':
-        return <FeedTab />;
+        return <FeedTab refreshTrigger={feedRefreshTrigger} />;
       case 'events':
         return <EventsTab />;
     }
@@ -43,7 +60,6 @@ export default function HomeTab({profile}: HomeTabProps) {
     if (activeTab === 'feed') {
       setShowNewPostModal(true);
     }
-    console.log(activeTab);
   };
 
   // Extract username from profile id or use a default
@@ -119,6 +135,7 @@ export default function HomeTab({profile}: HomeTabProps) {
       <NewPostModal
         visible={showNewPostModal}
         onClose={() => setShowNewPostModal(false)}
+        onPostSuccess={handlePostSuccess}
         username={username}
       />
     </View>

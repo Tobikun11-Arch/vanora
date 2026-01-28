@@ -30,7 +30,7 @@ export default function Step4Screen() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'], // Updated from deprecated MediaTypeOptions.Images
       allowsEditing: true,
       quality: 0.7
     });
@@ -73,18 +73,27 @@ export default function Step4Screen() {
       const userId = user?.id;
       if (!userId) throw new Error('No authenticated user found');
 
-      // Upload all photos with better error handling
+      // Helper function to check if URI is a remote URL
+      const isRemoteUrl = (uri: string) =>
+        uri.startsWith('http://') || uri.startsWith('https://');
+
+      // Upload only local photos (skip already uploaded ones)
       const uploadResults = [];
       for (let i = 0; i < data.photos.length; i++) {
         const photo = data.photos[i];
+
+        // Skip if already uploaded (remote URL)
+        if (isRemoteUrl(photo.uri)) {
+          uploadResults.push({success: true, url: photo.uri});
+          continue;
+        }
+
         try {
-          console.log(`Uploading photo ${i + 1}:`, photo.uri);
           const result = await profileService.uploadGalleryPhoto(
             userId,
             photo.uri,
             i + 1
           );
-          console.log(`Upload result ${i + 1}:`, result);
           uploadResults.push(result);
         } catch (uploadError: any) {
           console.error(`Failed to upload photo ${i + 1}:`, uploadError);
@@ -148,8 +157,6 @@ export default function Step4Screen() {
         favorite_activities: step3.favorite_activities
         // Removed gallery_photos - will use profile_photos table instead
       };
-
-      console.log('Saving profile data:', profileData);
 
       // Upsert the profile
       const {error} = await supabase

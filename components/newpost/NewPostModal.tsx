@@ -1,6 +1,7 @@
 import {MaterialCommunityIcons} from '@expo/vector-icons';
-import {useState} from 'react';
+import {useRef, useState} from 'react';
 import {
+  ActivityIndicator,
   Modal,
   ScrollView,
   StyleSheet,
@@ -8,7 +9,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import FeedPost from './FeedPost';
+import FeedPost, {FeedPostRef} from './FeedPost';
 import ImagePollPost from './ImagePollPost';
 import PollPost from './PollPost';
 
@@ -17,20 +18,24 @@ type PostTabType = 'feed' | 'poll' | 'imagePoll';
 interface NewPostModalProps {
   visible: boolean;
   onClose: () => void;
+  onPostSuccess?: () => void;
   username: string;
 }
 
 export default function NewPostModal({
   visible,
   onClose,
+  onPostSuccess,
   username
 }: NewPostModalProps) {
   const [activeTab, setActiveTab] = useState<PostTabType>('feed');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const feedPostRef = useRef<FeedPostRef>(null);
 
   const renderTabContent = () => {
     switch (activeTab) {
       case 'feed':
-        return <FeedPost />;
+        return <FeedPost ref={feedPostRef} onPostSuccess={handlePostSuccess} />;
       case 'poll':
         return <PollPost username={username} />;
       case 'imagePoll':
@@ -38,10 +43,24 @@ export default function NewPostModal({
     }
   };
 
-  const handleShare = () => {
-    // TODO: Implement share logic
-    console.log('Share post');
+  const handlePostSuccess = () => {
+    onPostSuccess?.();
     onClose();
+  };
+
+  const handleShare = async () => {
+    if (activeTab === 'feed' && feedPostRef.current) {
+      if (!feedPostRef.current.canSubmit()) return;
+      setIsSubmitting(true);
+      try {
+        await feedPostRef.current.submit();
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else {
+      // TODO: Handle poll and imagePoll submission
+      onClose();
+    }
   };
 
   return (
@@ -54,12 +73,24 @@ export default function NewPostModal({
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+          <TouchableOpacity
+            onPress={onClose}
+            style={styles.closeBtn}
+            disabled={isSubmitting}
+          >
             <MaterialCommunityIcons name="close" size={24} color="#1F2937" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>New Post</Text>
-          <TouchableOpacity onPress={handleShare} style={styles.shareBtn}>
-            <Text style={styles.shareText}>Share</Text>
+          <TouchableOpacity
+            onPress={handleShare}
+            style={[styles.shareBtn, isSubmitting && styles.shareBtnDisabled]}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator color="#4A7C59" size="small" />
+            ) : (
+              <Text style={styles.shareText}>Share</Text>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -138,7 +169,12 @@ const styles = StyleSheet.create({
     color: '#1F2937'
   },
   shareBtn: {
-    padding: 4
+    padding: 4,
+    minWidth: 50,
+    alignItems: 'center'
+  },
+  shareBtnDisabled: {
+    opacity: 0.6
   },
   shareText: {
     fontSize: 14,

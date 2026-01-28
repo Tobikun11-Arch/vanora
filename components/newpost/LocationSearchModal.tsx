@@ -1,6 +1,6 @@
 import {MaterialCommunityIcons} from '@expo/vector-icons';
 import debounce from 'lodash.debounce';
-import {useCallback, useState} from 'react';
+import {useMemo, useState} from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -65,33 +65,27 @@ export default function LocationSearchModal({
     }
   };
 
-  const debouncedSearch = useCallback(
-    debounce((text: string) => {
-      if (!text.trim()) {
-        setResults([]);
-        return;
-      }
+  const debouncedSearch = useMemo(
+    () =>
+      debounce(async (query: string) => {
+        if (!query) {
+          setResults([]);
+          return;
+        }
 
-      setLoading(true);
-      fetch(
-        `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
-          text
-        )}&types=(regions)&key=${GOOGLE_PLACES_API_KEY}`
-      )
-        .then(response => response.json())
-        .then(data => {
-          if (data.predictions) {
-            setResults(data.predictions);
-          }
-        })
-        .catch(error => {
-          console.error('Error searching locations:', error);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    }, 300),
-    []
+        try {
+          const response = await fetch(
+            `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
+              query
+            )}&types=(regions)&key=${GOOGLE_PLACES_API_KEY}`
+          );
+          const data = await response.json();
+          setResults(data.predictions || []);
+        } catch (error) {
+          console.error("Error fetching places:", error);
+        }
+      }, 500),
+    [] 
   );
 
   const handleQueryChange = (text: string) => {
