@@ -1,3 +1,11 @@
+import {showToast} from '@/components/Toast';
+import {
+  ExploreTab,
+  FindTechTab,
+  HomeTab,
+  NotificationsTab,
+  ProfileTab
+} from '@/components/tabs/index';
 import {supabase} from '@/services/supabase';
 import {Feather} from '@expo/vector-icons';
 import {useRouter} from 'expo-router';
@@ -9,14 +17,6 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import {showToast} from '@/components/Toast';
-import {
-  ExploreTab,
-  FindTechTab,
-  HomeTab,
-  NotificationsTab,
-  ProfileTab
-} from '@/components/tabs/index';
 
 type TabType = 'findtech' | 'explore' | 'home' | 'notifications' | 'profile';
 
@@ -47,6 +47,7 @@ interface UserProfile {
   created_at: string;
   updated_at: string;
   gallery_photos?: GalleryPhoto[];
+  display_name: string;
 }
 
 export default function DashboardScreen() {
@@ -70,16 +71,58 @@ export default function DashboardScreen() {
           .from('profiles')
           .select('*')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
 
         if (profileError) throw profileError;
 
-        // Fetch gallery photos
+        // If no profile exists, redirect to profile setup
+        if (!profileData) {
+          router.replace('/(profile)/step-1');
+          return;
+        }
+
+        // Check if profile is complete - verify required fields from each step
+        const isStep1Complete =
+          profileData.nomad_type &&
+          profileData.travel_style &&
+          profileData.relationship_intent?.length > 0 &&
+          profileData.current_location &&
+          profileData.movement_pattern;
+
+        const isStep2Complete =
+          profileData.age &&
+          profileData.age >= 18 &&
+          profileData.gender &&
+          profileData.bio;
+
+        const isStep3Complete = profileData.hobbies?.length > 0;
+
+        // Fetch gallery photos to check step 4
         const {data: photosData} = await supabase
           .from('profile_photos')
           .select('*')
           .eq('user_id', user.id)
           .order('created_at', {ascending: false});
+
+        const isStep4Complete = photosData && photosData.length >= 1;
+
+        // Redirect to the appropriate step if profile is incomplete
+        if (!isStep1Complete) {
+          router.replace('/(profile)/step-1');
+          return;
+        }
+        if (!isStep2Complete) {
+          router.replace('/(profile)/step-2');
+          return;
+        }
+        if (!isStep3Complete) {
+          router.replace('/(profile)/step-3');
+          return;
+        }
+        if (!isStep4Complete) {
+          router.replace('/(profile)/step-4');
+          return;
+        }
 
         setProfile({
           ...profileData,

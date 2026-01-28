@@ -24,6 +24,7 @@ interface GalleryPhoto {
 
 interface UserProfile {
   id: string;
+  display_name: string;
   nomad_type: string;
   travel_style: string;
   relationship_intent: string[];
@@ -94,6 +95,9 @@ export default function ProfileTab({profile}: ProfileTabProps) {
           </View>
         )}
         <View style={styles.basicInfo}>
+          <Text style={styles.ageGender}>
+            {profile.display_name}
+          </Text>
           <Text style={styles.ageGender}>
             {profile.age} years old • {profile.gender}
           </Text>

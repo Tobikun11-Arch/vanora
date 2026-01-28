@@ -73,16 +73,51 @@ export default function Step4Screen() {
       const userId = user?.id;
       if (!userId) throw new Error('No authenticated user found');
 
-      // Upload all photos
-      const uploadPromises = data.photos.map((photo, index) =>
-        profileService.uploadGalleryPhoto(userId, photo.uri, index + 1)
-      );
+      // Upload all photos with better error handling
+      const uploadResults = [];
+      for (let i = 0; i < data.photos.length; i++) {
+        const photo = data.photos[i];
+        try {
+          console.log(`Uploading photo ${i + 1}:`, photo.uri);
+          const result = await profileService.uploadGalleryPhoto(
+            userId,
+            photo.uri,
+            i + 1
+          );
+          console.log(`Upload result ${i + 1}:`, result);
+          uploadResults.push(result);
+        } catch (uploadError: any) {
+          console.error(`Failed to upload photo ${i + 1}:`, uploadError);
+          uploadResults.push({success: false, error: uploadError.message});
+        }
+      }
 
-      const uploadResults = await Promise.all(uploadPromises);
+      // Check if all uploads succeeded before proceeding
+      const allSuccess = uploadResults.every(r => r.success);
+      if (!allSuccess) {
+        const failedCount = uploadResults.filter(r => !r.success).length;
+        const errorMessages = uploadResults
+          .filter(r => !r.success)
+          .map(r => r.error)
+          .join(', ');
+        console.error('Upload failures:', errorMessages);
+        showToast(
+          'error',
+          'Upload Failed',
+          `Failed to upload ${failedCount} photo(s): ${
+            errorMessages || 'Unknown error'
+          }`
+        );
+        setLoading(false);
+        return;
+      }
 
+      // Only update state after confirming all uploads succeeded
       const updatedPhotos = uploadResults
         .map((result, i) =>
-          result.success ? {uri: result.url, type: data.photos[i].type} : null
+          result.success && result.url
+            ? {uri: result.url, type: data.photos[i].type}
+            : null
         )
         .filter(photo => photo !== null) as {
         uri: string;
@@ -91,17 +126,11 @@ export default function Step4Screen() {
 
       setStep4({...data, photos: updatedPhotos});
 
-      const allSuccess = uploadResults.every(r => r.success);
-      if (!allSuccess) {
-        showToast('error', 'Error', 'Failed to upload some photos');
-        setLoading(false);
-        return;
-      }
-
       // Save complete profile data to Supabase
       const {step1, step2, step3} = useProfileStore.getState();
 
       const profileData = {
+        id: userId,
         nomad_type: step1.nomad_type,
         travel_style: step1.travel_style,
         relationship_intent: step1.relationship_intent,
@@ -117,37 +146,55 @@ export default function Step4Screen() {
         skills: step3.skills,
         lifestyle_tags: step3.lifestyle_tags,
         favorite_activities: step3.favorite_activities
+        // Removed gallery_photos - will use profile_photos table instead
       };
 
-      // Check if profile exists
-      const {data: existingProfile} = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', userId)
-        .single();
+      console.log('Saving profile data:', profileData);
 
-      let error;
-      if (existingProfile) {
-        // Update existing profile
-        const {error: updateError} = await supabase
-          .from('profiles')
-          .update(profileData)
-          .eq('id', userId);
-        error = updateError;
-      } else {
-        // Create new profile
-        const {error: insertError} = await supabase
-          .from('profiles')
-          .insert([{id: userId, ...profileData}]);
-        error = insertError;
+      // Upsert the profile
+      const {error} = await supabase
+        .from('profiles')
+        .upsert(profileData, {onConflict: 'id'});
+
+      if (error) {
+        console.error('Profile save error:', error);
+        throw error;
       }
 
-      if (error) throw error;
+      // Save gallery photos to profile_photos table
+      if (updatedPhotos.length > 0) {
+        const photoRecords = updatedPhotos.map((photo, index) => ({
+          user_id: userId,
+          photo_url: photo.uri,
+          photo_type: 'gallery' as const,
+          display_order: index,
+          is_primary: false
+        }));
+
+        const {error: photosError} = await supabase
+          .from('profile_photos')
+          .insert(photoRecords);
+
+        if (photosError) {
+          console.error('Gallery photos save error:', photosError);
+          // Don't throw - profile is saved, photos are secondary
+          showToast(
+            'error',
+            'Warning',
+            'Profile saved but gallery photos failed'
+          );
+        }
+      }
 
       showToast('success', 'Success', 'Profile created successfully');
       router.replace('/(app)/dashboard');
     } catch (error: any) {
-      showToast('error', 'Error', error.message);
+      console.error('handleComplete error:', error);
+      showToast(
+        'error',
+        'Error',
+        error.message || 'An unexpected error occurred'
+      );
       setLoading(false);
     }
   };
