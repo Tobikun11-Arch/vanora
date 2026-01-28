@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     width: 24,
   },
   bottomSection: {
-    marginBottom: 10,
+    paddingBottom: 10,
   },
   loginPrompt: {
     flexDirection: "row",

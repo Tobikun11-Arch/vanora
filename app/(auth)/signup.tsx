@@ -198,6 +198,7 @@ const styles = StyleSheet.create({
     marginTop: -20,
     elevation: 6,
     alignItems: "stretch",
+    paddingBottom: 40,
   },
   pullBar: {
     width: 48,
@@ -267,9 +268,9 @@ const styles = StyleSheet.create({
   loginRow: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 20,
+    marginTop: 10,
     paddingBottom: 12,
-  },
+},
   haveText: {
     color: "#777",
   },
