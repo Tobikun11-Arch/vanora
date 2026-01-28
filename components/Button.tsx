@@ -1,17 +1,17 @@
-import React from 'react';
+import React from "react";
 import {
   ActivityIndicator,
   StyleSheet,
   Text,
-  TouchableOpacity
-} from 'react-native';
+  TouchableOpacity,
+} from "react-native";
 
 interface ButtonProps {
   title: string;
   onPress: () => void;
   loading?: boolean;
   disabled?: boolean;
-  variant?: 'primary' | 'secondary' | 'outline';
+  variant?: "primary" | "secondary" | "outline";
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -19,7 +19,7 @@ export const Button: React.FC<ButtonProps> = ({
   onPress,
   loading = false,
   disabled = false,
-  variant = 'primary'
+  variant = "primary",
 }) => {
   return (
     <TouchableOpacity
@@ -28,7 +28,7 @@ export const Button: React.FC<ButtonProps> = ({
       disabled={disabled || loading}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'outline' ? '#4a90e2' : '#fff'} />
+        <ActivityIndicator color={variant === "outline" ? "#4a90e2" : "#fff"} />
       ) : (
         <Text style={[styles.text, styles[`text_${variant}`]]}>{title}</Text>
       )}
@@ -39,35 +39,35 @@ export const Button: React.FC<ButtonProps> = ({
 const styles = StyleSheet.create({
   button: {
     paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 48
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 56,
   },
   primary: {
-    backgroundColor: '#2e7d64'
+    backgroundColor: "#2e7d64",
   },
   secondary: {
-    backgroundColor: '#f0f0f0'
+    backgroundColor: "#f0f0f0",
   },
   outline: {
     borderWidth: 1,
-    borderColor: '#4a90e2'
+    borderColor: "#4a90e2",
   },
   disabled: {
-    opacity: 0.5
+    opacity: 0.5,
   },
   text: {
     fontSize: 16,
-    fontWeight: '600'
+    fontWeight: "600",
   },
   text_primary: {
-    color: '#fff'
+    color: "#fff",
   },
   text_secondary: {
-    color: '#333'
+    color: "#333",
   },
   text_outline: {
-    color: '#4a90e2'
-  }
+    color: "#4a90e2",
+  },
 });
