@@ -13,13 +13,20 @@ import {
   View
 } from 'react-native';
 
+// Geoapify API response interface
+interface GeoapifyResult {
+  place_id: string;
+  name: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  formatted: string;
+}
+
 interface LocationResult {
   place_id: string;
-  description: string;
-  structured_formatting: {
-    main_text: string;
-    secondary_text: string;
-  };
+  main_text: string;
+  secondary_text: string;
 }
 
 interface LocationSearchModalProps {
@@ -28,8 +35,7 @@ interface LocationSearchModalProps {
   onSelectLocation: (location: string) => void;
 }
 
-// Replace with your Google Places API key
-const GOOGLE_PLACES_API_KEY = 'YOUR_GOOGLE_PLACES_API_KEY';
+const GEOAPIFY_API_KEY = process.env.EXPO_PUBLIC_GEOAPIFY_API_KEY;
 
 export default function LocationSearchModal({
   visible,
@@ -40,52 +46,57 @@ export default function LocationSearchModal({
   const [results, setResults] = useState<LocationResult[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const searchLocations = async (searchQuery: string) => {
-    if (!searchQuery.trim()) {
-      setResults([]);
-      return;
-    }
+  // Transform Geoapify result to our LocationResult format
+  const transformGeoapifyResult = (result: GeoapifyResult): LocationResult => {
+    const mainText =
+      result.name || result.city || result.formatted.split(',')[0];
+    const secondaryParts = [result.city, result.state, result.country].filter(
+      Boolean
+    );
+    const secondaryText = result.name
+      ? secondaryParts.join(', ')
+      : result.formatted.split(',').slice(1).join(',').trim();
 
-    setLoading(true);
-    try {
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
-          searchQuery
-        )}&types=(regions)&key=${GOOGLE_PLACES_API_KEY}`
-      );
-      const data = await response.json();
-
-      if (data.predictions) {
-        setResults(data.predictions);
-      }
-    } catch (error) {
-      console.error('Error searching locations:', error);
-    } finally {
-      setLoading(false);
-    }
+    return {
+      place_id: result.place_id,
+      main_text: mainText,
+      secondary_text: secondaryText || result.country || ''
+    };
   };
 
   const debouncedSearch = useMemo(
     () =>
-      debounce(async (query: string) => {
-        if (!query) {
+      debounce(async (searchQuery: string) => {
+        if (!searchQuery.trim()) {
           setResults([]);
           return;
         }
 
+        setLoading(true);
         try {
           const response = await fetch(
-            `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
-              query
-            )}&types=(regions)&key=${GOOGLE_PLACES_API_KEY}`
+            `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(
+              searchQuery
+            )}&limit=10&format=json&apiKey=${GEOAPIFY_API_KEY}`
           );
           const data = await response.json();
-          setResults(data.predictions || []);
+
+          if (data.results) {
+            const transformedResults = data.results.map(
+              transformGeoapifyResult
+            );
+            setResults(transformedResults);
+          } else {
+            setResults([]);
+          }
         } catch (error) {
-          console.error("Error fetching places:", error);
+          console.error('Error fetching locations:', error);
+          setResults([]);
+        } finally {
+          setLoading(false);
         }
       }, 500),
-    [] 
+    []
   );
 
   const handleQueryChange = (text: string) => {
@@ -94,7 +105,7 @@ export default function LocationSearchModal({
   };
 
   const handleSelectLocation = (location: LocationResult) => {
-    onSelectLocation(location.structured_formatting.main_text);
+    onSelectLocation(location.main_text);
     setQuery('');
     setResults([]);
     onClose();
@@ -165,11 +176,9 @@ export default function LocationSearchModal({
                 color="#4A7C59"
               />
               <View style={styles.resultTextContainer}>
-                <Text style={styles.resultMainText}>
-                  {item.structured_formatting.main_text}
-                </Text>
+                <Text style={styles.resultMainText}>{item.main_text}</Text>
                 <Text style={styles.resultSecondaryText}>
-                  {item.structured_formatting.secondary_text}
+                  {item.secondary_text}
                 </Text>
               </View>
             </TouchableOpacity>
