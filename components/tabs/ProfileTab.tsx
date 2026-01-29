@@ -108,7 +108,8 @@ export default function ProfileTab({ profile }: ProfileTabProps) {
             <Text style={styles.premiumModalTitle}>Vandora Premium</Text>
 
             <Text style={styles.premiumModalDescription}>
-              Boost visibility by 3x and get your exclusive verified nomad badge today
+              Boost visibility by 3x and get your exclusive verified nomad badge
+              today
             </Text>
 
             <View style={styles.premiumFeatures}>
@@ -179,7 +180,8 @@ export default function ProfileTab({ profile }: ProfileTabProps) {
             <View style={styles.premiumCardText}>
               <Text style={styles.premiumCardTitle}>Vandora Premium</Text>
               <Text style={styles.premiumCardSubtitle}>
-                Boost visibility by 3x and get your exclusive verified nomad badge.  
+                Boost visibility by 3x and get your exclusive verified nomad
+                badge.
               </Text>
             </View>
           </View>
@@ -192,84 +194,118 @@ export default function ProfileTab({ profile }: ProfileTabProps) {
         </View>
       </TouchableOpacity>
 
-      {/* Profile Picture & Basic Info */}
+      {/* Profile Picture & Basic Info - Centered Layout */}
       <View style={styles.profileHeader}>
-        {profile.profile_picture_url ? (
-          <Image
-            source={{ uri: profile.profile_picture_url }}
-            style={styles.profilePicture}
-          />
-        ) : (
-          <View style={[styles.profilePicture, styles.placeholderPicture]}>
-            <MaterialCommunityIcons name="account" size={50} color="#9CA3AF" />
-          </View>
-        )}
-        <View style={styles.basicInfo}>
-          <Text style={styles.ageGender}>{profile.display_name}</Text>
-          <Text style={styles.ageGender}>
-            {profile.age} years old • {profile.gender}
-          </Text>
-          {profile.pronouns && (
-            <Text style={styles.pronouns}>{profile.pronouns}</Text>
+        <View style={styles.profileCenterContainer}>
+          {/* Profile Picture */}
+          {profile.profile_picture_url ? (
+            <Image
+              source={{ uri: profile.profile_picture_url }}
+              style={styles.profilePicture}
+            />
+          ) : (
+            <View style={[styles.profilePicture, styles.placeholderPicture]}>
+              <MaterialCommunityIcons
+                name="account"
+                size={60}
+                color="#9CA3AF"
+              />
+            </View>
           )}
-          <View style={styles.locationRow}>
+
+          {/* Name */}
+          <Text style={styles.nameText}>
+            {profile.display_name}, {profile.age}
+          </Text>
+
+          {/* Gender */}
+          <Text style={styles.genderText}>{profile.gender}</Text>
+
+          {/* Location */}
+          <View style={styles.locationRowCentered}>
             <MaterialCommunityIcons
               name="map-marker"
-              size={16}
+              size={14}
               color="#6B7280"
             />
-            <Text style={styles.location}>{profile.current_location}</Text>
+            <Text style={styles.locationCentered}>
+              {profile.current_location}
+            </Text>
+          </View>
+
+          {/* Verified Status if available */}
+          {profile.pronouns && (
+            <Text style={styles.verifiedStatus}>{profile.pronouns}</Text>
+          )}
+        </View>
+      </View>
+
+      {/* Nomad Life Section - 4 Cards in 1 Line */}
+      <View style={styles.nomadLifeSection}>
+        <View style={styles.nomadCardsContainer}>
+          <View style={styles.nomadCard}>
+            <MaterialCommunityIcons
+              name="van-utility"
+              size={24}
+              color="#2e7d64"
+            />
+            <Text style={styles.nomadCardValue}>{profile.nomad_type}</Text>
+          </View>
+          <View style={styles.nomadCard}>
+            <MaterialCommunityIcons name="airplane" size={24} color="#2e7d64" />
+            <Text style={styles.nomadCardValue}>{profile.travel_style}</Text>
+          </View>
+          <View style={styles.nomadCard}>
+            <MaterialCommunityIcons
+              name="map-marker-path"
+              size={24}
+              color="#2e7d64"
+            />
+            <Text style={styles.nomadCardValue}>
+              {profile.movement_pattern}
+            </Text>
+          </View>
+          <View style={styles.nomadCard}>
+            <MaterialCommunityIcons
+              name="calendar-clock"
+              size={24}
+              color="#2e7d64"
+            />
+            <Text style={styles.nomadCardValue}>
+              {profile.years_in_van_life}
+            </Text>
           </View>
         </View>
       </View>
+      
+      {/* Photo Gallery */}
+      {profile.gallery_photos && profile.gallery_photos.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Photo Gallery</Text>
+          <View style={styles.galleryGrid}>
+            {profile.gallery_photos.map((photo) => (
+              <View key={photo.id} style={styles.galleryImageContainer}>
+                <Image
+                  source={{ uri: photo.photo_url }}
+                  style={styles.galleryImage}
+                  resizeMode="cover"
+                />
+                <View style={styles.photoTypeLabel}>
+                  <Text style={styles.photoTypeLabelText}>
+                    {photo.photo_type}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
 
       {/* Bio Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>About Me</Text>
         <Text style={styles.bioText}>{profile.bio}</Text>
       </View>
-
-      {/* Nomad Info Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Nomad Life</Text>
-        <View style={styles.infoGrid}>
-          <View style={styles.infoItem}>
-            <MaterialCommunityIcons
-              name="van-utility"
-              size={24}
-              color="#4a90e2"
-            />
-            <Text style={styles.infoLabel}>Nomad Type</Text>
-            <Text style={styles.infoValue}>{profile.nomad_type}</Text>
-          </View>
-          <View style={styles.infoItem}>
-            <MaterialCommunityIcons name="airplane" size={24} color="#4a90e2" />
-            <Text style={styles.infoLabel}>Travel Style</Text>
-            <Text style={styles.infoValue}>{profile.travel_style}</Text>
-          </View>
-          <View style={styles.infoItem}>
-            <MaterialCommunityIcons
-              name="map-marker-path"
-              size={24}
-              color="#4a90e2"
-            />
-            <Text style={styles.infoLabel}>Movement</Text>
-            <Text style={styles.infoValue}>{profile.movement_pattern}</Text>
-          </View>
-          <View style={styles.infoItem}>
-            <MaterialCommunityIcons
-              name="calendar-clock"
-              size={24}
-              color="#4a90e2"
-            />
-            <Text style={styles.infoLabel}>Years on Road</Text>
-            <Text style={styles.infoValue}>
-              {profile.years_in_van_life} years
-            </Text>
-          </View>
-        </View>
-      </View>
-
       {/* Relationship Intent */}
       {profile.relationship_intent &&
         profile.relationship_intent.length > 0 && (
@@ -290,45 +326,41 @@ export default function ProfileTab({ profile }: ProfileTabProps) {
           </View>
         )}
 
-      {/* Hobbies */}
-      {profile.hobbies && profile.hobbies.length > 0 && (
+      {/* Combined Interest Section - Hobbies, Skills, Lifestyle */}
+      {(profile.hobbies?.length > 0 ||
+        profile.skills?.length > 0 ||
+        profile.lifestyle_tags?.length > 0) && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Hobbies & Interests</Text>
+          <Text style={styles.sectionTitle}>Interest</Text>
           <View style={styles.tagsContainer}>
-            {profile.hobbies.map((hobby, index) => (
-              <View key={index} style={styles.hobbyTag}>
-                <Text style={styles.hobbyTagText}>{hobby}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-      )}
+            {/* Lifestyle Tags */}
+            {profile.lifestyle_tags &&
+              profile.lifestyle_tags.map((tag, index) => (
+                <View key={`lifestyle-${index}`} style={styles.lifestyleTag}>
+                  <Text style={styles.lifestyleTagText}>{tag}</Text>
+                </View>
+              ))}
 
-      {/* Skills */}
-      {profile.skills && profile.skills.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Skills</Text>
-          <View style={styles.tagsContainer}>
-            {profile.skills.map((skill, index) => (
-              <View key={index} style={styles.skillTag}>
-                <MaterialCommunityIcons name="star" size={12} color="#F59E0B" />
-                <Text style={styles.skillTagText}>{skill}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-      )}
+            {/* Hobbies */}
+            {profile.hobbies &&
+              profile.hobbies.map((hobby, index) => (
+                <View key={`hobby-${index}`} style={styles.hobbyTag}>
+                  <Text style={styles.hobbyTagText}>{hobby}</Text>
+                </View>
+              ))}
 
-      {/* Lifestyle Tags */}
-      {profile.lifestyle_tags && profile.lifestyle_tags.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Lifestyle</Text>
-          <View style={styles.tagsContainer}>
-            {profile.lifestyle_tags.map((tag, index) => (
-              <View key={index} style={styles.lifestyleTag}>
-                <Text style={styles.lifestyleTagText}>{tag}</Text>
-              </View>
-            ))}
+            {/* Skills */}
+            {profile.skills &&
+              profile.skills.map((skill, index) => (
+                <View key={`skill-${index}`} style={styles.skillTag}>
+                  <MaterialCommunityIcons
+                    name="star"
+                    size={12}
+                    color="#F59E0B"
+                  />
+                  <Text style={styles.skillTagText}>{skill}</Text>
+                </View>
+              ))}
           </View>
         </View>
       )}
@@ -352,29 +384,6 @@ export default function ProfileTab({ profile }: ProfileTabProps) {
             </View>
           </View>
         )}
-
-      {/* Photo Gallery */}
-      {profile.gallery_photos && profile.gallery_photos.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Photo Gallery</Text>
-          <View style={styles.galleryGrid}>
-            {profile.gallery_photos.map((photo) => (
-              <View key={photo.id} style={styles.galleryImageContainer}>
-                <Image
-                  source={{ uri: photo.photo_url }}
-                  style={styles.galleryImage}
-                  resizeMode="cover"
-                />
-                <View style={styles.photoTypeLabel}>
-                  <Text style={styles.photoTypeLabelText}>
-                    {photo.photo_type}
-                  </Text>
-                </View>
-              </View>
-            ))}
-          </View>
-        </View>
-      )}
 
       {/* Member Since */}
       <View style={styles.memberSection}>
@@ -533,152 +542,196 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   profileHeader: {
-    flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 20,
-    marginBottom: 24,
+    marginBottom: 1,
+    marginTop: 12,
+  },
+  profileCenterContainer: {
+    alignItems: "center",
+    width: "100%",
   },
   profilePicture: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    marginRight: 16,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    marginBottom: 18,
+    borderWidth: 3,
+    borderColor: "#2e7d64",
   },
   placeholderPicture: {
     backgroundColor: "#F3F4F6",
     justifyContent: "center",
     alignItems: "center",
   },
-  basicInfo: {
-    flex: 1,
+  nameText: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#2e7d64",
+    marginBottom: 3,
+    textAlign: "center",
+    letterSpacing: 0.3,
   },
-  ageGender: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#1F2937",
-    marginBottom: 4,
-  },
-  pronouns: {
+  genderText: {
     fontSize: 14,
     color: "#6B7280",
-    marginBottom: 4,
+    marginBottom: 3,
+    textAlign: "center",
+    fontWeight: "500",
   },
-  locationRow: {
+  locationRowCentered: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    justifyContent: "center",
+    gap: 5,
+    marginBottom: 8,
   },
-  location: {
-    fontSize: 14,
+  locationCentered: {
+    fontSize: 13,
     color: "#6B7280",
+    textAlign: "center",
+    fontWeight: "500",
+  },
+  verifiedStatus: {
+    fontSize: 12,
+    color: "#10B981",
+    fontWeight: "600",
+    textAlign: "center",
+    marginTop: 4,
   },
   section: {
     paddingHorizontal: 20,
-    marginBottom: 24,
+    marginBottom: 30,
+  },
+  nomadLifeSection: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+    marginTop: 12,
+  },
+  nomadLifeTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#2e7d64",
+    marginBottom: 10,
+    textAlign: "center",
+    letterSpacing: 0.3,
+  },
+  nomadCardsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 5,
+  },
+  nomadCard: {
+    flex: 1,
+    height: 110,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F0FDF4",
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderWidth: 1.5,
+    borderColor: "#2e7d64",
+  },
+  nomadCardValue: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#2e7d64",
+    marginTop: 10,
+    textAlign: "center",
+    numberOfLines: 2,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#1F2937",
-    marginBottom: 12,
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#2e7d64",
+    marginBottom: 10,
+    letterSpacing: 0.3,
   },
   bioText: {
-    fontSize: 15,
-    color: "#4B5563",
-    lineHeight: 22,
-  },
-  infoGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-  },
-  infoItem: {
-    width: "47%",
-    backgroundColor: "#F9FAFB",
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  infoLabel: {
-    fontSize: 12,
-    color: "#6B7280",
-    marginTop: 8,
-    marginBottom: 4,
-  },
-  infoValue: {
     fontSize: 14,
-    fontWeight: "600",
-    color: "#1F2937",
-    textAlign: "center",
+    color: "#4B5563",
+    fontWeight: "500",
   },
   tagsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: 10,
   },
   intentTag: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#FEE2E2",
-    paddingHorizontal: 12,
+    paddingHorizontal: 13,
     paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: 22,
     gap: 6,
+    borderWidth: 1,
+    borderColor: "#FECACA",
   },
   intentTagText: {
     fontSize: 13,
-    color: "#DC2626",
-    fontWeight: "500",
+    color: "#991B1B",
+    fontWeight: "600",
   },
   hobbyTag: {
     backgroundColor: "#DBEAFE",
-    paddingHorizontal: 14,
+    paddingHorizontal: 13,
     paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "#BAE6FD",
   },
   hobbyTagText: {
     fontSize: 13,
-    color: "#1D4ED8",
-    fontWeight: "500",
+    color: "#0C4A6E",
+    fontWeight: "600",
   },
   skillTag: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#FEF3C7",
-    paddingHorizontal: 12,
+    paddingHorizontal: 13,
     paddingVertical: 8,
-    borderRadius: 20,
-    gap: 4,
+    borderRadius: 22,
+    gap: 5,
+    borderWidth: 1,
+    borderColor: "#FDE68A",
   },
   skillTagText: {
     fontSize: 13,
     color: "#B45309",
-    fontWeight: "500",
+    fontWeight: "600",
   },
   lifestyleTag: {
     backgroundColor: "#E0E7FF",
-    paddingHorizontal: 14,
+    paddingHorizontal: 13,
     paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "#C7D2FE",
   },
   lifestyleTagText: {
     fontSize: 13,
     color: "#4338CA",
-    fontWeight: "500",
+    fontWeight: "600",
   },
   activityTag: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#D1FAE5",
-    paddingHorizontal: 12,
+    paddingHorizontal: 13,
     paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: 22,
     gap: 6,
+    borderWidth: 1,
+    borderColor: "#A7F3D0",
   },
   activityTagText: {
     fontSize: 13,
     color: "#047857",
-    fontWeight: "500",
+    fontWeight: "600",
   },
   galleryGrid: {
     flexDirection: "row",
