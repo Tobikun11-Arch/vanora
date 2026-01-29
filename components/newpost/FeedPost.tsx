@@ -1,4 +1,5 @@
 import {supabase} from '@/services/supabase';
+import {useUserStore} from '@/store/userStore';
 import {
   baseStyles,
   mediaStyles,
@@ -28,12 +29,6 @@ import CategoryModal from './CategoryModal';
 import GearTagsModal from './GearTagsModal';
 import LocationSearchModal from './LocationSearchModal';
 import TagNomadsModal from './TagNomadsModal';
-
-interface UserProfile {
-  username: string | null;
-  display_name: string | null;
-  profile_picture_url: string | null;
-}
 
 interface MediaItem {
   uri: string;
@@ -67,14 +62,13 @@ const FeedPost = forwardRef<FeedPostRef, FeedPostProps>(function FeedPost(
   {onPostSuccess},
   ref
 ) {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const profile = useUserStore(state => state.profile);
   const [caption, setCaption] = useState('');
-  const [location, setLocation] = useState('Philippines'); // Default location
+  const [location, setLocation] = useState(''); // Default location
   const [visibility, setVisibility] = useState<'everyone' | 'followers'>(
     'everyone'
   );
   const [media, setMedia] = useState<MediaItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [locationModalVisible, setLocationModalVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [gearTags, setGearTags] = useState<GearTag[]>([]);
@@ -121,32 +115,6 @@ const FeedPost = forwardRef<FeedPostRef, FeedPostProps>(function FeedPost(
   useEffect(() => {
     taggedUsersRef.current = taggedUsers;
   }, [taggedUsers]);
-
-  useEffect(() => {
-    fetchUserProfile();
-  }, []);
-
-  const fetchUserProfile = async () => {
-    try {
-      const {
-        data: {user}
-      } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const {data, error} = await supabase
-        .from('profiles')
-        .select('username, display_name, profile_picture_url')
-        .eq('id', user.id)
-        .single();
-
-      if (error) throw error;
-      setProfile(data);
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const pickMedia = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -270,7 +238,7 @@ const FeedPost = forwardRef<FeedPostRef, FeedPostProps>(function FeedPost(
           user_id: user.id,
           post_type: 'feed',
           caption: currentCaption.trim() || null,
-          location: currentLocation || 'Philippines',
+          location: currentLocation || '',
           visibility: currentVisibility,
           category: currentCategory // Add category
         })
@@ -349,7 +317,7 @@ const FeedPost = forwardRef<FeedPostRef, FeedPostProps>(function FeedPost(
       // Success - Reset form and trigger refetch
       setCaption('');
       setMedia([]);
-      setLocation('Philippines');
+      setLocation('');
       setVisibility('everyone');
       setGearTags([]);
       setCategory(null);

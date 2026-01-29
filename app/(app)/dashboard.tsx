@@ -7,6 +7,7 @@ import {
   ProfileTab
 } from '@/components/tabs/index';
 import {supabase} from '@/services/supabase';
+import {useUserStore} from '@/store/userStore';
 import {Feather} from '@expo/vector-icons';
 import {useRouter} from 'expo-router';
 import {useEffect, useState} from 'react';
@@ -29,6 +30,7 @@ interface GalleryPhoto {
 
 interface UserProfile {
   id: string;
+  username: string | null;
   nomad_type: string;
   travel_style: string;
   relationship_intent: string[];
@@ -55,6 +57,7 @@ export default function DashboardScreen() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>('home');
+  const setUserProfile = useUserStore(state => state.setProfile);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -124,9 +127,17 @@ export default function DashboardScreen() {
           return;
         }
 
-        setProfile({
+        const nextProfile = {
           ...profileData,
           gallery_photos: photosData || []
+        };
+
+        setProfile(nextProfile);
+        setUserProfile({
+          id: nextProfile.id,
+          username: nextProfile.username ?? null,
+          display_name: nextProfile.display_name ?? null,
+          profile_picture_url: nextProfile.profile_picture_url ?? null
         });
       } catch (error: any) {
         console.error('Error fetching profile:', error);

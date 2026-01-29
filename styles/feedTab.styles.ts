@@ -42,5 +42,51 @@ export const feedTabStyles = StyleSheet.create({
   feedActionText: {
     fontSize: 14,
     color: '#6B7280'
+  },
+  pollContainer: {
+    marginTop: 12,
+    gap: 10
+  },
+  pollOption: {
+    position: 'relative',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#F9FAFB'
+  },
+  pollOptionSelected: {
+    borderColor: '#4A7C59'
+  },
+  pollOptionFill: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#F9FAFB'
+  },
+  pollOptionFillActive: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: '#E8F5E9'
+  },
+  pollOptionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 10
+  },
+  pollOptionText: {
+    fontSize: 14,
+    color: '#1F2937'
+  },
+  pollOptionPercent: {
+    fontSize: 13,
+    color: '#6B7280',
+    fontWeight: '600'
+  },
+  pollMetaText: {
+    fontSize: 12,
+    color: '#6B7280'
   }
 });

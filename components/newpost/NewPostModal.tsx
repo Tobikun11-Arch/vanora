@@ -10,8 +10,8 @@ import {
   View
 } from 'react-native';
 import FeedPost, {FeedPostRef} from './FeedPost';
-import ImagePollPost from './ImagePollPost';
-import PollPost from './PollPost';
+import ImagePollPost, {ImagePollPostRef} from './ImagePollPost';
+import PollPost, {PollPostRef} from './PollPost';
 
 type PostTabType = 'feed' | 'poll' | 'imagePoll';
 
@@ -31,15 +31,29 @@ export default function NewPostModal({
   const [activeTab, setActiveTab] = useState<PostTabType>('feed');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const feedPostRef = useRef<FeedPostRef>(null);
+  const pollPostRef = useRef<PollPostRef>(null);
+  const imagePollPostRef = useRef<ImagePollPostRef>(null);
 
   const renderTabContent = () => {
     switch (activeTab) {
       case 'feed':
         return <FeedPost ref={feedPostRef} onPostSuccess={handlePostSuccess} />;
       case 'poll':
-        return <PollPost username={username} />;
+        return (
+          <PollPost
+            ref={pollPostRef}
+            username={username}
+            onPostSuccess={handlePostSuccess}
+          />
+        );
       case 'imagePoll':
-        return <ImagePollPost username={username} />;
+        return (
+          <ImagePollPost
+            ref={imagePollPostRef}
+            username={username}
+            onPostSuccess={handlePostSuccess}
+          />
+        );
     }
   };
 
@@ -57,9 +71,29 @@ export default function NewPostModal({
       } finally {
         setIsSubmitting(false);
       }
-    } else {
-      // TODO: Handle poll and imagePoll submission
-      onClose();
+      return;
+    }
+
+    if (activeTab === 'poll' && pollPostRef.current) {
+      if (!pollPostRef.current.canSubmit()) return;
+      setIsSubmitting(true);
+      try {
+        await pollPostRef.current.submit();
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    if (activeTab === 'imagePoll' && imagePollPostRef.current) {
+      if (!imagePollPostRef.current.canSubmit()) return;
+      setIsSubmitting(true);
+      try {
+        await imagePollPostRef.current.submit();
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
     }
   };
 

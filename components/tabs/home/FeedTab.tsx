@@ -27,6 +27,7 @@ interface PostAuthor {
 interface FeedPost {
   id: string;
   user_id: string;
+  post_type: 'feed' | 'poll' | 'image_poll';
   caption: string | null;
   location: string | null;
   category: string | null;
@@ -36,6 +37,19 @@ interface FeedPost {
   post_media: PostMedia[];
   likes_count: number;
   comments_count: number;
+  poll_results?: PollResultOption[];
+  poll_vote_option_id?: string | null;
+}
+
+interface PollResultOption {
+  option_id: string;
+  poll_id: string;
+  option_text: string;
+  display_order: number;
+  post_id: string;
+  ends_at: string;
+  vote_count: number;
+  total_votes: number;
 }
 
 interface FeedTabProps {
@@ -64,6 +78,7 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
     if (refreshTrigger && refreshTrigger > 0) {
       fetchPosts(currentUserId);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshTrigger]);
 
   const fetchPosts = async (userId: string | null) => {
@@ -85,6 +100,7 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
           `
           id,
           user_id,
+          post_type,
           caption,
           location,
           category,
@@ -104,7 +120,7 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
           )
         `
         )
-        .eq('post_type', 'feed')
+        .in('post_type', ['feed', 'poll', 'image_poll'])
         .order('created_at', {ascending: false})
         .limit(50);
 
@@ -120,6 +136,58 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
           return true; // following-only
         return false;
       });
+
+      const pollPostIds = filtered
+        .filter(p => p.post_type === 'poll' || p.post_type === 'image_poll')
+        .map(p => p.id);
+
+      let pollResultsByPostId: Record<string, PollResultOption[]> = {};
+      let userVoteByPollId: Record<string, string> = {};
+
+      if (pollPostIds.length > 0) {
+        const {data: pollResultsData, error: pollResultsError} = await supabase
+          .from('poll_results')
+          .select('*')
+          .in('post_id', pollPostIds);
+
+        if (pollResultsError) {
+          console.error('Error fetching poll results:', pollResultsError);
+        } else {
+          const grouped: Record<string, PollResultOption[]> = {};
+          (pollResultsData || []).forEach(option => {
+            if (!grouped[option.post_id]) grouped[option.post_id] = [];
+            grouped[option.post_id].push(option);
+          });
+
+          Object.keys(grouped).forEach(postId => {
+            grouped[postId].sort((a, b) => a.display_order - b.display_order);
+          });
+
+          pollResultsByPostId = grouped;
+
+          if (userId) {
+            const pollIds = Array.from(
+              new Set((pollResultsData || []).map(r => r.poll_id))
+            );
+
+            if (pollIds.length > 0) {
+              const {data: voteData, error: voteError} = await supabase
+                .from('poll_votes')
+                .select('poll_id, option_id')
+                .eq('user_id', userId)
+                .in('poll_id', pollIds);
+
+              if (voteError) {
+                console.error('Error fetching poll votes:', voteError);
+              } else {
+                (voteData || []).forEach(vote => {
+                  userVoteByPollId[vote.poll_id] = vote.option_id;
+                });
+              }
+            }
+          }
+        }
+      }
       const withStats: FeedPost[] = await Promise.all(
         filtered.map(async p => {
           const sortedMedia = (p.post_media || []).sort(
@@ -141,12 +209,17 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
             ? p.profiles[0]
             : p.profiles;
 
+          const pollResults = pollResultsByPostId[p.id] || [];
+          const pollId = pollResults[0]?.poll_id;
+
           return {
             ...p,
             profiles: profileData,
             post_media: sortedMedia,
             likes_count: likesCount || 0,
-            comments_count: commentsCount || 0
+            comments_count: commentsCount || 0,
+            poll_results: pollResults,
+            poll_vote_option_id: pollId ? userVoteByPollId[pollId] : null
           } as FeedPost;
         })
       );
@@ -165,12 +238,63 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
     fetchPosts(currentUserId);
   }, [currentUserId]);
 
+  const handleVote = async (
+    postId: string,
+    pollId: string,
+    optionId: string
+  ) => {
+    if (!currentUserId) return;
+
+    try {
+      const {error} = await supabase
+        .from('poll_votes')
+        .insert({
+          poll_id: pollId,
+          option_id: optionId,
+          user_id: currentUserId
+        });
+
+      if (error) {
+        console.error('Error voting:', error);
+        return;
+      }
+
+      setPosts(prev =>
+        prev.map(post => {
+          if (post.id !== postId) return post;
+          const updatedResults = (post.poll_results || []).map(option => {
+            const increment = option.option_id === optionId ? 1 : 0;
+            return {
+              ...option,
+              vote_count: option.vote_count + increment,
+              total_votes: option.total_votes + 1
+            };
+          });
+
+          return {
+            ...post,
+            poll_results: updatedResults,
+            poll_vote_option_id: optionId
+          };
+        })
+      );
+    } catch (e) {
+      console.error('Error submitting vote:', e);
+    }
+  };
+
   const renderItem = ({item}: {item: FeedPost}) => {
     const author = item.profiles;
     const displayName = author?.username
       ? `@${author.username}`
       : author?.display_name || 'Unknown';
     const firstMedia = item.post_media?.[0];
+    const pollOptions = item.poll_results || [];
+    const pollId = pollOptions[0]?.poll_id;
+    const totalVotes = pollOptions[0]?.total_votes || 0;
+    const hasVoted = !!item.poll_vote_option_id;
+    const isPoll = item.post_type === 'poll';
+    const isImagePoll = item.post_type === 'image_poll';
 
     return (
       <View style={styles.feedPost}>
@@ -205,6 +329,18 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
             <Text style={{fontWeight: '600', color: '#1F2937'}}>
               {displayName}
             </Text>
+            {(isPoll || isImagePoll) && (
+              <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 2}}>
+                <MaterialCommunityIcons
+                  name={isImagePoll ? 'image' : 'poll'}
+                  size={12}
+                  color="#6B7280"
+                />
+                <Text style={{fontSize: 12, color: '#6B7280', marginLeft: 4}}>
+                  {isImagePoll ? 'Image Poll' : 'Community Poll'}
+                </Text>
+              </View>
+            )}
             {!!item.location && (
               <View style={{flexDirection: 'row', alignItems: 'center'}}>
                 <MaterialCommunityIcons
@@ -236,6 +372,48 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
             }}
             resizeMode="cover"
           />
+        )}
+
+        {(isPoll || isImagePoll) && pollOptions.length > 0 && (
+          <View style={styles.pollContainer}>
+            {pollOptions.map(option => {
+              const percent =
+                option.total_votes > 0
+                  ? Math.round((option.vote_count / option.total_votes) * 100)
+                  : 0;
+              const isSelected = option.option_id === item.poll_vote_option_id;
+              return (
+                <TouchableOpacity
+                  key={option.option_id}
+                  style={[
+                    styles.pollOption,
+                    isSelected && styles.pollOptionSelected
+                  ]}
+                  onPress={() =>
+                    pollId && !hasVoted && handleVote(item.id, pollId, option.option_id)
+                  }
+                  disabled={hasVoted}
+                >
+                  <View style={styles.pollOptionFill} />
+                  <View
+                    style={[
+                      styles.pollOptionFillActive,
+                      {width: `${percent}%`}
+                    ]}
+                  />
+                  <View style={styles.pollOptionContent}>
+                    <Text style={styles.pollOptionText}>
+                      {option.option_text}
+                    </Text>
+                    <Text style={styles.pollOptionPercent}>{percent}%</Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+            <Text style={styles.pollMetaText}>
+              {totalVotes} votes
+            </Text>
+          </View>
         )}
 
         <View style={styles.feedPostActions}>
