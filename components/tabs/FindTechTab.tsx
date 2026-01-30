@@ -72,7 +72,6 @@ export default function FindTechTab() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Find Technician</Text>
       </View>
 
       {/* Tabs */}
@@ -249,10 +248,10 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 50,
+    paddingTop: 10,
     paddingBottom: 20,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    borderBottomColor: "#fff",
   },
   headerTitle: {
     fontSize: 24,
