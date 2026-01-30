@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Button } from "../../components/Button";
 import { InputField } from "../../components/InputField";
 import { showToast } from "../../components/Toast";
@@ -85,87 +85,89 @@ export default function SignupScreen() {
 
   return (
     <View style={styles.screen}>
-      <View style={styles.topBackground}>
-        <Text style={styles.appName}>Vanora</Text>
-        <Text style={styles.appSubtitle}>Connect. Roam. Belong.</Text>
-      </View>
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+        <View style={styles.topBackground}>
+          <Text style={styles.appName}>Vanora</Text>
+          <Text style={styles.appSubtitle}>Connect. Roam. Belong.</Text>
+        </View>
 
-      <View style={styles.cardContainer}>
-        <View style={styles.pullBar} />
-        <Text style={styles.cardTitle}>Create Account</Text>
-        <Text style={styles.cardSubtitle}>Start your nomadic journey</Text>
+        <View style={styles.cardContainer}>
+          <View style={styles.pullBar} />
+          <Text style={styles.cardTitle}>Create Account</Text>
+          <Text style={styles.cardSubtitle}>Start your nomadic journey</Text>
 
-        <View style={styles.inputsWrap}>
-          <InputField
-            placeholder="Full Name"
-            value={fullName}
-            onChangeText={setFullName}
-            leftIcon="account-outline"
-            error={errors.fullName}
-          />
-
-          <InputField
-            placeholder="Email"
-            value={email}
-            onChangeText={setEmail}
-            leftIcon="email-outline"
-            keyboardType="email-address"
-            error={errors.email}
-          />
-
-          <InputField
-            placeholder="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            leftIcon="lock-outline"
-            rightIcon="eye"
-            error={errors.password}
-          />
-
-          <View style={styles.signupButtonWrap}>
-            <Button
-              title="Sign Up"
-              onPress={handleSignup}
-              loading={loading}
-              disabled={loading}
+          <View style={styles.inputsWrap}>
+            <InputField
+              placeholder="Full Name"
+              value={fullName}
+              onChangeText={setFullName}
+              leftIcon="account-outline"
+              error={errors.fullName}
             />
+
+            <InputField
+              placeholder="Email"
+              value={email}
+              onChangeText={setEmail}
+              leftIcon="email-outline"
+              keyboardType="email-address"
+              error={errors.email}
+            />
+
+            <InputField
+              placeholder="Password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              leftIcon="lock-outline"
+              rightIcon="eye"
+              error={errors.password}
+            />
+
+            <View style={styles.signupButtonWrap}>
+              <Button
+                title="Sign Up"
+                onPress={handleSignup}
+                loading={loading}
+                disabled={loading}
+              />
+            </View>
+          </View>
+
+          <View style={styles.dividerRow}>
+            <View style={styles.line} />
+            <Text style={styles.dividerText}>OR SIGN UP WITH</Text>
+            <View style={styles.line} />
+          </View>
+
+          <View style={styles.socialRow}>
+            <TouchableOpacity
+              style={styles.socialBtn}
+              onPress={handleGoogleSignup}
+              disabled={loading}
+            >
+              <MaterialCommunityIcons name="google" size={18} color="#EA4335" />
+              <Text style={styles.socialText}>Google</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.socialBtn}
+              onPress={handleAzureSignup}
+              disabled={loading}
+            >
+              <MaterialCommunityIcons name="apple" size={18} color="#000" />
+              <Text style={styles.socialText}>Apple</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.loginRow}>
+            <Text style={styles.haveText}>Already have an account? </Text>
+            <TouchableOpacity onPress={() => router.push("/(auth)/login")}>
+              <Text style={styles.loginLink}>Log In</Text>
+            </TouchableOpacity>
           </View>
         </View>
-
-        <View style={styles.dividerRow}>
-          <View style={styles.line} />
-          <Text style={styles.dividerText}>OR SIGN UP WITH</Text>
-          <View style={styles.line} />
-        </View>
-
-        <View style={styles.socialRow}>
-          <TouchableOpacity
-            style={styles.socialBtn}
-            onPress={handleGoogleSignup}
-            disabled={loading}
-          >
-            <MaterialCommunityIcons name="google" size={18} color="#EA4335" />
-            <Text style={styles.socialText}>Google</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.socialBtn}
-            onPress={handleAzureSignup}
-            disabled={loading}
-          >
-            <MaterialCommunityIcons name="apple" size={18} color="#000" />
-            <Text style={styles.socialText}>Apple</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.loginRow}>
-          <Text style={styles.haveText}>Already have an account? </Text>
-          <TouchableOpacity onPress={() => router.push("/(auth)/login")}>
-            <Text style={styles.loginLink}>Log In</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -174,6 +176,9 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: "#fff",
+  },
+  scrollContent: {
+    paddingBottom: 24,
   },
   topBackground: {
     backgroundColor: "#2e7d64",
@@ -196,7 +201,6 @@ const styles = StyleSheet.create({
     paddingVertical: 30,
     paddingHorizontal: 24,
     marginTop: -20,
-    elevation: 6,
     alignItems: "stretch",
     paddingBottom: 40,
   },
