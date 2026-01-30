@@ -21,6 +21,7 @@ interface MatchProfile {
   username: string | null;
   display_name: string | null;
   age: number;
+  gender: string | null;
   current_location: string | null;
   bio: string | null;
   profile_picture_url: string | null;
@@ -48,23 +49,31 @@ export default function FindMatchTab() {
   const swipe = useRef(new Animated.ValueXY()).current;
   const matchesRef = useRef<MatchProfile[]>([]);
 
+  const getOppositeGender = (gender?: string | null) => {
+    if (!gender) return null;
+    const normalized = gender.trim().toLowerCase();
+    if (normalized === 'male') return 'Female';
+    if (normalized === 'female') return 'Male';
+    return null;
+  };
+
   useEffect(() => {
     const loadMatches = async () => {
       try {
         const cached = await AsyncStorage.getItem('findMatchCacheV1');
+        let cachedMatches: MatchProfile[] = [];
+        let cachedProfile: MatchProfile | null = null;
         if (cached) {
           const parsed = JSON.parse(cached) as {
             matches: MatchProfile[];
             profile: MatchProfile | null;
           };
           if (parsed?.matches?.length) {
-            setMatches(parsed.matches);
-            setCurrentIndex(0);
+            cachedMatches = parsed.matches;
           }
           if (parsed?.profile) {
-            setCurrentProfile(parsed.profile);
+            cachedProfile = parsed.profile;
           }
-          setLoading(false);
         }
 
         const {
@@ -83,6 +92,7 @@ export default function FindMatchTab() {
             username,
             display_name,
             age,
+            gender,
             current_location,
             bio,
             profile_picture_url,
@@ -98,7 +108,26 @@ export default function FindMatchTab() {
 
         setCurrentProfile(myProfile || null);
 
-        const {data: matchData, error} = await supabase
+        const oppositeGender = getOppositeGender(myProfile?.gender);
+        const filterByGender = (list: MatchProfile[]) => {
+          if (oppositeGender) {
+            return list.filter(profile => profile.gender === oppositeGender);
+          }
+          if (myProfile?.gender) {
+            return list.filter(profile => profile.gender !== myProfile.gender);
+          }
+          return list;
+        };
+
+        if (cachedMatches.length) {
+          setMatches(filterByGender(cachedMatches));
+          setCurrentIndex(0);
+        }
+        if (cachedProfile) {
+          setCurrentProfile(cachedProfile);
+        }
+
+        let matchQuery = supabase
           .from('profiles')
           .select(
             `
@@ -106,6 +135,7 @@ export default function FindMatchTab() {
             username,
             display_name,
             age,
+            gender,
             current_location,
             bio,
             profile_picture_url,
@@ -116,19 +146,29 @@ export default function FindMatchTab() {
             favorite_activities
           `
           )
-          .neq('id', user.id)
-          .order('created_at', {ascending: false});
+          .neq('id', user.id);
+
+        if (oppositeGender) {
+          matchQuery = matchQuery.eq('gender', oppositeGender);
+        } else if (myProfile?.gender) {
+          matchQuery = matchQuery.neq('gender', myProfile.gender);
+        }
+
+        const {data: matchData, error} = await matchQuery.order('created_at', {
+          ascending: false
+        });
 
         if (error) {
           console.error('Error fetching matches:', error);
           setMatches([]);
         } else {
-          setMatches(matchData || []);
+          const filteredMatches = filterByGender(matchData || []);
+          setMatches(filteredMatches);
           setCurrentIndex(0);
           await AsyncStorage.setItem(
             'findMatchCacheV1',
             JSON.stringify({
-              matches: matchData || [],
+              matches: filteredMatches,
               profile: myProfile || null
             })
           );
@@ -425,13 +465,6 @@ export default function FindMatchTab() {
                   <Text style={styles.cardTitle}>
                     {displayName}, {activeMatch.age}
                   </Text>
-                  <View style={styles.verifiedBadge}>
-                    <MaterialCommunityIcons
-                      name="check-decagram"
-                      size={18}
-                      color="#60A5FA"
-                    />
-                  </View>
                 </View>
                 <View style={styles.locationRow}>
                   <MaterialCommunityIcons

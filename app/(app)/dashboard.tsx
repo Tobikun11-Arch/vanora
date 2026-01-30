@@ -326,8 +326,13 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
+    paddingBottom: 120,
   },
   bottomBar: {
+    position: "absolute",
+    left: 16,
+    right: 16,
+    bottom: 20,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-around",
@@ -337,8 +342,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#E5E7EB",
     borderRadius: 30,
-    marginHorizontal: 16,
-    marginBottom: 30,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
