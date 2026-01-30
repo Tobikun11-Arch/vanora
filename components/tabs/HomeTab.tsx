@@ -118,18 +118,24 @@ export default function HomeTab({profile}: HomeTabProps) {
       </View>
 
       {/* Tab Content */}
-      <ScrollView
-        style={styles.scrollContainer}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {renderTabContent()}
-      </ScrollView>
+      {activeTab === 'findMatch' ? (
+        <View style={styles.scrollContainer}>{renderTabContent()}</View>
+      ) : (
+        <ScrollView
+          style={styles.scrollContainer}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {renderTabContent()}
+        </ScrollView>
+      )}
 
       {/* Floating Action Button */}
-      <TouchableOpacity style={styles.fab} onPress={handleFabFeed}>
-        <MaterialCommunityIcons name="plus" size={28} color="#fff" />
-      </TouchableOpacity>
+      {activeTab === 'feed' && (
+        <TouchableOpacity style={styles.fab} onPress={handleFabFeed}>
+          <MaterialCommunityIcons name="plus" size={28} color="#fff" />
+        </TouchableOpacity>
+      )}
 
       {/* New Post Modal */}
       <NewPostModal

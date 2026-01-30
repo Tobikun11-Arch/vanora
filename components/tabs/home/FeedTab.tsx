@@ -56,33 +56,40 @@ interface FeedTabProps {
   refreshTrigger?: number;
 }
 
+const CACHE_TTL_MS = 60 * 1000;
+let feedCache: {posts: FeedPost[]; fetchedAt: number} = {
+  posts: [],
+  fetchedAt: 0
+};
+
 export default function FeedTab({refreshTrigger}: FeedTabProps) {
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [votingPollIds, setVotingPollIds] = useState<Record<string, boolean>>({});
 
-  useEffect(() => {
-    const init = async () => {
-      const {
-        data: {user}
-      } = await supabase.auth.getUser();
-      setCurrentUserId(user?.id || null);
-      await fetchPosts(user?.id || null);
-    };
+  const setPostsWithCache = (
+    updater: FeedPost[] | ((prev: FeedPost[]) => FeedPost[])
+  ) => {
+    setPosts(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      feedCache = {posts: next, fetchedAt: Date.now()};
+      return next;
+    });
+  };
 
-    init();
-  }, []);
-
-  useEffect(() => {
-    if (refreshTrigger && refreshTrigger > 0) {
-      fetchPosts(currentUserId);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [refreshTrigger]);
-
-  const fetchPosts = async (userId: string | null) => {
+  const fetchPosts = useCallback(
+    async (userId: string | null, options?: {force?: boolean}) => {
     try {
+      const cacheFresh =
+        feedCache.posts.length > 0 &&
+        Date.now() - feedCache.fetchedAt < CACHE_TTL_MS;
+      if (!options?.force && cacheFresh) {
+        setPosts(feedCache.posts);
+        setLoading(false);
+        return;
+      }
+
       // who am I following?
       let followingIds: string[] = [];
       if (userId) {
@@ -224,19 +231,33 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
         })
       );
 
-      setPosts(withStats);
+      setPostsWithCache(withStats);
     } catch (e) {
       console.error('Error building feed:', e);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
-  };
+    },
+    []
+  );
 
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    fetchPosts(currentUserId);
-  }, [currentUserId]);
+  useEffect(() => {
+    const init = async () => {
+      const {
+        data: {user}
+      } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
+      await fetchPosts(user?.id || null);
+    };
+
+    init();
+  }, [fetchPosts]);
+
+  useEffect(() => {
+    if (refreshTrigger && refreshTrigger > 0) {
+      fetchPosts(currentUserId, {force: true});
+    }
+  }, [currentUserId, fetchPosts, refreshTrigger]);
 
   const handleVote = async (
     postId: string,
@@ -244,8 +265,12 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
     optionId: string
   ) => {
     if (!currentUserId) return;
+    if (votingPollIds[pollId]) return;
+    const existingVote = posts.find(p => p.id === postId)?.poll_vote_option_id;
+    if (existingVote) return;
 
     try {
+      setVotingPollIds(prev => ({...prev, [pollId]: true}));
       const {error} = await supabase
         .from('poll_votes')
         .insert({
@@ -254,12 +279,12 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
           user_id: currentUserId
         });
 
-      if (error) {
+      if (error && error.code !== '23505') {
         console.error('Error voting:', error);
         return;
       }
 
-      setPosts(prev =>
+      setPostsWithCache(prev =>
         prev.map(post => {
           if (post.id !== postId) return post;
           const updatedResults = (post.poll_results || []).map(option => {
@@ -280,6 +305,8 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
       );
     } catch (e) {
       console.error('Error submitting vote:', e);
+    } finally {
+      setVotingPollIds(prev => ({...prev, [pollId]: false}));
     }
   };
 
@@ -293,6 +320,7 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
     const pollId = pollOptions[0]?.poll_id;
     const totalVotes = pollOptions[0]?.total_votes || 0;
     const hasVoted = !!item.poll_vote_option_id;
+    const isVoting = pollId ? !!votingPollIds[pollId] : false;
     const isPoll = item.post_type === 'poll';
     const isImagePoll = item.post_type === 'image_poll';
 
@@ -390,9 +418,9 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
                     isSelected && styles.pollOptionSelected
                   ]}
                   onPress={() =>
-                    pollId && !hasVoted && handleVote(item.id, pollId, option.option_id)
+                    pollId && !hasVoted && !isVoting && handleVote(item.id, pollId, option.option_id)
                   }
-                  disabled={hasVoted}
+                  disabled={hasVoted || isVoting}
                 >
                   <View style={styles.pollOptionFill} />
                   <View
