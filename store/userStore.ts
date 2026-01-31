@@ -5,6 +5,7 @@ export interface UserProfile {
   username: string | null;
   display_name: string | null;
   profile_picture_url: string | null;
+  nomad_type: string | null;
 }
 
 interface UserStore {

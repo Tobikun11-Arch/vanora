@@ -45,6 +45,8 @@ interface UserProfile {
   created_at: string;
   updated_at: string;
   gallery_photos?: GalleryPhoto[];
+  followers_count?: number;
+  following_count?: number;
 }
 
 interface ProfileTabProps {
@@ -154,7 +156,7 @@ export default function ProfileTab({profile}: ProfileTabProps) {
           <MaterialCommunityIcons name="cog" size={24} color="#1F2937" />
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>My Profile</Text>
+        <Text style={styles.headerTitle}>Profile</Text>
 
         <TouchableOpacity
           onPress={handleLogout}
@@ -227,6 +229,29 @@ export default function ProfileTab({profile}: ProfileTabProps) {
             </Text>
           </View>
 
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>
+                {profile.followers_count ?? 0}
+              </Text>
+              <Text style={styles.statLabel}>Followers</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>
+                {profile.following_count ?? 0}
+              </Text>
+              <Text style={styles.statLabel}>Following</Text>
+            </View>
+            <View style={styles.nomadPill}>
+              <MaterialCommunityIcons
+                name="van-utility"
+                size={14}
+                color="#2e7d64"
+              />
+              <Text style={styles.nomadPillText}>{profile.nomad_type}</Text>
+            </View>
+          </View>
+
           {/* Verified Status if available */}
           {profile.pronouns && (
             <Text style={styles.verifiedStatus}>{profile.pronouns}</Text>
@@ -237,14 +262,7 @@ export default function ProfileTab({profile}: ProfileTabProps) {
       {/* Nomad Life Section - 4 Cards in 1 Line */}
       <View style={styles.nomadLifeSection}>
         <View style={styles.nomadCardsContainer}>
-          <View style={styles.nomadCard}>
-            <MaterialCommunityIcons
-              name="van-utility"
-              size={24}
-              color="#2e7d64"
-            />
-            <Text style={styles.nomadCardValue}>{profile.nomad_type}</Text>
-          </View>
+          
           <View style={styles.nomadCard}>
             <MaterialCommunityIcons name="airplane" size={24} color="#2e7d64" />
             <Text style={styles.nomadCardValue}>{profile.travel_style}</Text>
@@ -592,6 +610,40 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     textAlign: 'center',
     fontWeight: '500'
+  },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    marginTop: 6
+  },
+  statItem: {
+    alignItems: 'center'
+  },
+  statValue: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1F2937'
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#6B7280'
+  },
+  nomadPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#A7F3D0'
+  },
+  nomadPillText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#2e7d64'
   },
   verifiedStatus: {
     fontSize: 12,
