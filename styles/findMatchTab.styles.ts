@@ -115,7 +115,7 @@ export const findMatchTabStyles = StyleSheet.create({
     color: '#E5E7EB'
   },
   actionRow: {
-    marginTop: 20,
+    marginTop: 10,
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: 12
