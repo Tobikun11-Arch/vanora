@@ -54,6 +54,7 @@ interface ProfileTabProps {
 export default function ProfileTab({profile}: ProfileTabProps) {
   const router = useRouter();
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
 
   const handleLogout = async () => {
     const result = await authService.signOut();
@@ -64,8 +65,7 @@ export default function ProfileTab({profile}: ProfileTabProps) {
   };
 
   const handleSettings = () => {
-    // Navigate to settings page
-    // router.push('/(app)/settings');
+    setShowSettingsMenu(prev => !prev);
   };
 
   const formatDate = (dateString: string) => {
@@ -143,6 +143,52 @@ export default function ProfileTab({profile}: ProfileTabProps) {
             </TouchableOpacity>
           </View>
         </View>
+      </Modal>
+
+      {/* Settings Menu */}
+      <Modal
+        visible={showSettingsMenu}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowSettingsMenu(false)}
+      >
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => setShowSettingsMenu(false)}
+          style={styles.settingsOverlay}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={() => {
+              // Prevent backdrop close when tapping menu itself
+            }}
+            style={styles.settingsMenu}
+          >
+            <TouchableOpacity
+              style={styles.settingsMenuItem}
+              onPress={() => {
+                setShowSettingsMenu(false);
+                router.push('/(app)/membership-subscription');
+              }}
+            >
+              <Text style={styles.settingsMenuItemText}>
+                Membership & Subscription
+              </Text>
+            </TouchableOpacity>
+
+            <View style={styles.settingsMenuDivider} />
+
+            <TouchableOpacity
+              style={styles.settingsMenuItem}
+              onPress={() => {
+                setShowSettingsMenu(false);
+                router.push('/(app)/privacy-and-safety');
+              }}
+            >
+              <Text style={styles.settingsMenuItemText}>Privacy and Safety</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
 
       {/* Header */}
@@ -426,6 +472,37 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center'
+  },
+  settingsOverlay: {
+    flex: 1,
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
+    paddingTop: 92,
+    paddingLeft: 16
+  },
+  settingsMenu: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    minWidth: 240,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 6
+  },
+  settingsMenuItem: {
+    paddingVertical: 14,
+    paddingHorizontal: 16
+  },
+  settingsMenuItemText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#111827'
+  },
+  settingsMenuDivider: {
+    height: 1,
+    backgroundColor: '#E5E7EB'
   },
   premiumModalContent: {
     backgroundColor: '#fff',
