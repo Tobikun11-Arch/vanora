@@ -310,7 +310,7 @@ export default function EventsTab() {
               <View style={styles.aboutSection}>
                 <Text style={styles.sectionHeader}>About the Event</Text>
                 <Text style={styles.aboutText}>
-                  Join us for an amazing evening under the stars! We'll be
+                  Join us for an amazing evening under the stars! We&apos;ll be
                   enjoying a campfire social with fellow nomads, sharing
                   stories, and making new friends. Bring your own chairs,
                   drinks, and snacks!
@@ -319,7 +319,7 @@ export default function EventsTab() {
 
               <View style={styles.whosGoingSection}>
                 <View style={styles.whosGoingHeader}>
-                  <Text style={styles.sectionHeader}>Who's Going</Text>
+                  <Text style={styles.sectionHeader}>Who&apos;s Going</Text>
                   <TouchableOpacity>
                     <Text style={styles.seeAllLink}>See all</Text>
                   </TouchableOpacity>
@@ -394,6 +394,11 @@ export default function EventsTab() {
               <View style={{ width: 24 }} />
             </View>
 
+            
+            <ScrollView
+              style={styles.createModalContent}
+              showsVerticalScrollIndicator={false}
+            >
             <View style={styles.imageUploadSection}>
               <Text style={styles.createModalLabel}>Event Image</Text>
               <View style={styles.imageUploadBox}>
@@ -408,10 +413,6 @@ export default function EventsTab() {
               </View>
             </View>
 
-            <ScrollView
-              style={styles.createModalContent}
-              showsVerticalScrollIndicator={false}
-            >
               <View style={styles.formSection}>
                 <Text style={styles.formLabel}>Event Title</Text>
                 <View style={styles.formInput}>
@@ -1083,7 +1084,6 @@ const styles = StyleSheet.create({
     color: "#1a1a1a",
   },
   imageUploadSection: {
-    paddingHorizontal: 20,
     paddingVertical: 16,
   },
   imageUploadBox: {
