@@ -1,4 +1,7 @@
-import {useState} from 'react';
+import {showToast} from '@/components/Toast';
+import {supabase} from '@/services/supabase';
+import {useUserStore} from '@/store/userStore';
+import {useEffect, useState} from 'react';
 import {
   Image,
   ScrollView,
@@ -10,50 +13,153 @@ import {
 
 interface Notification {
   id: string;
-  type: 'welcome' | 'premium';
+  type: string;
   title: string;
   message: string;
-  timestamp: string;
-  icon: string;
-  read: boolean;
+  created_at: string;
+  read_at: string | null;
+  actor: {
+    id: string;
+    username: string | null;
+    display_name: string | null;
+    profile_picture_url: string | null;
+  } | null;
 }
 
 export default function NotificationsTab() {
-  const [notifications, setNotifications] = useState<Notification[]>([
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const userProfile = useUserStore(state => state.profile);
+  const [activeTab, setActiveTab] = useState('all');
+  const promoSeedDate = new Date();
+  promoSeedDate.setDate(promoSeedDate.getDate() - 1);
+  promoSeedDate.setHours(9, 0, 0, 0);
+  const promoCreatedAt = promoSeedDate.toISOString();
+  const welcomeCreatedAt = new Date(promoSeedDate.getTime() - 2 * 60 * 60 * 1000).toISOString();
+  const baseNotifications: Notification[] = [
     {
-      id: '1',
-      type: 'premium',
-      title: 'Unlock Premium Features',
-      message:
-        'Upgrade to Premium to access exclusive features and connect with more travelers worldwide.',
-      timestamp: '2m ago',
-      icon: '⭐',
-      read: false
-    },
-    {
-      id: '2',
+      id: 'welcome-vanora',
       type: 'welcome',
       title: 'Welcome to Vanora!',
       message:
         'Welcome to our community of nomads and travelers. Discover amazing people and experiences around the world.',
-      timestamp: '5m ago',
-      icon: '🌍',
-      read: false
+      created_at: welcomeCreatedAt,
+      read_at: null,
+      actor: null
+    },
+    {
+      id: 'promo-premium',
+      type: 'premium',
+      title: 'Unlock Premium Features',
+      message:
+        'Upgrade to Premium to access exclusive features and connect with more travelers worldwide.',
+      created_at: promoCreatedAt,
+      read_at: null,
+      actor: null
     }
-  ]);
+  ];
 
-  const [activeTab, setActiveTab] = useState('all');
-
-  const handleMarkAllAsRead = () => {
-    setNotifications(
-      notifications.map(notif => ({
-        ...notif,
-        read: true
-      }))
-    );
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) {
+      return 'Just now';
+    }
+    const now = new Date();
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days}d ago`;
+    return date.toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
   };
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const isLocalNotification = (id: string) =>
+    id === 'welcome-vanora' || id === 'promo-premium';
+
+  useEffect(() => {
+    if (!userProfile?.id) return;
+
+    const fetchNotifications = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const {data, error} = await supabase
+          .from('notifications')
+          .select(
+            `
+            id,
+            type,
+            title,
+            message,
+            created_at,
+            read_at,
+            actor:profiles!notifications_actor_id_fkey (
+              id,
+              username,
+              display_name,
+              profile_picture_url
+            )
+          `
+          )
+          .eq('recipient_id', userProfile.id)
+          .order('created_at', {ascending: false});
+
+        if (error) {
+          throw error;
+        }
+
+        const fetched = data || [];
+        const fetchedIds = new Set(fetched.map(item => item.id));
+        const merged = [
+          ...baseNotifications.filter(item => !fetchedIds.has(item.id)),
+          ...fetched
+        ];
+        setNotifications(
+          merged.sort(
+            (a, b) =>
+              new Date(b.created_at).getTime() -
+              new Date(a.created_at).getTime()
+          )
+        );
+      } catch (err) {
+        console.error('Fetch notifications error:', err);
+        setError('Unable to load notifications.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNotifications();
+  }, [userProfile?.id]);
+
+  const handleMarkAllAsRead = () => {
+    if (!userProfile?.id) return;
+    const now = new Date().toISOString();
+    setNotifications(prev =>
+      prev.map(notif => ({
+        ...notif,
+        read_at: notif.read_at || now
+      }))
+    );
+
+    supabase
+      .from('notifications')
+      .update({read_at: now})
+      .eq('recipient_id', userProfile.id)
+      .is('read_at', null)
+      .then(({error}) => {
+        if (error) {
+          console.error('Mark all read error:', error);
+          showToast('error', 'Update failed', 'Unable to mark all as read.');
+        }
+      });
+  };
+
+  const unreadCount = notifications.filter(n => !n.read_at).length;
 
   return (
     <View style={styles.container}>
@@ -95,46 +201,85 @@ export default function NotificationsTab() {
         style={styles.notificationsList}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.sectionTitle}>Today</Text>
+        <Text style={styles.sectionTitle}>Recent</Text>
 
-        {notifications.map(notification => (
-          <TouchableOpacity
-            key={notification.id}
-            style={[
-              styles.notificationCard,
-              notification.read && styles.notificationCardRead
-            ]}
-            onPress={() => {
-              setNotifications(
-                notifications.map(n =>
-                  n.id === notification.id ? {...n, read: true} : n
-                )
-              );
-            }}
-            activeOpacity={0.7}
-          >
-            <View style={styles.avatarWrapper}>
-              <View style={styles.avatarBadge}>
-                <Image
-                  source={require('../../assets/images/vanora.png')}
-                  style={styles.avatar}
-                />
-              </View>
-            </View>
+        {loading ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyText}>Loading notifications...</Text>
+          </View>
+        ) : notifications.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyText}>No notifications yet.</Text>
+          </View>
+        ) : (
+          notifications.map(notification => {
+            const actorName =
+              notification.actor?.display_name ||
+              notification.actor?.username ||
+              'Vanora';
+            const avatarSource = notification.actor?.profile_picture_url
+              ? {uri: notification.actor.profile_picture_url}
+              : require('../../assets/images/vanora.png');
 
-            <View style={styles.notificationContent}>
-              <Text style={styles.notificationTitle}>{notification.title}</Text>
-              <Text style={styles.notificationMessage} numberOfLines={2}>
-                {notification.message}
-              </Text>
-              <Text style={styles.notificationTime}>
-                {notification.timestamp}
-              </Text>
-            </View>
+            return (
+              <TouchableOpacity
+                key={notification.id}
+                style={[
+                  styles.notificationCard,
+                  notification.read_at && styles.notificationCardRead
+                ]}
+                onPress={() => {
+                  if (notification.read_at) return;
+                  const now = new Date().toISOString();
+                  setNotifications(prev =>
+                    prev.map(n =>
+                      n.id === notification.id ? {...n, read_at: now} : n
+                    )
+                  );
+                  if (isLocalNotification(notification.id)) {
+                    return;
+                  }
+                  supabase
+                    .from('notifications')
+                    .update({read_at: now})
+                    .eq('id', notification.id)
+                    .then(({error}) => {
+                      if (error) {
+                        console.error('Mark read error:', error);
+                        showToast(
+                          'error',
+                          'Update failed',
+                          'Unable to mark as read.'
+                        );
+                      }
+                    });
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={styles.avatarWrapper}>
+                  <View style={styles.avatarBadge}>
+                    <Image source={avatarSource} style={styles.avatar} />
+                  </View>
+                </View>
 
-            {!notification.read && <View style={styles.statusIndicator} />}
-          </TouchableOpacity>
-        ))}
+                <View style={styles.notificationContent}>
+                  <Text style={styles.notificationTitle}>
+                    {notification.title}
+                  </Text>
+                  <Text style={styles.notificationMessage} numberOfLines={2}>
+                    {notification.message}
+                  </Text>
+                  <Text style={styles.notificationTime}>
+                    {actorName} - {formatTimeAgo(notification.created_at)}
+                  </Text>
+                </View>
+
+                {!notification.read_at && <View style={styles.statusIndicator} />}
+              </TouchableOpacity>
+            );
+          })
+        )}
+        {error && <Text style={styles.errorText}>{error}</Text>}
       </ScrollView>
     </View>
   );
@@ -268,6 +413,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
     color: '#999999'
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 24
+  },
+  emptyText: {
+    fontSize: 13,
+    color: '#94A3B8'
+  },
+  errorText: {
+    marginTop: 8,
+    fontSize: 12,
+    color: '#EF4444'
   },
   unreadIndicator: {
     width: 8,

@@ -6,6 +6,9 @@ export interface Step1Data {
   relationship_intent: string[];
   current_location: string;
   movement_pattern: string;
+  mechanic_whatsapp: string;
+  mechanic_email: string;
+  mechanic_instagram: string;
 }
 
 export interface Step2Data {
@@ -48,7 +51,10 @@ const initialStep1: Step1Data = {
   travel_style: '',
   relationship_intent: [],
   current_location: '',
-  movement_pattern: ''
+  movement_pattern: '',
+  mechanic_whatsapp: '',
+  mechanic_email: '',
+  mechanic_instagram: ''
 };
 
 const initialStep2: Step2Data = {

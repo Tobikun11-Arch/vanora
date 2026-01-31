@@ -11,6 +11,8 @@ CREATE TYPE post_type AS ENUM ('feed', 'poll', 'image_poll');
 CREATE TYPE post_visibility AS ENUM ('everyone', 'followers');
 CREATE TYPE photo_type AS ENUM ('profile', 'gallery', 'cover');
 CREATE TYPE media_type AS ENUM ('image', 'video');
+CREATE TYPE signal_status AS ENUM ('emergency', 'urgent', 'normal');
+CREATE TYPE notification_type AS ENUM ('mechanic_request', 'signal_request', 'general');
 
 -- =============================================
 -- PROFILES TABLE (Core user data)
@@ -25,6 +27,9 @@ CREATE TABLE profiles (
   relationship_intent TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
   current_location VARCHAR(255),
   movement_pattern VARCHAR(50),
+  mechanic_whatsapp VARCHAR(30),
+  mechanic_email VARCHAR(255),
+  mechanic_instagram VARCHAR(100),
   age INTEGER NOT NULL,
   gender VARCHAR(50) NOT NULL,
   pronouns VARCHAR(100),
@@ -54,6 +59,34 @@ CREATE TABLE user_follows (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(follower_id, following_id),
   CHECK (follower_id != following_id) -- Prevent self-follow
+);
+
+-- =============================================
+-- HELP SIGNALS (User assistance requests)
+-- =============================================
+
+CREATE TABLE help_signals (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  location VARCHAR(255) NOT NULL,
+  status signal_status NOT NULL,
+  description TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- =============================================
+-- NOTIFICATIONS (User to user alerts)
+-- =============================================
+
+CREATE TABLE notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  recipient_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  actor_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  type notification_type NOT NULL DEFAULT 'general',
+  title VARCHAR(255) NOT NULL,
+  message TEXT NOT NULL,
+  read_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- =============================================
@@ -258,6 +291,17 @@ CREATE INDEX profiles_location_idx ON profiles(current_location);
 CREATE INDEX user_follows_follower_idx ON user_follows(follower_id);
 CREATE INDEX user_follows_following_idx ON user_follows(following_id);
 
+-- Help signals
+CREATE INDEX help_signals_user_id_idx ON help_signals(user_id);
+CREATE INDEX help_signals_status_idx ON help_signals(status);
+CREATE INDEX help_signals_created_at_idx ON help_signals(created_at DESC);
+
+-- Notifications
+CREATE INDEX notifications_recipient_id_idx ON notifications(recipient_id);
+CREATE INDEX notifications_actor_id_idx ON notifications(actor_id);
+CREATE INDEX notifications_created_at_idx ON notifications(created_at DESC);
+CREATE INDEX notifications_read_at_idx ON notifications(read_at);
+
 -- Galleries & Photos
 CREATE INDEX galleries_user_id_idx ON galleries(user_id);
 CREATE INDEX profile_photos_user_id_idx ON profile_photos(user_id);
@@ -296,6 +340,8 @@ CREATE INDEX post_saves_user_id_idx ON post_saves(user_id);
 
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_follows ENABLE ROW LEVEL SECURITY;
+ALTER TABLE help_signals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE galleries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE profile_photos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
@@ -342,6 +388,46 @@ CREATE POLICY "Users can follow others"
 CREATE POLICY "Users can unfollow"
   ON user_follows FOR DELETE
   USING (auth.uid() = follower_id);
+
+-- =============================================
+-- RLS POLICIES - HELP SIGNALS
+-- =============================================
+
+CREATE POLICY "Anyone can view help signals"
+  ON help_signals FOR SELECT
+  USING (true);
+
+CREATE POLICY "Users can create their own help signals"
+  ON help_signals FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own help signals"
+  ON help_signals FOR UPDATE
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own help signals"
+  ON help_signals FOR DELETE
+  USING (auth.uid() = user_id);
+
+-- =============================================
+-- RLS POLICIES - NOTIFICATIONS
+-- =============================================
+
+CREATE POLICY "Recipients can view their notifications"
+  ON notifications FOR SELECT
+  USING (auth.uid() = recipient_id);
+
+CREATE POLICY "Users can create notifications they send"
+  ON notifications FOR INSERT
+  WITH CHECK (auth.uid() = actor_id);
+
+CREATE POLICY "Recipients can update their notifications"
+  ON notifications FOR UPDATE
+  USING (auth.uid() = recipient_id);
+
+CREATE POLICY "Recipients can delete their notifications"
+  ON notifications FOR DELETE
+  USING (auth.uid() = recipient_id);
 
 -- =============================================
 -- RLS POLICIES - GALLERIES

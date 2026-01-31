@@ -231,7 +231,6 @@ const FeedPost = forwardRef<FeedPostRef, FeedPostProps>(function FeedPost(
         return;
       }
 
-
       const {data: postData, error: postError} = await supabase
         .from('posts')
         .insert({

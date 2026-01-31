@@ -7,6 +7,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View
 } from 'react-native';
@@ -15,7 +16,8 @@ import {showToast} from '../../components/Toast';
 import {useProfileStore} from '../../store/profileStore';
 import {
   MOVEMENT_PATTERNS,
-  NOMAD_TYPES,
+  LIFESTYLE_TYPES,
+  NOMAD_TYPE_MECHANIC,
   RELATIONSHIP_INTENTS,
   TRAVEL_STYLES
 } from '../../utils/constants';
@@ -109,6 +111,20 @@ export default function Step1Screen() {
       showToast('error', 'Required', 'Please select movement pattern');
       return;
     }
+    if (data.nomad_type === NOMAD_TYPE_MECHANIC) {
+      if (!data.mechanic_whatsapp.trim()) {
+        showToast('error', 'Required', 'Please enter WhatsApp number');
+        return;
+      }
+      if (!data.mechanic_email.trim()) {
+        showToast('error', 'Required', 'Please enter email address');
+        return;
+      }
+      if (!data.mechanic_instagram.trim()) {
+        showToast('error', 'Required', 'Please enter Instagram handle');
+        return;
+      }
+    }
 
     router.push('/(profile)/step-2');
   };
@@ -127,7 +143,7 @@ export default function Step1Screen() {
 
         <Text style={styles.label}>Nomad Type</Text>
         <View style={styles.grid}>
-          {NOMAD_TYPES.map(type => (
+          {LIFESTYLE_TYPES.map(type => (
             <TouchableOpacity
               key={type}
               style={[
@@ -239,6 +255,68 @@ export default function Step1Screen() {
             </TouchableOpacity>
           ))}
         </View>
+
+        {data.nomad_type === NOMAD_TYPE_MECHANIC && (
+          <View>
+            <Text style={styles.label}>Mechanic Contact</Text>
+
+            <View style={styles.inputWrapper}>
+              <MaterialCommunityIcons
+                name="whatsapp"
+                size={20}
+                color="#999"
+                style={styles.inputIcon}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Whatsapp number"
+                placeholderTextColor="#999"
+                keyboardType="phone-pad"
+                value={data.mechanic_whatsapp}
+                onChangeText={text =>
+                  setStep1({...data, mechanic_whatsapp: text})
+                }
+              />
+            </View>
+
+            <View style={styles.inputWrapper}>
+              <MaterialCommunityIcons
+                name="email-outline"
+                size={20}
+                color="#999"
+                style={styles.inputIcon}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Email address"
+                placeholderTextColor="#999"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={data.mechanic_email}
+                onChangeText={text => setStep1({...data, mechanic_email: text})}
+              />
+            </View>
+
+            <View style={styles.inputWrapper}>
+              <MaterialCommunityIcons
+                name="instagram"
+                size={20}
+                color="#999"
+                style={styles.inputIcon}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="username"
+                placeholderTextColor="#999"
+                autoCapitalize="none"
+                value={data.mechanic_instagram}
+                onChangeText={text =>
+                  setStep1({...data, mechanic_instagram: text})
+                }
+              />
+            </View>
+          </View>
+        )}
       </View>
 
       <View style={styles.buttonContainer}>
@@ -328,6 +406,25 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     color: '#999'
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#f9f9f9',
+    minHeight: 48,
+    marginBottom: 12
+  },
+  inputIcon: {
+    marginRight: 8
+  },
+  input: {
+    flex: 1,
+    fontSize: 14,
+    color: '#333'
   },
   buttonContainer: {
     paddingHorizontal: 20,

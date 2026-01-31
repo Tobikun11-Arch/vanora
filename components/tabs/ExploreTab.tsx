@@ -69,10 +69,6 @@ export default function ExploreTab() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Explore</Text>
-      </View>
-
       <View style={styles.tabsContainer}>
         {["News", "Games"].map((tab) => (
           <TouchableOpacity
@@ -208,7 +204,7 @@ const styles = StyleSheet.create({
     gap: 0,
     backgroundColor: "#f0f0f0",
     marginHorizontal: 20,
-    marginVertical: 12,
+    marginVertical: 40,
     borderRadius: 24,
     padding: 4,
   },
