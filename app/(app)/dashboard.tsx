@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-    paddingBottom: 120,
+    paddingBottom: 80,
   },
   bottomBar: {
     position: "absolute",

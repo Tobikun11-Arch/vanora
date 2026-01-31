@@ -660,7 +660,7 @@ const styles = StyleSheet.create({
   },
   addEventButton: {
     position: "absolute",
-    bottom: 24,
+    bottom: 35,
     right: 24,
     width: 56,
     height: 56,
