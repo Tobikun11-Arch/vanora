@@ -6,6 +6,7 @@ export interface UserProfile {
   display_name: string | null;
   profile_picture_url: string | null;
   nomad_type: string | null;
+  current_location: string | null;
 }
 
 interface UserStore {

@@ -10,7 +10,7 @@ import {supabase} from '@/services/supabase';
 import {useUserStore} from '@/store/userStore';
 import {Feather} from '@expo/vector-icons';
 import {useRouter} from 'expo-router';
-import {useEffect, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {
   ActivityIndicator,
   StyleSheet,
@@ -18,6 +18,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 type TabType = 'findtech' | 'explore' | 'home' | 'notifications' | 'profile';
 
@@ -60,6 +61,13 @@ export default function DashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const setUserProfile = useUserStore(state => state.setProfile);
+  const insets = useSafeAreaInsets();
+  const bottomInset = Math.max(insets.bottom, 8);
+  const bottomBarHeight = 64;
+  const contentPaddingBottom = useMemo(
+    () => bottomBarHeight + bottomInset + 12,
+    [bottomInset]
+  );
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -140,7 +148,8 @@ export default function DashboardScreen() {
           username: nextProfile.username ?? null,
           display_name: nextProfile.display_name ?? null,
           profile_picture_url: nextProfile.profile_picture_url ?? null,
-          nomad_type: nextProfile.nomad_type ?? null
+          nomad_type: nextProfile.nomad_type ?? null,
+          current_location: nextProfile.current_location ?? null
         });
       } catch (error: any) {
         console.error('Error fetching profile:', error);
@@ -193,10 +202,12 @@ export default function DashboardScreen() {
   return (
     <View style={styles.mainContainer}>
       {/* Tab Content */}
-      <View style={styles.contentContainer}>{renderTabContent()}</View>
+      <View style={[styles.contentContainer, {paddingBottom: contentPaddingBottom}]}>
+        {renderTabContent()}
+      </View>
 
       {/* Bottom Navigation Bar */}
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, {bottom: bottomInset, minHeight: bottomBarHeight}]}>
         <TouchableOpacity
           style={[
             styles.tabItem,
@@ -328,8 +339,7 @@ const styles = StyleSheet.create({
     color: '#333'
   },
   contentContainer: {
-    flex: 1,
-    paddingBottom: 80
+    flex: 1
   },
   bottomBar: {
     position: 'absolute',
