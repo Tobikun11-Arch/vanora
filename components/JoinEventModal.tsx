@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React from "react";
 import {
+    Image,
     Modal,
     ScrollView,
     StyleSheet,
@@ -22,6 +23,22 @@ export default function JoinEventModal({
   onBack,
   onClose,
 }: JoinEventModalProps) {
+  const organizerName =
+    event?.hostName ||
+    event?.organizerName ||
+    event?.host?.display_name ||
+    event?.host?.username ||
+    "Organizer";
+  const organizerAvatar =
+    event?.hostAvatar ||
+    event?.organizerAvatar ||
+    event?.host?.profile_picture_url ||
+    null;
+  const organizerInitial =
+    typeof organizerName === "string" && organizerName.length > 0
+      ? organizerName[0].toUpperCase()
+      : "O";
+
   return (
     <Modal
       visible={visible}
@@ -77,17 +94,26 @@ export default function JoinEventModal({
 
             {/* Update Card */}
             <View style={styles.updateCard}>
-              <View style={styles.updateAuthor}>
-                <View style={styles.updateAvatar}>
-                  <Text style={styles.updateAvatarText}>V</Text>
-                </View>
-                <View style={styles.updateAuthorInfo}>
-                  <Text style={styles.updateAuthorName}>Vanora</Text>
-                  <Text style={styles.updateAuthorRole}>
-                    Verified Organizer
+            <View style={styles.updateAuthor}>
+              <View style={styles.updateAvatar}>
+                {organizerAvatar ? (
+                  <Image
+                    source={{ uri: organizerAvatar }}
+                    style={styles.updateAvatarImage}
+                  />
+                ) : (
+                  <Text style={styles.updateAvatarText}>
+                    {organizerInitial}
                   </Text>
-                </View>
+                )}
               </View>
+              <View style={styles.updateAuthorInfo}>
+                <Text style={styles.updateAuthorName}>{organizerName}</Text>
+                <Text style={styles.updateAuthorRole}>
+                  Verified Organizer
+                </Text>
+              </View>
+            </View>
 
               <Text style={styles.updateContent}>
                 Hey everyone! Moving the campfire 100yards north to get away
@@ -239,6 +265,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#4A7C59",
     justifyContent: "center",
     alignItems: "center",
+  },
+  updateAvatarImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
   },
   updateAvatarText: {
     fontSize: 14,
