@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import * as Location from "expo-location";
+import { useEffect, useMemo, useState } from "react";
 import {
   SafeAreaView,
   ScrollView,
@@ -10,13 +11,21 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useUserStore } from "@/store/userStore";
+import MapView, { Circle, Marker } from "react-native-maps";
 
 type LocationPrecision = "approximate" | "exact";
 
 export default function PrivacyAndSafetyScreen() {
   const router = useRouter();
+  const profile = useUserStore((state) => state.profile);
   const [locationPrecision, setLocationPrecision] =
     useState<LocationPrecision>("approximate");
+  const [mapCoords, setMapCoords] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+  const [isGeocoding, setIsGeocoding] = useState(false);
 
   const [showOnMap, setShowOnMap] = useState(true);
   const [parkedMode, setParkedMode] = useState(true);
@@ -37,6 +46,68 @@ export default function PrivacyAndSafetyScreen() {
 
     return "Approximate Radius Active";
   }, [locationPrecision]);
+
+  const mapLocationLabel = useMemo(() => {
+    const location = profile?.current_location?.trim();
+    return location && location.length > 0 ? location : "Location unavailable";
+  }, [profile?.current_location]);
+
+  const mapRegion = useMemo(() => {
+    if (mapCoords) {
+      const delta = locationPrecision === "exact" ? 0.06 : 0.2;
+      return {
+        latitude: mapCoords.latitude,
+        longitude: mapCoords.longitude,
+        latitudeDelta: delta,
+        longitudeDelta: delta,
+      };
+    }
+
+    return {
+      latitude: 39.8283,
+      longitude: -98.5795,
+      latitudeDelta: 24,
+      longitudeDelta: 24,
+    };
+  }, [mapCoords, locationPrecision]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const location = profile?.current_location?.trim();
+
+    if (!location) {
+      setMapCoords(null);
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    setIsGeocoding(true);
+    Location.geocodeAsync(location)
+      .then((results) => {
+        if (!isMounted) return;
+        const first = results[0];
+        if (first) {
+          setMapCoords({ latitude: first.latitude, longitude: first.longitude });
+        } else {
+          setMapCoords(null);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setMapCoords(null);
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsGeocoding(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [profile?.current_location]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -69,11 +140,41 @@ export default function PrivacyAndSafetyScreen() {
 
         <View style={styles.mapCard}>
           <View style={styles.mapPreview}>
-            <MaterialCommunityIcons name="map" size={22} color="#9CA3AF" />
-            <Text style={styles.mapPreviewText}>Map preview</Text>
+            <MapView
+              style={StyleSheet.absoluteFillObject}
+              region={mapRegion}
+              pointerEvents="none"
+            >
+              {mapCoords ? (
+                <>
+                  <Marker coordinate={mapCoords} pinColor="#1dd1a1" />
+                  {locationPrecision === "approximate" ? (
+                    <Circle
+                      center={mapCoords}
+                      radius={3219}
+                      strokeColor="rgba(29, 209, 161, 0.55)"
+                      fillColor="rgba(29, 209, 161, 0.18)"
+                    />
+                  ) : null}
+                </>
+              ) : null}
+            </MapView>
 
-            <View style={styles.mapRing} />
-            <View style={styles.mapPin} />
+            {!mapCoords && !isGeocoding ? (
+              <>
+                <MaterialCommunityIcons name="map" size={22} color="#9CA3AF" />
+                <Text style={styles.mapPreviewText}>Map preview</Text>
+              </>
+            ) : null}
+
+            <View style={styles.mapLocationPill}>
+              <MaterialCommunityIcons
+                name="map-marker"
+                size={12}
+                color="#065F46"
+              />
+              <Text style={styles.mapLocationText}>{mapLocationLabel}</Text>
+            </View>
 
             <View style={styles.mapBadge}>
               <MaterialCommunityIcons
@@ -364,21 +465,25 @@ const styles = StyleSheet.create({
     color: "#9CA3AF",
     fontWeight: "600",
   },
-  mapRing: {
+  mapLocationPill: {
     position: "absolute",
-    width: 92,
-    height: 92,
-    borderRadius: 46,
-    borderWidth: 2,
-    borderColor: "#1dd1a1",
-    opacity: 0.35,
+    top: 12,
+    right: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: "#ECFDF5",
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#A7F3D0",
+    maxWidth: 160,
   },
-  mapPin: {
-    position: "absolute",
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: "#1dd1a1",
+  mapLocationText: {
+    marginLeft: 4,
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#065F46",
   },
   mapBadge: {
     position: "absolute",

@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Dimensions,
   Image,
@@ -11,11 +11,14 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { authService } from "../../services/auth.service";
 import { showToast } from "../Toast";
 
 const { width } = Dimensions.get("window");
 const GALLERY_IMAGE_SIZE = (width - 60) / 3;
+const FALLBACK_HEADER_HEIGHT = 64;
+const SETTINGS_MENU_OFFSET = 8;
 
 interface GalleryPhoto {
   id: string;
@@ -55,8 +58,17 @@ interface ProfileTabProps {
 
 export default function ProfileTab({ profile }: ProfileTabProps) {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const [headerHeight, setHeaderHeight] = useState(0);
+  const [settingsAnchor, setSettingsAnchor] = useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
+  const settingsButtonRef = useRef<View>(null);
 
   const handleLogout = async () => {
     const result = await authService.signOut();
@@ -67,6 +79,13 @@ export default function ProfileTab({ profile }: ProfileTabProps) {
   };
 
   const handleSettings = () => {
+    if (settingsButtonRef.current?.measureInWindow) {
+      settingsButtonRef.current.measureInWindow((x, y, width, height) => {
+        setSettingsAnchor({ x, y, width, height });
+        setShowSettingsMenu((prev) => !prev);
+      });
+      return;
+    }
     setShowSettingsMenu((prev) => !prev);
   };
 
@@ -161,7 +180,21 @@ export default function ProfileTab({ profile }: ProfileTabProps) {
         <TouchableOpacity
           activeOpacity={1}
           onPress={() => setShowSettingsMenu(false)}
-          style={styles.settingsOverlay}
+          style={[
+            styles.settingsOverlay,
+            {
+              paddingTop:
+                settingsAnchor?.y != null
+                  ? settingsAnchor.y +
+                    settingsAnchor.height +
+                    SETTINGS_MENU_OFFSET
+                  : headerHeight > 0
+                    ? headerHeight
+                    : insets.top + FALLBACK_HEADER_HEIGHT,
+              paddingLeft:
+                settingsAnchor?.x != null ? settingsAnchor.x : 16,
+            },
+          ]}
         >
           <TouchableOpacity
             activeOpacity={1}
@@ -200,13 +233,23 @@ export default function ProfileTab({ profile }: ProfileTabProps) {
       </Modal>
 
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={handleSettings}
-          style={styles.headerIconButton}
-        >
-          <MaterialCommunityIcons name="cog" size={24} color="#1F2937" />
-        </TouchableOpacity>
+      <View
+        style={styles.header}
+        onLayout={(event) => {
+          const { height } = event.nativeEvent.layout;
+          if (height !== headerHeight) {
+            setHeaderHeight(height);
+          }
+        }}
+      >
+        <View ref={settingsButtonRef} collapsable={false}>
+          <TouchableOpacity
+            onPress={handleSettings}
+            style={styles.headerIconButton}
+          >
+            <MaterialCommunityIcons name="cog" size={24} color="#1F2937" />
+          </TouchableOpacity>
+        </View>
 
         <Text style={styles.headerTitle}>Profile</Text>
 
@@ -502,7 +545,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "flex-start",
     alignItems: "flex-start",
-    paddingTop: 92,
     paddingLeft: 16,
   },
   settingsMenu: {
