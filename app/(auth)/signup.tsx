@@ -1,7 +1,15 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Image,
+  ImageBackground,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { Button } from "../../components/Button";
 import { InputField } from "../../components/InputField";
 import { showToast } from "../../components/Toast";
@@ -85,11 +93,26 @@ export default function SignupScreen() {
 
   return (
     <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        <View style={styles.topBackground}>
-          <Text style={styles.appName}>Vanora</Text>
-          <Text style={styles.appSubtitle}>Connect. Roam. Belong.</Text>
-        </View>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <ImageBackground
+          source={{
+            uri: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=1000&auto=format&fit=crop",
+          }}
+          style={styles.topBackground}
+        >
+          <View style={styles.topOverlay} />
+          <View style={styles.headerRow}>
+            <Image
+              source={require("../../assets/images/vanora-logo-only.png")}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
+            <Text style={styles.appName}>anora</Text>
+          </View>
+        </ImageBackground>
 
         <View style={styles.cardContainer}>
           <View style={styles.pullBar} />
@@ -181,26 +204,42 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   topBackground: {
-    backgroundColor: "#2e7d64",
-    paddingTop: 50,
-    paddingBottom: 70,
+    paddingTop: 70,
+    paddingBottom: 180,
     alignItems: "center",
   },
+  topOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.28)",
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logoImage: {
+    position: "absolute",
+    top: -65,
+    left: -175,
+    width: 250,
+    height: 250,
+    tintColor: "#fff",
+  },
   appName: {
-    fontSize: 34,
+    position: "absolute",
+    bottom: -85,
+    right: -105,
+    fontSize: 42,
     fontWeight: "800",
     color: "#fff",
-  },
-  appSubtitle: {
-    color: "rgba(255,255,255,0.9)",
-    marginTop: 6,
+    letterSpacing: 1,
   },
   cardContainer: {
     backgroundColor: "#fff",
     borderRadius: 28,
     paddingVertical: 30,
     paddingHorizontal: 24,
-    marginTop: -20,
+    marginTop: -46,
     alignItems: "stretch",
     paddingBottom: 40,
   },
@@ -218,6 +257,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 2,
     marginBottom: 4,
+    color: "#2e7d64",
   },
   cardSubtitle: {
     textAlign: "center",
@@ -274,7 +314,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: 10,
     paddingBottom: 12,
-},
+  },
   haveText: {
     color: "#777",
   },

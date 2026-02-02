@@ -1,11 +1,14 @@
+import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   Dimensions,
   Image,
   ImageBackground,
+  type ImageSourcePropType,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,48 +18,56 @@ import { Button } from "../../components/Button";
 
 const { width } = Dimensions.get("window");
 
+const CARD_SIDE_PADDING = 40;
+const CARD_WIDTH = width - CARD_SIDE_PADDING * 2;
+
+const glassCardSurfaceWebStyle: any = {
+  backdropFilter: "blur(10px)",
+  WebkitBackdropFilter: "blur(10px)",
+};
+
 interface CardData {
   icon: string;
   title: string;
   description: string;
-  image: string;
+  image: ImageSourcePropType;
 }
 
 const cardsData: CardData[] = [
   {
-    icon: "❤️",
+    icon: "favorite",
     title: "Find Your Co-Pilot",
     description:
       "Connect with fellow travelers who share your passion for the open road and the freedom of van life.",
-    image: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=500",
+    image: require("../../assets/images/copilot-bg-removed.png"),
   },
   {
-    icon: "🗺️",
+    icon: "explore",
     title: "Discover Adventures",
     description:
       "Explore hidden gems and popular destinations recommended by our community of experienced nomads.",
-    image: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=500",
+    image: require("../../assets/images/discover-bg-removed.png"),
   },
   {
-    icon: "🤝",
+    icon: "groups",
     title: "Build Community",
     description:
       "Join groups, share experiences, and find support from people who understand the van life lifestyle.",
-    image: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=500",
+    image: require("../../assets/images/community-bg-removed.png"),
   },
   {
-    icon: "📍",
+    icon: "photo-camera",
     title: "Share Your Journey",
     description:
       "Document your travels, post photos, and inspire others with your unique nomadic lifestyle stories.",
-    image: "https://images.unsplash.com/photo-1516238323209-271f07db0f5f?w=500",
+    image: require("../../assets/images/share-bg-removed.png"),
   },
   {
-    icon: "🚐",
+    icon: "airport-shuttle",
     title: "Van Life Made Easy",
     description:
       "Find tips, resources, and connect with mechanics and service providers trusted by van lifers.",
-    image: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=500",
+    image: require("../../assets/images/van-bg-removed.png"),
   },
 ];
 
@@ -83,7 +94,8 @@ export default function GetStartedScreen() {
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
     const index = Math.round(contentOffsetX / width);
-    setActiveIndex(index);
+    const clampedIndex = Math.max(0, Math.min(cardsData.length - 1, index));
+    setActiveIndex(clampedIndex);
   };
 
   return (
@@ -99,8 +111,12 @@ export default function GetStartedScreen() {
       <View style={styles.container}>
         {/* Top Section with Logo and Name */}
         <View style={styles.topSection}>
-          <Text style={styles.logoIcon}>🚐</Text>
-          <Text style={styles.appName}>Vanora</Text>
+          <Image
+            source={require("../../assets/images/vanora-logo-only.png")}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
+          <Text style={styles.appName}>anora</Text>
         </View>
 
         {/* Swipeable Cards */}
@@ -115,18 +131,35 @@ export default function GetStartedScreen() {
         >
           {cardsData.map((card, index) => (
             <View key={index} style={styles.cardWrapper}>
-              <View style={styles.glassCard}>
-                {/* Card Icon */}
-                <Text style={styles.cardIcon}>{card.icon}</Text>
+              <View
+                style={[
+                  styles.glassCardSurface,
+                  Platform.OS === "web" && glassCardSurfaceWebStyle,
+                ]}
+              >
+                <View style={styles.glassCard}>
+                  {/* Card Header with Icon */}
+                  <View style={styles.cardHeader}>
+                    <View style={styles.cardIconCircle}>
+                      <MaterialIcons
+                        name={card.icon as any}
+                        size={30}
+                        color="#2e7d64"
+                      />
+                    </View>
+                    <Text style={styles.cardTitle}>{card.title}</Text>
+                  </View>
 
-                {/* Card Header */}
-                <Text style={styles.cardTitle}>{card.title}</Text>
+                  {/* Card Description */}
+                  <Text style={styles.cardDescription}>{card.description}</Text>
 
-                {/* Card Description */}
-                <Text style={styles.cardDescription}>{card.description}</Text>
-
-                {/* Card Image */}
-                <Image source={{ uri: card.image }} style={styles.cardImage} />
+                  {/* Card Image */}
+                  <Image
+                    source={card.image}
+                    style={styles.cardImage}
+                    resizeMode="contain"
+                  />
+                </View>
               </View>
             </View>
           ))}
@@ -180,62 +213,98 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   topSection: {
+    position: "absolute",
+    top: 60,
+    left: 0,
+    right: 0,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 30,
-    marginBottom: 60,
+    zIndex: 2,
   },
-  logoIcon: {
-    fontSize: 48,
-    marginRight: 12,
+  logoImage: {
+    position: "absolute",
+    top: -50,
+    left: 35,
+    width: 250,
+    height: 250,
+    tintColor: "#2e7d64",
   },
   appName: {
-    fontSize: 32,
+    position: "absolute",
+    bottom: -100,
+    right: 110,
+    fontSize: 44,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: "#2e7d64",
     letterSpacing: 1,
   },
   cardsContainer: {
     flex: 1,
-    marginVertical: 20,
+    marginTop: 150,
+    marginBottom: 20,
+    marginHorizontal: -20,
   },
   cardWrapper: {
-    width: width - 40,
-    paddingHorizontal: 0,
+    width,
+    paddingHorizontal: CARD_SIDE_PADDING,
     justifyContent: "center",
+    height: "100%",
+  },
+  glassCardSurface: {
+    width: CARD_WIDTH,
+    alignSelf: "center",
+    flex: 1,
+    minHeight: 460,
+    borderRadius: 20,
+    overflow: "hidden",
+    backgroundColor: "rgba(255, 255, 255, 0)",
   },
   glassCard: {
-    backgroundColor: "rgba(202, 238, 227, 0.15)",
-    backdropFilter: "blur(10px)",
+    flex: 1,
+    minHeight: 460,
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
     borderRadius: 20,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.35)",
-    alignItems: "center",
-    overflow: "hidden",
+    padding: 32,
+    borderWidth: 1.5,
+    borderColor: "rgba(255, 255, 255, 0.75)",
+    alignItems: "stretch",
+    justifyContent: "flex-start",
   },
-  cardIcon: {
-    fontSize: 56,
-    marginBottom: 16,
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 6,
+  },
+  cardIconCircle: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: "#cfe7deff",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 14,
   },
   cardTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#fff",
-    marginBottom: 12,
+    fontSize: 26,
+    fontWeight: "500",
+    color: "#2e7d64",
+    marginBottom: 0,
     textAlign: "center",
   },
   cardDescription: {
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.9)",
+    fontSize: 15,
+    color: "rgba(255, 255, 255, 0.95)",
     textAlign: "center",
-    lineHeight: 20,
-    marginBottom: 16,
+    lineHeight: 22,
+    marginTop: 2,
+    marginBottom: 24,
   },
   cardImage: {
     width: "100%",
-    height: 180,
+    flex: 1,
+    minHeight: 240,
     borderRadius: 12,
     marginBottom: 0,
   },
