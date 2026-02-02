@@ -2,20 +2,47 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
   Image,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { useUserStore } from "../../store/userStore";
 
 export default function ExploreTab() {
   const [activeTab, setActiveTab] = useState("news");
+  const [selectedSpotlight, setSelectedSpotlight] = useState<null | {
+    id: string;
+    name: string;
+    subtitle: string;
+    image: any;
+    location: string;
+    journey: string;
+  }>(null);
+  const profile = useUserStore((state) => state.profile);
+  const userLocation = profile?.current_location ?? "your area";
+
+  const roadAlerts = [
+    {
+      id: "1",
+      title: `${userLocation} Area - Main Corridor`,
+      detail: `Traffic slowdown reported near ${userLocation}. Expect delays for the next 2 hours.`,
+      color: "#f43f5e",
+    },
+    {
+      id: "2",
+      title: `${userLocation} Scenic Route`,
+      detail: `Road work ahead outside ${userLocation}. Single-lane traffic and short stops.`,
+      color: "#f59e0b",
+    },
+  ];
 
   const featuredNews = {
-    title: "10 Best Hidden Boondocking Spots in Oregon",
+    title: `10 Best Hidden Boondocking Spots Near ${userLocation}`,
     tag: "EDITOR'S CHOICE",
-    image: require("../../assets/images/vanora.png"),
+    image: require("../../assets/images/featured_news.jpg"),
   };
 
   const newsItems = [
@@ -25,7 +52,7 @@ export default function ExploreTab() {
       category: "TECH + GEAR",
       time: "2 hours ago",
       read: "5 min read",
-      image: require("../../assets/images/vanora.png"),
+      image: require("../../assets/images/solar_van.jpg"),
     },
     {
       id: "2",
@@ -33,37 +60,58 @@ export default function ExploreTab() {
       category: "WORK LIFE",
       time: "Yesterday",
       read: "4 min read",
-      image: require("../../assets/images/vanora.png"),
-    },
-  ];
-
-  const roadAlerts = [
-    {
-      id: "1",
-      title: "I-70 Glenwood Canyon",
-      detail: "Flash flood warning. Road closed for next 4 hours.",
-      color: "#f43f5e",
-    },
-    {
-      id: "2",
-      title: "Tioga Pass (Yosemite)",
-      detail: "Heavy snow accumulation. Chains required for all vehicles.",
-      color: "#f59e0b",
+      image: require("../../assets/images/cozy_van.jpg"),
     },
   ];
 
   const communitySpotlight = [
     {
       id: "1",
-      name: "Marcus & Luna",
+      name: "Jis & Luna",
       subtitle: "Full-timing since 2021",
-      image: require("../../assets/images/vanora.png"),
+      image: require("../../assets/images/duo_camper.jpg"),
+      location: "Sedona, AZ",
+      journey: "Desert loops, red rock camps, and weekly sunrise hikes.",
     },
     {
       id: "2",
       name: "Elena Wild",
       subtitle: "Solo Sprinter Builder",
-      image: require("../../assets/images/vanora.png"),
+      image: require("../../assets/images/solo_camper.jpg"),
+      location: "Bend, OR",
+      journey: "Mountain trails by day, wood-stove nights by the river.",
+    },
+    {
+      id: "3",
+      name: "Theo & Mina",
+      subtitle: "Weekend Warriors",
+      image: require("../../assets/images/theo.jpg"),
+      location: "Bozeman, MT",
+      journey: "Quick escapes, hot springs stops, and ski weekends.",
+    },
+    {
+      id: "4",
+      name: "Riley Stone",
+      subtitle: "Remote Dev on Wheels",
+      image: require("../../assets/images/stones.jpg"),
+      location: "Asheville, NC",
+      journey: "Coffee shop code sprints and Blue Ridge overnights.",
+    },
+    {
+      id: "5",
+      name: "Aria & Pax",
+      subtitle: "Family Micro-Adventure",
+      image: require("../../assets/images/aria.jpg"),
+      location: "Moab, UT",
+      journey: "School-on-the-road and nightly campfire stories.",
+    },
+    {
+      id: "6",
+      name: "Noah Reyes",
+      subtitle: "Budget Build Enthusiast",
+      image: require("../../assets/images/Noah.jpg"),
+      location: "Flagstaff, AZ",
+      journey: "DIY upgrades and forest service road exploring.",
     },
   ];
 
@@ -98,9 +146,6 @@ export default function ExploreTab() {
         >
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionTitle}>Latest News</Text>
-            <TouchableOpacity>
-              <Text style={styles.viewAllText}>View All</Text>
-            </TouchableOpacity>
           </View>
 
           <TouchableOpacity style={styles.featuredCard} activeOpacity={0.9}>
@@ -160,7 +205,10 @@ export default function ExploreTab() {
                 <View style={styles.spotlightContent}>
                   <Text style={styles.spotlightName}>{person.name}</Text>
                   <Text style={styles.spotlightSubtitle}>{person.subtitle}</Text>
-                  <TouchableOpacity style={styles.spotlightButton}>
+                  <TouchableOpacity
+                    style={styles.spotlightButton}
+                    onPress={() => setSelectedSpotlight(person)}
+                  >
                     <Text style={styles.spotlightButtonText}>View Journey</Text>
                   </TouchableOpacity>
                 </View>
@@ -177,6 +225,49 @@ export default function ExploreTab() {
           <Text style={styles.placeholderText}>Games coming soon!</Text>
         </View>
       )}
+
+      <Modal
+        visible={!!selectedSpotlight}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSelectedSpotlight(null)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            {selectedSpotlight && (
+              <>
+                <Image
+                  source={selectedSpotlight.image}
+                  style={styles.modalImage}
+                />
+                <Text style={styles.modalName}>{selectedSpotlight.name}</Text>
+                <Text style={styles.modalSubtitle}>
+                  {selectedSpotlight.subtitle}
+                </Text>
+                <View style={styles.modalMetaRow}>
+                  <MaterialCommunityIcons
+                    name="map-marker"
+                    size={14}
+                    color="#0f172a"
+                  />
+                  <Text style={styles.modalMetaText}>
+                    {selectedSpotlight.location}
+                  </Text>
+                </View>
+                <Text style={styles.modalJourney}>
+                  {selectedSpotlight.journey}
+                </Text>
+                <TouchableOpacity
+                  style={styles.modalCloseButton}
+                  onPress={() => setSelectedSpotlight(null)}
+                >
+                  <Text style={styles.modalCloseText}>Close</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -204,7 +295,7 @@ const styles = StyleSheet.create({
     gap: 0,
     backgroundColor: "#f0f0f0",
     marginHorizontal: 20,
-    marginVertical: 40,
+    marginTop: 40,
     borderRadius: 24,
     padding: 4,
   },
@@ -411,5 +502,65 @@ const styles = StyleSheet.create({
     color: "#999999",
     textAlign: "center",
     marginTop: 40,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(15, 23, 42, 0.5)",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+  },
+  modalCard: {
+    width: "100%",
+    backgroundColor: "#ffffff",
+    borderRadius: 18,
+    padding: 16,
+  },
+  modalImage: {
+    width: "100%",
+    height: 160,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  modalName: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#0f172a",
+  },
+  modalSubtitle: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#64748b",
+    marginTop: 4,
+  },
+  modalMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 10,
+  },
+  modalMetaText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#0f172a",
+  },
+  modalJourney: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#475569",
+    marginTop: 10,
+    lineHeight: 18,
+  },
+  modalCloseButton: {
+    marginTop: 14,
+    backgroundColor: "#1dd1a1",
+    paddingVertical: 10,
+    borderRadius: 16,
+    alignItems: "center",
+  },
+  modalCloseText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#ffffff",
   },
 });

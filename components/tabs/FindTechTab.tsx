@@ -151,6 +151,7 @@ export default function FindTechTab() {
     };
 
     fetchHelpSignals();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userProfile?.nomad_type]);
 
   const handleFollow = async (id: string) => {
