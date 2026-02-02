@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Image,
   Modal,
@@ -10,6 +10,8 @@ import {
   View,
 } from "react-native";
 import { useUserStore } from "../../store/userStore";
+import { showToast } from "../Toast";
+import { CameraView, useCameraPermissions } from "expo-camera";
 
 export default function ExploreTab() {
   const [activeTab, setActiveTab] = useState("news");
@@ -21,6 +23,14 @@ export default function ExploreTab() {
     location: string;
     journey: string;
   }>(null);
+  const [activeQuestId, setActiveQuestId] = useState<string | null>(null);
+  const [joinedQuestIds, setJoinedQuestIds] = useState<string[]>([]);
+  const [submittedQuestIds, setSubmittedQuestIds] = useState<string[]>([]);
+  const [questPhotos, setQuestPhotos] = useState<Record<string, string | null>>(
+    {}
+  );
+  const cameraRef = useRef<CameraView | null>(null);
+  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const profile = useUserStore((state) => state.profile);
   const userLocation = profile?.current_location ?? "your area";
 
@@ -114,6 +124,87 @@ export default function ExploreTab() {
       journey: "DIY upgrades and forest service road exploring.",
     },
   ];
+
+  const roadQuests = [
+    {
+      id: "rq1",
+      title: "Sunrise Over Water",
+      points: 120,
+      time: "Ends in 2d 6h",
+      players: 248,
+      tag: "WEEKLY",
+    },
+    {
+      id: "rq2",
+      title: "Best Campfire Coffee",
+      points: 90,
+      time: "Ends in 5d 1h",
+      players: 193,
+      tag: "COMMUNITY",
+    },
+    {
+      id: "rq3",
+      title: "Odd Roadside Attraction",
+      points: 150,
+      time: "Ends in 1d 4h",
+      players: 322,
+      tag: "TRENDING",
+    },
+  ];
+
+  const vanBingoCards = [
+    { id: "vb1", title: "Forest Service Road", progress: 3, total: 5 },
+    { id: "vb2", title: "Free Campfire Ring", progress: 4, total: 5 },
+    { id: "vb3", title: "Meet Another Vanlifer", progress: 2, total: 5 },
+  ];
+
+  const leaderboard = [
+    {
+      id: "lb1",
+      name: "Riley Stone",
+      points: 1280,
+      badge: "Trail Captain",
+      image: communitySpotlight[3].image,
+    },
+    {
+      id: "lb2",
+      name: "Jis & Luna",
+      points: 1195,
+      badge: "Sunrise Hunter",
+      image: communitySpotlight[0].image,
+    },
+    {
+      id: "lb3",
+      name: "Elena Wild",
+      points: 1080,
+      badge: "Route Scout",
+      image: communitySpotlight[1].image,
+    },
+    {
+      id: "lb4",
+      name: "Theo & Mina",
+      points: 990,
+      badge: "Campfire Pro",
+      image: communitySpotlight[2].image,
+    },
+    {
+      id: "lb5",
+      name: "Aria & Pax",
+      points: 920,
+      badge: "Family Voyager",
+      image: communitySpotlight[4].image,
+    },
+  ];
+
+  const activeQuest = roadQuests.find((quest) => quest.id === activeQuestId);
+  const activeQuestPhoto = activeQuestId ? questPhotos[activeQuestId] : null;
+  const hasQuestPhoto = !!activeQuestPhoto;
+
+  useEffect(() => {
+    if (activeQuestId && !cameraPermission?.granted) {
+      requestCameraPermission();
+    }
+  }, [activeQuestId, cameraPermission?.granted, requestCameraPermission]);
 
   return (
     <View style={styles.container}>
@@ -221,9 +312,116 @@ export default function ExploreTab() {
       )}
 
       {activeTab === "games" && (
-        <View style={styles.contentContainer}>
-          <Text style={styles.placeholderText}>Games coming soon!</Text>
-        </View>
+        <ScrollView
+          style={styles.contentContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>Road Quest</Text>
+          </View>
+
+          <View style={styles.questGrid}>
+            {roadQuests.map((quest) => (
+              <View key={quest.id} style={styles.questCard}>
+                <View style={styles.questTag}>
+                  <Text style={styles.questTagText}>{quest.tag}</Text>
+                </View>
+                <Text style={styles.questTitle}>{quest.title}</Text>
+                <View style={styles.questMetaRow}>
+                  <View style={styles.questMetaPill}>
+                    <MaterialCommunityIcons name="star" size={12} color="#0f172a" />
+                    <Text style={styles.questMetaText}>{quest.points} pts</Text>
+                  </View>
+                  <View style={styles.questMetaPill}>
+                    <MaterialCommunityIcons name="account-group" size={12} color="#0f172a" />
+                    <Text style={styles.questMetaText}>{quest.players} players</Text>
+                  </View>
+                </View>
+                <Text style={styles.questTime}>{quest.time}</Text>
+                <TouchableOpacity
+                  style={[
+                    styles.questButton,
+                    submittedQuestIds.includes(quest.id) &&
+                      styles.questButtonSubmitted,
+                  ]}
+                  onPress={() => {
+                    if (submittedQuestIds.includes(quest.id)) {
+                      return;
+                    }
+                    if (!joinedQuestIds.includes(quest.id)) {
+                      setJoinedQuestIds((prev) => [...prev, quest.id]);
+                    }
+                    setActiveQuestId(quest.id);
+                  }}
+                >
+                  <Text style={styles.questButtonText}>
+                    {submittedQuestIds.includes(quest.id)
+                      ? "Entry Submitted"
+                      : joinedQuestIds.includes(quest.id)
+                        ? "Submit Entry"
+                        : "Join Quest"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>Van Bingo</Text>
+            <Text style={styles.viewAllText}>New card</Text>
+          </View>
+
+          <View style={styles.bingoCard}>
+            <View style={styles.bingoHeader}>
+              <Text style={styles.bingoTitle}>This Week's Card</Text>
+              <View style={styles.bingoChip}>
+                <Text style={styles.bingoChipText}>3/5 complete</Text>
+              </View>
+            </View>
+            {vanBingoCards.map((card) => (
+              <View key={card.id} style={styles.bingoRow}>
+                <Text style={styles.bingoRowTitle}>{card.title}</Text>
+                <View style={styles.bingoProgressTrack}>
+                  <View
+                    style={[
+                      styles.bingoProgressFill,
+                      { width: `${(card.progress / card.total) * 100}%` },
+                    ]}
+                  />
+                </View>
+                <Text style={styles.bingoProgressText}>
+                  {card.progress}/{card.total}
+                </Text>
+              </View>
+            ))}
+            <TouchableOpacity style={styles.bingoButton}>
+              <Text style={styles.bingoButtonText}>Share Progress</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>Leaderboard</Text>
+            <Text style={styles.viewAllText}>Season 12</Text>
+          </View>
+
+          <View style={styles.leaderboardCard}>
+            {leaderboard.map((entry, index) => (
+              <View key={entry.id} style={styles.leaderboardRow}>
+                <View style={styles.leaderboardRank}>
+                  <Text style={styles.leaderboardRankText}>{index + 1}</Text>
+                </View>
+                <Image source={entry.image} style={styles.leaderboardAvatar} />
+                <View style={styles.leaderboardInfo}>
+                  <Text style={styles.leaderboardName}>{entry.name}</Text>
+                  <Text style={styles.leaderboardBadge}>{entry.badge}</Text>
+                </View>
+                <Text style={styles.leaderboardPoints}>{entry.points} pts</Text>
+              </View>
+            ))}
+          </View>
+
+          <View style={{ height: 24 }} />
+        </ScrollView>
       )}
 
       <Modal
@@ -265,6 +463,92 @@ export default function ExploreTab() {
                 </TouchableOpacity>
               </>
             )}
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={!!activeQuestId}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setActiveQuestId(null)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.gameModalCard}>
+            <View style={styles.gameModalHeader}>
+              <Text style={styles.gameModalTitle}>
+                {activeQuest?.title ?? "Submit Road Quest"}
+              </Text>
+              <TouchableOpacity
+                style={styles.gameModalClose}
+                onPress={() => setActiveQuestId(null)}
+              >
+                <MaterialCommunityIcons name="close" size={16} color="#0f172a" />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.gameModalSubtext}>
+              Snap a photo to enter this week's quest. 
+            </Text>
+            <View style={styles.cameraPreview}>
+              {hasQuestPhoto ? (
+                <Image source={{ uri: activeQuestPhoto ?? "" }} style={styles.cameraPreviewImage} />
+              ) : cameraPermission?.granted ? (
+                <CameraView ref={cameraRef} style={styles.cameraPreviewCamera} facing="back" />
+              ) : (
+                <>
+                  <MaterialCommunityIcons name="camera" size={32} color="#ffffff" />
+                  <Text style={styles.cameraPreviewText}>Camera permission needed</Text>
+                </>
+              )}
+            </View>
+            <View style={styles.cameraActions}>
+              <TouchableOpacity
+                style={styles.cameraActionGhost}
+                onPress={async () => {
+                  if (!activeQuestId) {
+                    return;
+                  }
+                  if (!cameraPermission?.granted) {
+                    const result = await requestCameraPermission();
+                    if (!result.granted) {
+                      showToast("error", "Permission Needed", "Enable camera access.");
+                      return;
+                    }
+                  }
+                  if (!cameraRef.current) {
+                    showToast("error", "Camera Unavailable", "Try opening again.");
+                    return;
+                  }
+                  const photo = await cameraRef.current.takePictureAsync();
+                  if (photo?.uri) {
+                    setQuestPhotos((prev) => ({
+                      ...prev,
+                      [activeQuestId]: photo.uri,
+                    }));
+                  }
+                }}
+              >
+                <Text style={styles.cameraActionGhostText}>
+                  {hasQuestPhoto ? "Retake" : "Take Photo"}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.cameraActionPrimary}
+                onPress={() => {
+                  if (!activeQuestId || !questPhotos[activeQuestId]) {
+                    showToast("error", "Photo Required", "Take a photo to submit.");
+                    return;
+                  }
+                  showToast("success", "Submitted", "Photo entry sent.");
+                  setSubmittedQuestIds((prev) =>
+                    prev.includes(activeQuestId) ? prev : [...prev, activeQuestId]
+                  );
+                  setActiveQuestId(null);
+                }}
+              >
+                <Text style={styles.cameraActionPrimaryText}>Submit Photo</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -337,6 +621,205 @@ const styles = StyleSheet.create({
   viewAllText: {
     fontSize: 12,
     fontWeight: "600",
+    color: "#1dd1a1",
+  },
+  questGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    marginBottom: 18,
+  },
+  questCard: {
+    width: "48%",
+    backgroundColor: "#f8fafc",
+    borderRadius: 16,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  questTag: {
+    alignSelf: "flex-start",
+    backgroundColor: "#1dd1a1",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    marginBottom: 8,
+  },
+  questTagText: {
+    fontSize: 9,
+    fontWeight: "700",
+    color: "#ffffff",
+    letterSpacing: 0.3,
+  },
+  questTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#0f172a",
+    marginBottom: 8,
+  },
+  questMetaRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginBottom: 6,
+  },
+  questMetaPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#ffffff",
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  questMetaText: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: "#0f172a",
+  },
+  questTime: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: "#64748b",
+    marginBottom: 10,
+  },
+  questButton: {
+    backgroundColor: "#0f172a",
+    borderRadius: 12,
+    paddingVertical: 8,
+    alignItems: "center",
+  },
+  questButtonSubmitted: {
+    backgroundColor: "#1dd1a1",
+  },
+  questButtonText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#ffffff",
+  },
+  bingoCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    padding: 12,
+    marginBottom: 18,
+  },
+  bingoHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  bingoTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#0f172a",
+  },
+  bingoChip: {
+    backgroundColor: "#e2f8f1",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  bingoChipText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#0f766e",
+  },
+  bingoRow: {
+    marginBottom: 10,
+  },
+  bingoRowTitle: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#0f172a",
+    marginBottom: 6,
+  },
+  bingoProgressTrack: {
+    height: 6,
+    backgroundColor: "#e2e8f0",
+    borderRadius: 999,
+    overflow: "hidden",
+  },
+  bingoProgressFill: {
+    height: "100%",
+    backgroundColor: "#1dd1a1",
+  },
+  bingoProgressText: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: "#64748b",
+    marginTop: 4,
+  },
+  bingoButton: {
+    marginTop: 6,
+    borderWidth: 1,
+    borderColor: "#1dd1a1",
+    borderRadius: 12,
+    paddingVertical: 8,
+    alignItems: "center",
+  },
+  bingoButtonText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#1dd1a1",
+  },
+  leaderboardCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    paddingVertical: 6,
+    marginBottom: 8,
+  },
+  leaderboardRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e2e8f0",
+  },
+  leaderboardRank: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#0f172a",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+  leaderboardRankText: {
+    color: "#ffffff",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  leaderboardAvatar: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    marginRight: 10,
+  },
+  leaderboardInfo: {
+    flex: 1,
+  },
+  leaderboardName: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#0f172a",
+  },
+  leaderboardBadge: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: "#64748b",
+    marginTop: 2,
+  },
+  leaderboardPoints: {
+    fontSize: 12,
+    fontWeight: "700",
     color: "#1dd1a1",
   },
   featuredCard: {
@@ -560,6 +1043,89 @@ const styles = StyleSheet.create({
   },
   modalCloseText: {
     fontSize: 12,
+    fontWeight: "700",
+    color: "#ffffff",
+  },
+  gameModalCard: {
+    width: "100%",
+    backgroundColor: "#ffffff",
+    borderRadius: 18,
+    padding: 16,
+  },
+  gameModalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  gameModalTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#0f172a",
+  },
+  gameModalClose: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#f1f5f9",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  gameModalSubtext: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#64748b",
+    marginBottom: 12,
+  },
+  cameraPreview: {
+    height: 180,
+    borderRadius: 16,
+    backgroundColor: "#0f172a",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+    gap: 6,
+    overflow: "hidden",
+  },
+  cameraPreviewImage: {
+    width: "100%",
+    height: "100%",
+  },
+  cameraPreviewCamera: {
+    width: "100%",
+    height: "100%",
+  },
+  cameraPreviewText: {
+    color: "#ffffff",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  cameraActions: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  cameraActionGhost: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#1dd1a1",
+    borderRadius: 12,
+    paddingVertical: 10,
+    alignItems: "center",
+  },
+  cameraActionGhostText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#1dd1a1",
+  },
+  cameraActionPrimary: {
+    flex: 1,
+    backgroundColor: "#1dd1a1",
+    borderRadius: 12,
+    paddingVertical: 10,
+    alignItems: "center",
+  },
+  cameraActionPrimaryText: {
+    fontSize: 11,
     fontWeight: "700",
     color: "#ffffff",
   },
