@@ -1,4 +1,5 @@
 import { MaterialIcons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -20,11 +21,6 @@ const { width } = Dimensions.get("window");
 
 const CARD_SIDE_PADDING = 40;
 const CARD_WIDTH = width - CARD_SIDE_PADDING * 2;
-
-const glassCardSurfaceWebStyle: any = {
-  backdropFilter: "blur(10px)",
-  WebkitBackdropFilter: "blur(10px)",
-};
 
 interface CardData {
   icon: string;
@@ -131,35 +127,38 @@ export default function GetStartedScreen() {
         >
           {cardsData.map((card, index) => (
             <View key={index} style={styles.cardWrapper}>
-              <View
-                style={[
-                  styles.glassCardSurface,
-                  Platform.OS === "web" && glassCardSurfaceWebStyle,
-                ]}
-              >
-                <View style={styles.glassCard}>
-                  {/* Card Header with Icon */}
-                  <View style={styles.cardHeader}>
-                    <View style={styles.cardIconCircle}>
-                      <MaterialIcons
-                        name={card.icon as any}
-                        size={30}
-                        color="#2e7d64"
-                      />
+              <View style={styles.cardShadowContainer}>
+                <BlurView
+                  intensity={Platform.OS === "ios" ? 40 : 80}
+                  tint="light"
+                  style={styles.glassCardSurface}
+                >
+                  <View style={styles.glassCard}>
+                    {/* Card Header with Icon */}
+                    <View style={styles.cardHeader}>
+                      <View style={styles.cardIconCircle}>
+                        <MaterialIcons
+                          name={card.icon as any}
+                          size={30}
+                          color="#2e7d64"
+                        />
+                      </View>
+                      <Text style={styles.cardTitle}>{card.title}</Text>
                     </View>
-                    <Text style={styles.cardTitle}>{card.title}</Text>
+
+                    {/* Card Description */}
+                    <Text style={styles.cardDescription}>
+                      {card.description}
+                    </Text>
+
+                    {/* Card Image */}
+                    <Image
+                      source={card.image}
+                      style={styles.cardImage}
+                      resizeMode="contain"
+                    />
                   </View>
-
-                  {/* Card Description */}
-                  <Text style={styles.cardDescription}>{card.description}</Text>
-
-                  {/* Card Image */}
-                  <Image
-                    source={card.image}
-                    style={styles.cardImage}
-                    resizeMode="contain"
-                  />
-                </View>
+                </BlurView>
               </View>
             </View>
           ))}
@@ -251,14 +250,34 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     height: "100%",
   },
-  glassCardSurface: {
+  cardShadowContainer: {
     width: CARD_WIDTH,
     alignSelf: "center",
     flex: 1,
     minHeight: 460,
     borderRadius: 20,
+    // Shadow for iOS - light from top
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 30,
+    // Shadow for Android - light from top
+    elevation: 15,
+  },
+  glassCardSurface: {
+    flex: 1,
+    minHeight: 460,
+    borderRadius: 20,
     overflow: "hidden",
-    backgroundColor: "rgba(255, 255, 255, 0)",
+    backgroundColor:
+      Platform.OS === "web" ? "rgba(255, 255, 255, 0.1)" : "transparent",
+    ...(Platform.OS === "web" && {
+      backdropFilter: "blur(10px)",
+      WebkitBackdropFilter: "blur(10px)",
+    }),
   },
   glassCard: {
     flex: 1,
