@@ -3,13 +3,12 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Image,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 
 type PlanType = "vanora" | "mechanic";
@@ -138,7 +137,6 @@ export default function MembershipSubscriptionScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-
         <Text style={styles.title}>{planContent.heading}</Text>
         <Text style={styles.subtitle}>{planContent.subheading}</Text>
 
