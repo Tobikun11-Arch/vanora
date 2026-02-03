@@ -50,6 +50,7 @@ interface UserProfile {
   gallery_photos?: GalleryPhoto[];
   followers_count?: number;
   following_count?: number;
+  posts_count?: number;
 }
 
 interface ProfileTabProps {
@@ -191,8 +192,7 @@ export default function ProfileTab({ profile }: ProfileTabProps) {
                   : headerHeight > 0
                     ? headerHeight
                     : insets.top + FALLBACK_HEADER_HEIGHT,
-              paddingLeft:
-                settingsAnchor?.x != null ? settingsAnchor.x : 16,
+              paddingLeft: settingsAnchor?.x != null ? settingsAnchor.x : 16,
             },
           ]}
         >
@@ -286,9 +286,9 @@ export default function ProfileTab({ profile }: ProfileTabProps) {
         </View>
       </TouchableOpacity>
 
-      {/* Profile Picture & Basic Info - Centered Layout */}
+      {/* Profile Header - Avatar, Stats & Basic Info */}
       <View style={styles.profileHeader}>
-        <View style={styles.profileCenterContainer}>
+        <View style={styles.profileTopRow}>
           {/* Profile Picture */}
           {profile.profile_picture_url ? (
             <Image
@@ -305,15 +305,44 @@ export default function ProfileTab({ profile }: ProfileTabProps) {
             </View>
           )}
 
-          {/* Name */}
+          {/* Header Stats beside avatar */}
+          <View style={styles.headerStatsRow}>
+            <View style={styles.headerStatItem}>
+              <Text style={styles.headerStatValue}>
+                {profile.posts_count ?? 0}
+              </Text>
+              <Text style={styles.headerStatLabel}>Posts</Text>
+            </View>
+            <View style={styles.headerStatItem}>
+              <Text style={styles.headerStatValue}>
+                {profile.followers_count ?? 0}
+              </Text>
+              <Text style={styles.headerStatLabel}>Followers</Text>
+            </View>
+            <View style={styles.headerStatItem}>
+              <Text style={styles.headerStatValue}>
+                {profile.following_count ?? 0}
+              </Text>
+              <Text style={styles.headerStatLabel}>Following</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Name, gender, location, pronouns & nomad type */}
+        <View style={styles.profileInfoContainer}>
           <Text style={styles.nameText}>
             {profile.display_name}, {profile.age}
           </Text>
 
-          {/* Gender */}
-          <Text style={styles.genderText}>{profile.gender}</Text>
+          <View style={styles.genderRow}>
+            <MaterialCommunityIcons
+              name="gender-male-female"
+              size={14}
+              color="#6B7280"
+            />
+            <Text style={styles.genderText}>{profile.gender}</Text>
+          </View>
 
-          {/* Location */}
           <View style={styles.locationRowCentered}>
             <MaterialCommunityIcons
               name="map-marker"
@@ -325,68 +354,19 @@ export default function ProfileTab({ profile }: ProfileTabProps) {
             </Text>
           </View>
 
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>
-                {profile.followers_count ?? 0}
-              </Text>
-              <Text style={styles.statLabel}>Followers</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>
-                {profile.following_count ?? 0}
-              </Text>
-              <Text style={styles.statLabel}>Following</Text>
-            </View>
-            <View style={styles.nomadPill}>
-              <MaterialCommunityIcons
-                name="van-utility"
-                size={14}
-                color="#2e7d64"
-              />
-              <Text style={styles.nomadPillText}>{profile.nomad_type}</Text>
-            </View>
+          <View style={styles.profileMetaRow}>
+            {profile.pronouns && (
+              <Text style={styles.verifiedStatus}>{profile.pronouns}</Text>
+            )}
           </View>
 
-          {/* Verified Status if available */}
-          {profile.pronouns && (
-            <Text style={styles.verifiedStatus}>{profile.pronouns}</Text>
-          )}
+          {profile.bio ? (
+            <Text style={styles.bioText}>{profile.bio}</Text>
+          ) : null}
         </View>
       </View>
 
-      {/* Nomad Life Section - 4 Cards in 1 Line */}
-      <View style={styles.nomadLifeSection}>
-        <View style={styles.nomadCardsContainer}>
-          
-          <View style={styles.nomadCard}>
-            <MaterialCommunityIcons name="airplane" size={24} color="#2e7d64" />
-            <Text style={styles.nomadCardValue}>{profile.travel_style}</Text>
-          </View>
-          <View style={styles.nomadCard}>
-            <MaterialCommunityIcons
-              name="map-marker-path"
-              size={24}
-              color="#2e7d64"
-            />
-            <Text style={styles.nomadCardValue}>
-              {profile.movement_pattern}
-            </Text>
-          </View>
-          <View style={styles.nomadCard}>
-            <MaterialCommunityIcons
-              name="calendar-clock"
-              size={24}
-              color="#2e7d64"
-            />
-            <Text style={styles.nomadCardValue}>
-              {profile.years_in_van_life}
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Photo Gallery */}
+      {/* Photo Gallery - directly beneath bio */}
       {profile.gallery_photos && profile.gallery_photos.length > 0 && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Photo Gallery</Text>
@@ -409,11 +389,56 @@ export default function ProfileTab({ profile }: ProfileTabProps) {
         </View>
       )}
 
-      {/* Bio Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>About Me</Text>
-        <Text style={styles.bioText}>{profile.bio}</Text>
+      {/* Nomad Type - tag style below gallery */}
+      {profile.nomad_type ? (
+        <View style={styles.section}>
+          <View style={styles.tagsContainer}>
+            <View style={styles.nomadTypeTag}>
+              <MaterialCommunityIcons
+                name="van-utility"
+                size={14}
+                color="#2e7d64"
+              />
+              <Text style={styles.nomadTypeTagText}>
+                - {profile.nomad_type}
+              </Text>
+            </View>
+          </View>
+        </View>
+      ) : null}
+
+      {/* Nomad Life Section - 2 Column Grid */}
+      <View style={styles.nomadLifeSection}>
+        <View style={styles.nomadCardsContainer}>
+          <View style={styles.nomadCard}>
+            <MaterialCommunityIcons name="airplane" size={24} color="#6B7280" />
+            <Text style={styles.nomadCardValue} numberOfLines={2}>
+              {profile.travel_style}
+            </Text>
+          </View>
+          <View style={styles.nomadCard}>
+            <MaterialCommunityIcons
+              name="map-marker-path"
+              size={24}
+              color="#6B7280"
+            />
+            <Text style={styles.nomadCardValue} numberOfLines={2}>
+              {profile.movement_pattern}
+            </Text>
+          </View>
+          <View style={styles.nomadCard}>
+            <MaterialCommunityIcons
+              name="calendar-clock"
+              size={24}
+              color="#6B7280"
+            />
+            <Text style={styles.nomadCardValue} numberOfLines={2}>
+              {profile.years_in_van_life}
+            </Text>
+          </View>
+        </View>
       </View>
+
       {/* Relationship Intent */}
       {profile.relationship_intent &&
         profile.relationship_intent.length > 0 && (
@@ -445,6 +470,11 @@ export default function ProfileTab({ profile }: ProfileTabProps) {
             {profile.lifestyle_tags &&
               profile.lifestyle_tags.map((tag, index) => (
                 <View key={`lifestyle-${index}`} style={styles.lifestyleTag}>
+                  <MaterialCommunityIcons
+                    name="leaf"
+                    size={14}
+                    color="#4338CA"
+                  />
                   <Text style={styles.lifestyleTagText}>{tag}</Text>
                 </View>
               ))}
@@ -453,6 +483,11 @@ export default function ProfileTab({ profile }: ProfileTabProps) {
             {profile.hobbies &&
               profile.hobbies.map((hobby, index) => (
                 <View key={`hobby-${index}`} style={styles.hobbyTag}>
+                  <MaterialCommunityIcons
+                    name="tag"
+                    size={14}
+                    color="#0C4A6E"
+                  />
                   <Text style={styles.hobbyTagText}>{hobby}</Text>
                 </View>
               ))}
@@ -687,20 +722,25 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   profileHeader: {
-    alignItems: "center",
     paddingHorizontal: 20,
-    marginBottom: 1,
+    marginBottom: 16,
     marginTop: 12,
   },
-  profileCenterContainer: {
+  profileTopRow: {
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "flex-start",
+    gap: 16,
+    marginBottom: 12,
+  },
+  profileInfoContainer: {
     width: "100%",
   },
   profilePicture: {
     width: 120,
     height: 120,
     borderRadius: 60,
-    marginBottom: 18,
+    marginBottom: 5,
     borderWidth: 3,
     borderColor: "#2e7d64",
   },
@@ -714,62 +754,92 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: "#2e7d64",
     marginBottom: 3,
-    textAlign: "center",
+    textAlign: "left",
     letterSpacing: 0.3,
+  },
+  genderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 4,
   },
   genderText: {
     fontSize: 14,
     color: "#6B7280",
-    marginBottom: 3,
-    textAlign: "center",
+    textAlign: "left",
     fontWeight: "500",
   },
   locationRowCentered: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "flex-start",
     gap: 5,
     marginBottom: 8,
   },
   locationCentered: {
     fontSize: 13,
     color: "#6B7280",
-    textAlign: "center",
+    textAlign: "left",
     fontWeight: "500",
   },
+  headerStatsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    flex: 1,
+  },
+  headerStatItem: {
+    alignItems: "center",
+    minWidth: 60,
+  },
+  headerStatValue: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#1F2937",
+  },
+  headerStatLabel: {
+    fontSize: 12,
+    color: "#6B7280",
+  },
+  profileMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 8,
+  },
   statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 16,
-    marginTop: 6
+    marginTop: 6,
   },
   statItem: {
-    alignItems: 'center'
+    alignItems: "center",
   },
   statValue: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#1F2937'
+    fontWeight: "700",
+    color: "#1F2937",
   },
   statLabel: {
     fontSize: 12,
-    color: '#6B7280'
+    color: "#6B7280",
   },
   nomadPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: '#ECFDF5',
+    backgroundColor: "#ECFDF5",
     borderWidth: 1,
-    borderColor: '#A7F3D0'
+    borderColor: "#A7F3D0",
   },
   nomadPillText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#2e7d64'
+    fontWeight: "600",
+    color: "#2e7d64",
   },
   verifiedStatus: {
     fontSize: 12,
@@ -797,29 +867,31 @@ const styles = StyleSheet.create({
   },
   nomadCardsContainer: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "stretch",
+    flexWrap: "wrap",
     justifyContent: "space-between",
-    gap: 5,
+    gap: 12,
   },
   nomadCard: {
-    flex: 1,
-    height: 110,
+    width: "48%",
+    minHeight: 64,
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#F0FDF4",
+    justifyContent: "flex-start",
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderWidth: 1.5,
-    borderColor: "#2e7d64",
+    paddingHorizontal: 12,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
   },
   nomadCardValue: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#2e7d64",
-    marginTop: 10,
-    textAlign: "center",
-    numberOfLines: 2,
+    flexShrink: 1,
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#111827",
+    textAlign: "left",
   },
   sectionTitle: {
     fontSize: 17,
@@ -832,6 +904,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#4B5563",
     fontWeight: "500",
+    marginTop: 4,
   },
   tagsContainer: {
     flexDirection: "row",
@@ -855,10 +928,13 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   hobbyTag: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: "#DBEAFE",
     paddingHorizontal: 13,
     paddingVertical: 8,
     borderRadius: 22,
+    gap: 6,
     borderWidth: 1,
     borderColor: "#BAE6FD",
   },
@@ -884,10 +960,13 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   lifestyleTag: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: "#E0E7FF",
     paddingHorizontal: 13,
     paddingVertical: 8,
     borderRadius: 22,
+    gap: 6,
     borderWidth: 1,
     borderColor: "#C7D2FE",
   },
@@ -908,6 +987,22 @@ const styles = StyleSheet.create({
     borderColor: "#A7F3D0",
   },
   activityTagText: {
+    fontSize: 13,
+    color: "#047857",
+    fontWeight: "600",
+  },
+  nomadTypeTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#ECFDF5",
+    paddingHorizontal: 13,
+    paddingVertical: 8,
+    borderRadius: 22,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: "#A7F3D0",
+  },
+  nomadTypeTagText: {
     fontSize: 13,
     color: "#047857",
     fontWeight: "600",
