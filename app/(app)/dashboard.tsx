@@ -160,6 +160,7 @@ export default function DashboardScreen() {
     };
 
     fetchUserProfile();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
   const handleTabPress = (tab: TabType) => {
