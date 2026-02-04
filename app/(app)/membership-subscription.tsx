@@ -39,7 +39,7 @@ export default function MembershipSubscriptionScreen() {
   const {isSubscribed, refresh: refreshSubscription} =
     useRevenueCatSubscription();
   const goBackToDashboard = () => {
-    router.replace('/(app)/dashboard');
+    router.back()
   };
 
   useEffect(() => {
