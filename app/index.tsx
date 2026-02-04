@@ -23,6 +23,7 @@ export default function RootNavigator() {
             router.replace('/(profile)/step-1');
           }
         }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
         router.replace('/(auth)/get-started');
       } finally {
@@ -31,7 +32,7 @@ export default function RootNavigator() {
     };
 
     checkAuthState();
-  }, []);
+  }, [router]);
 
   if (isLoading) {
     return (

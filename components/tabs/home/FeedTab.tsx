@@ -1,7 +1,7 @@
 import {supabase} from '@/services/supabase';
 import {feedTabStyles as styles} from '@/styles';
 import {MaterialCommunityIcons} from '@expo/vector-icons';
-import {useCallback, useEffect, useState} from 'react';
+import {useEffect, useState} from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 interface PostMedia {
   id: string;
@@ -57,39 +58,14 @@ interface FeedTabProps {
 }
 
 const CACHE_TTL_MS = 60 * 1000;
-let feedCache: {posts: FeedPost[]; fetchedAt: number} = {
-  posts: [],
-  fetchedAt: 0
-};
 
 export default function FeedTab({refreshTrigger}: FeedTabProps) {
-  const [posts, setPosts] = useState<FeedPost[]>([]);
-  const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [votingPollIds, setVotingPollIds] = useState<Record<string, boolean>>({});
+  const queryClient = useQueryClient();
 
-  const setPostsWithCache = (
-    updater: FeedPost[] | ((prev: FeedPost[]) => FeedPost[])
-  ) => {
-    setPosts(prev => {
-      const next = typeof updater === 'function' ? updater(prev) : updater;
-      feedCache = {posts: next, fetchedAt: Date.now()};
-      return next;
-    });
-  };
-
-  const fetchPosts = useCallback(
-    async (userId: string | null, options?: {force?: boolean}) => {
+  const fetchPosts = async (userId: string | null) => {
     try {
-      const cacheFresh =
-        feedCache.posts.length > 0 &&
-        Date.now() - feedCache.fetchedAt < CACHE_TTL_MS;
-      if (!options?.force && cacheFresh) {
-        setPosts(feedCache.posts);
-        setLoading(false);
-        return;
-      }
-
       // who am I following?
       let followingIds: string[] = [];
       if (userId) {
@@ -231,15 +207,12 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
         })
       );
 
-      setPostsWithCache(withStats);
+      return withStats;
     } catch (e) {
       console.error('Error building feed:', e);
-    } finally {
-      setLoading(false);
+      return [];
     }
-    },
-    []
-  );
+  };
 
   useEffect(() => {
     const init = async () => {
@@ -251,63 +224,104 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
     };
 
     init();
-  }, [fetchPosts]);
+  }, []);
+
+  const {
+    data: posts = [],
+    isLoading,
+    refetch
+  } = useQuery({
+    queryKey: ['feed', currentUserId],
+    queryFn: () => fetchPosts(currentUserId),
+    enabled: currentUserId !== undefined,
+    staleTime: CACHE_TTL_MS,
+    gcTime: CACHE_TTL_MS * 5
+  });
 
   useEffect(() => {
     if (refreshTrigger && refreshTrigger > 0) {
-      fetchPosts(currentUserId, {force: true});
+      refetch();
     }
-  }, [currentUserId, fetchPosts, refreshTrigger]);
+  }, [refreshTrigger, refetch]);
 
-  const handleVote = async (
-    postId: string,
-    pollId: string,
-    optionId: string
-  ) => {
-    if (!currentUserId) return;
-    if (votingPollIds[pollId]) return;
-    const existingVote = posts.find(p => p.id === postId)?.poll_vote_option_id;
-    if (existingVote) return;
-
-    try {
-      setVotingPollIds(prev => ({...prev, [pollId]: true}));
+  const voteMutation = useMutation({
+    mutationFn: async ({
+      pollId,
+      optionId,
+      userId
+    }: {
+      pollId: string;
+      optionId: string;
+      userId: string;
+    }) => {
       const {error} = await supabase
         .from('poll_votes')
         .insert({
           poll_id: pollId,
           option_id: optionId,
-          user_id: currentUserId
+          user_id: userId
         });
 
       if (error && error.code !== '23505') {
-        console.error('Error voting:', error);
-        return;
+        throw error;
       }
+    },
+    onMutate: async variables => {
+      const {pollId, optionId, userId} = variables;
+      setVotingPollIds(prev => ({...prev, [pollId]: true}));
+      await queryClient.cancelQueries({queryKey: ['feed', userId]});
+      const previous = queryClient.getQueryData<FeedPost[]>(['feed', userId]) || [];
 
-      setPostsWithCache(prev =>
-        prev.map(post => {
-          if (post.id !== postId) return post;
-          const updatedResults = (post.poll_results || []).map(option => {
-            const increment = option.option_id === optionId ? 1 : 0;
-            return {
-              ...option,
-              vote_count: option.vote_count + increment,
-              total_votes: option.total_votes + 1
-            };
-          });
+      const next = previous.map(post => {
+        if (!post.poll_results?.length) return post;
+        const postPollId = post.poll_results[0]?.poll_id;
+        if (postPollId !== pollId) return post;
+        if (post.poll_vote_option_id) return post;
 
+        const updatedResults = post.poll_results.map(option => {
+          const increment = option.option_id === optionId ? 1 : 0;
           return {
-            ...post,
-            poll_results: updatedResults,
-            poll_vote_option_id: optionId
+            ...option,
+            vote_count: option.vote_count + increment,
+            total_votes: option.total_votes + 1
           };
-        })
-      );
-    } catch (e) {
-      console.error('Error submitting vote:', e);
-    } finally {
-      setVotingPollIds(prev => ({...prev, [pollId]: false}));
+        });
+
+        return {
+          ...post,
+          poll_results: updatedResults,
+          poll_vote_option_id: optionId
+        };
+      });
+
+      queryClient.setQueryData(['feed', userId], next);
+
+      return {previous, userId, pollId};
+    },
+    onError: (_error, _variables, context) => {
+      if (!context) return;
+      queryClient.setQueryData(['feed', context.userId], context.previous);
+    },
+    onSettled: (_data, _error, _variables, context) => {
+      if (context?.pollId) {
+        setVotingPollIds(prev => ({...prev, [context.pollId]: false}));
+      }
+      if (context?.userId) {
+        queryClient.invalidateQueries({queryKey: ['feed', context.userId]});
+      }
     }
+  });
+
+  const handleVote = (postId: string, pollId: string, optionId: string) => {
+    if (!currentUserId) return;
+    if (votingPollIds[pollId]) return;
+    const existingVote = posts.find(p => p.id === postId)?.poll_vote_option_id;
+    if (existingVote) return;
+    voteMutation.mutate({
+      pollId,
+      optionId,
+      userId: currentUserId
+    });
   };
 
   const renderItem = ({item}: {item: FeedPost}) => {
@@ -470,7 +484,7 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
     );
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <View style={styles.tabContent}>
         <ActivityIndicator size="large" color="#4A7C59" />
