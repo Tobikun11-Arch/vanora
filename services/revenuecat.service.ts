@@ -5,7 +5,6 @@ import Purchases, {
   PurchasesOfferings,
   PurchasesPackage
 } from 'react-native-purchases';
-
 export type RevenueCatPlan = 'vanora' | 'mechanic';
 
 const REVENUECAT_ANDROID_KEY =
