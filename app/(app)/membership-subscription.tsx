@@ -5,7 +5,6 @@ import {MaterialCommunityIcons} from '@expo/vector-icons';
 import {useRouter} from 'expo-router';
 import {useEffect, useMemo, useState} from 'react';
 import {
-  Image,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -15,7 +14,7 @@ import {
 } from 'react-native';
 import {PurchasesPackage} from 'react-native-purchases';
 
-type PlanType = 'vanora' | 'mechanic';
+type PlanType = "vanora" | "mechanic";
 
 type Benefit = {
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
@@ -44,8 +43,8 @@ export default function MembershipSubscriptionScreen() {
   };
 
   useEffect(() => {
-    if (!isMechanic && selectedPlan === 'mechanic') {
-      setSelectedPlan('vanora');
+    if (!isMechanic && selectedPlan === "mechanic") {
+      setSelectedPlan("vanora");
     }
   }, [isMechanic, selectedPlan]);
 
@@ -128,14 +127,14 @@ export default function MembershipSubscriptionScreen() {
 
   const planContent = useMemo(() => {
     const common = {
-      logo: require('@/assets/images/vanora.png'),
-      primary: '#2e7d64'
+      logo: require("@/assets/images/vanora.png"),
+      primary: "#2e7d64",
     };
 
-    if (effectivePlan === 'vanora') {
+    if (effectivePlan === "vanora") {
       return {
         ...common,
-        heading: 'Vanora Premium',
+        heading: "Vanora Premium",
         subheading:
           'Upgrade your experience and stand out in the Vanora community.',
         price: vanoraPrice,
@@ -144,30 +143,30 @@ export default function MembershipSubscriptionScreen() {
         footnote: 'Billed monthly. Cancel anytime in settings.',
         benefits: [
           {
-            icon: 'rocket-launch',
-            title: 'Visibility Boost',
+            icon: "rocket-launch",
+            title: "Visibility Boost",
             description:
-              'Get prioritized exposure so more people can see and connect with you.'
+              "Get prioritized exposure so more people can see and connect with you.",
           },
           {
-            icon: 'sword-cross',
-            title: 'Challenge Match Invites',
+            icon: "sword-cross",
+            title: "Challenge Match Invites",
             description:
-              'Access exclusive challenge-based matches and invitations.'
+              "Access exclusive challenge-based matches and invitations.",
           },
           {
-            icon: 'account-multiple-plus',
-            title: 'Expanded Event Reach',
+            icon: "account-multiple-plus",
+            title: "Expanded Event Reach",
             description:
-              'Invite more participants and increase engagement in your events.'
+              "Invite more participants and increase engagement in your events.",
           },
           {
-            icon: 'check-decagram',
-            title: 'Verified Premium Badge',
+            icon: "check-decagram",
+            title: "Verified Premium Badge",
             description:
-              'Earn a verified badge that builds trust and credibility.'
-          }
-        ] as Benefit[]
+              "Earn a verified badge that builds trust and credibility.",
+          },
+        ] as Benefit[],
       };
     }
 
@@ -181,29 +180,29 @@ export default function MembershipSubscriptionScreen() {
       footnote: 'Billed quarterly. Cancel anytime in settings.',
       benefits: [
         {
-          icon: 'tools',
-          title: 'Featured Mechanic Profile',
-          description: 'Get highlighted in the Featured Mechanics section.'
+          icon: "tools",
+          title: "Featured Mechanic Profile",
+          description: "Get highlighted in the Featured Mechanics section.",
         },
         {
-          icon: 'map-marker-radius',
-          title: 'Location-Based Discovery',
+          icon: "map-marker-radius",
+          title: "Location-Based Discovery",
           description:
-            'Appear in scanning results based on proximity to nearby users.'
+            "Appear in scanning results based on proximity to nearby users.",
         },
         {
-          icon: 'account-search',
-          title: 'Increased Client Opportunities',
+          icon: "account-search",
+          title: "Increased Client Opportunities",
           description:
-            'Be seen by users actively looking for trusted mechanics.'
+            "Be seen by users actively looking for trusted mechanics.",
         },
         {
-          icon: 'trending-up',
-          title: 'Profit-Driven Exposure',
+          icon: "trending-up",
+          title: "Profit-Driven Exposure",
           description:
-            'Grow your reputation and convert visibility into long-term clients.'
-        }
-      ] as Benefit[]
+            "Grow your reputation and convert visibility into long-term clients.",
+        },
+      ] as Benefit[],
     };
   }, [effectivePlan, mechanicPrice, vanoraPrice]);
 
@@ -231,17 +230,11 @@ export default function MembershipSubscriptionScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.logoWrap}>
-          <View style={styles.logoCard}>
-            <Image source={planContent.logo} style={styles.logoImage} />
-          </View>
-        </View>
-
         <Text style={styles.title}>{planContent.heading}</Text>
         <Text style={styles.subtitle}>{planContent.subheading}</Text>
 
         <View style={styles.benefitsList}>
-          {planContent.benefits.map(b => (
+          {planContent.benefits.map((b) => (
             <View key={b.title} style={styles.benefitRow}>
               <View style={styles.benefitIconWrap}>
                 <MaterialCommunityIcons
@@ -261,28 +254,28 @@ export default function MembershipSubscriptionScreen() {
         <View style={styles.cardsRow}>
           <TouchableOpacity
             activeOpacity={0.9}
-            onPress={() => setSelectedPlan('vanora')}
+            onPress={() => setSelectedPlan("vanora")}
             style={[
               styles.planCard,
-              selectedPlan === 'vanora'
+              selectedPlan === "vanora"
                 ? styles.planCardSelected
-                : styles.planCardUnselected
+                : styles.planCardUnselected,
             ]}
           >
             <View
               style={[
                 styles.planPill,
-                selectedPlan === 'vanora'
+                selectedPlan === "vanora"
                   ? styles.planPillSelected
-                  : styles.planPillUnselected
+                  : styles.planPillUnselected,
               ]}
             >
               <Text
                 style={[
                   styles.planPillText,
-                  selectedPlan === 'vanora'
+                  selectedPlan === "vanora"
                     ? styles.planPillTextSelected
-                    : styles.planPillTextUnselected
+                    : styles.planPillTextUnselected,
                 ]}
               >
                 VANORA
@@ -293,9 +286,9 @@ export default function MembershipSubscriptionScreen() {
               <Text
                 style={[
                   styles.planName,
-                  selectedPlan === 'vanora'
+                  selectedPlan === "vanora"
                     ? styles.planNameSelected
-                    : styles.planNameUnselected
+                    : styles.planNameUnselected,
                 ]}
               >
                 Vanora
@@ -303,24 +296,24 @@ export default function MembershipSubscriptionScreen() {
               <View
                 style={[
                   styles.radio,
-                  selectedPlan === 'vanora' && styles.radioSelected
+                  selectedPlan === "vanora" && styles.radioSelected,
                 ]}
               >
-                {selectedPlan === 'vanora' ? (
+                {selectedPlan === "vanora" ? (
                   <View style={styles.radioDot} />
                 ) : null}
               </View>
             </View>
 
-            <Text style={styles.planCadence}>{'Monthly'}</Text>
+            <Text style={styles.planCadence}>{"Monthly"}</Text>
 
             <View style={styles.priceRow}>
               <Text
                 style={[
                   styles.price,
-                  selectedPlan === 'vanora'
+                  selectedPlan === "vanora"
                     ? styles.priceSelected
-                    : styles.priceUnselected
+                    : styles.priceUnselected,
                 ]}
               >
                 {vanoraPrice}
@@ -332,28 +325,28 @@ export default function MembershipSubscriptionScreen() {
           {isMechanic ? (
             <TouchableOpacity
               activeOpacity={0.9}
-              onPress={() => setSelectedPlan('mechanic')}
+              onPress={() => setSelectedPlan("mechanic")}
               style={[
                 styles.planCard,
-                selectedPlan === 'mechanic'
+                selectedPlan === "mechanic"
                   ? styles.planCardSelected
-                  : styles.planCardUnselected
+                  : styles.planCardUnselected,
               ]}
             >
               <View
                 style={[
                   styles.planPill,
-                  selectedPlan === 'mechanic'
+                  selectedPlan === "mechanic"
                     ? styles.planPillSelected
-                    : styles.planPillUnselected
+                    : styles.planPillUnselected,
                 ]}
               >
                 <Text
                   style={[
                     styles.planPillText,
-                    selectedPlan === 'mechanic'
+                    selectedPlan === "mechanic"
                       ? styles.planPillTextSelected
-                      : styles.planPillTextUnselected
+                      : styles.planPillTextUnselected,
                   ]}
                 >
                   MECHANIC
@@ -364,9 +357,9 @@ export default function MembershipSubscriptionScreen() {
                 <Text
                   style={[
                     styles.planName,
-                    selectedPlan === 'mechanic'
+                    selectedPlan === "mechanic"
                       ? styles.planNameSelected
-                      : styles.planNameUnselected
+                      : styles.planNameUnselected,
                   ]}
                 >
                   Mechanic
@@ -374,24 +367,24 @@ export default function MembershipSubscriptionScreen() {
                 <View
                   style={[
                     styles.radio,
-                    selectedPlan === 'mechanic' && styles.radioSelected
+                    selectedPlan === "mechanic" && styles.radioSelected,
                   ]}
                 >
-                  {selectedPlan === 'mechanic' ? (
+                  {selectedPlan === "mechanic" ? (
                     <View style={styles.radioDot} />
                   ) : null}
                 </View>
               </View>
 
-              <Text style={styles.planCadence}>{'Quarterly'}</Text>
+              <Text style={styles.planCadence}>{"Quarterly"}</Text>
 
               <View style={styles.priceRow}>
                 <Text
                   style={[
                     styles.price,
-                    selectedPlan === 'mechanic'
+                    selectedPlan === "mechanic"
                       ? styles.priceSelected
-                      : styles.priceUnselected
+                      : styles.priceUnselected,
                   ]}
                 >
                   {mechanicPrice}
@@ -451,234 +444,241 @@ export default function MembershipSubscriptionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff'
+    backgroundColor: "#F9FAFB",
   },
   topBar: {
-    height: 44,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    height: 48,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
-    marginTop: 6
+    marginTop: 8,
+    backgroundColor: "#F9FAFB",
   },
   headerTitle: {
     flex: 1,
-    textAlign: 'center',
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#111827'
+    textAlign: "center",
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#1F2937",
+    letterSpacing: 0.2,
   },
   backButton: {
     width: 44,
     height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'transparent'
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "transparent",
   },
   topBarSpacer: {
     width: 44,
-    height: 44
+    height: 44,
   },
   scroll: {
-    flex: 1
+    flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 24,
-    paddingTop: 8,
-    paddingBottom: 16
-  },
-  logoWrap: {
-    alignItems: 'center',
-    paddingTop: 18,
-    paddingBottom: 14
-  },
-  logoCard: {
-    width: 86,
-    height: 86,
-    borderRadius: 22,
-    backgroundColor: '#ECFDF5',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 8},
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 4
-  },
-  logoImage: {
-    width: 42,
-    height: 42,
-    resizeMode: 'contain'
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 20,
   },
   title: {
-    fontSize: 30,
-    fontWeight: '800',
-    color: '#2e7d64',
-    textAlign: 'center',
-    marginTop: 4
+    fontSize: 32,
+    fontWeight: "700",
+    color: "#2e7d64",
+    textAlign: "center",
+    marginTop: 8,
+    letterSpacing: 0.3,
   },
   subtitle: {
-    marginTop: 1,
+    marginTop: 8,
     fontSize: 16,
-    color: '#6B7280',
-    lineHeight: 22,
-    textAlign: 'center'
+    color: "#6B7280",
+    lineHeight: 24,
+    textAlign: "center",
+    paddingHorizontal: 10,
   },
   benefitsList: {
-    marginTop: 22,
-    gap: 16
+    marginTop: 20,
+    gap: 14,
   },
   benefitRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 14
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: "#ffffff",
+    padding: 12,
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   benefitIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: '#ECFDF5',
-    alignItems: 'center',
-    justifyContent: 'center'
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: "#f0fdf9",
+    borderWidth: 1.5,
+    borderColor: "#9ed6c3",
+    alignItems: "center",
+    justifyContent: "center",
   },
   benefitTextWrap: {
-    flex: 1
+    flex: 1,
   },
   benefitTitle: {
     fontSize: 16,
-    fontWeight: '800',
-    color: '#2e7d64'
+    fontWeight: "700",
+    color: "#1F2937",
+    letterSpacing: 0.2,
   },
   benefitDesc: {
     marginTop: 4,
     fontSize: 14,
-    color: '#6B7280',
-    lineHeight: 20
+    color: "#6B7280",
+    lineHeight: 20,
   },
   cardsRow: {
-    marginTop: 26,
-    flexDirection: 'row',
-    gap: 14
+    marginTop: 24,
+    flexDirection: "row",
+    gap: 16,
   },
   planCard: {
     flex: 1,
-    borderRadius: 18,
-    padding: 16,
-    minHeight: 148,
-    justifyContent: 'space-between'
+    borderRadius: 20,
+    padding: 18,
+    minHeight: 140,
+    justifyContent: "space-between",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
   planCardSelected: {
-    borderWidth: 2,
-    borderColor: '#2e7d64',
-    backgroundColor: '#ECFDF5'
+    borderWidth: 2.5,
+    borderColor: "#2e7d64",
+    backgroundColor: "#f0fdf9",
+    shadowColor: "#2e7d64",
+    shadowOpacity: 0.15,
   },
   planCardUnselected: {
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#fff'
+    borderColor: "#E5E7EB",
+    backgroundColor: "#fff",
   },
   planPill: {
-    position: 'absolute',
-    top: -14,
-    alignSelf: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 999
+    position: "absolute",
+    top: -12,
+    alignSelf: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+    borderRadius: 999,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   planPillSelected: {
-    backgroundColor: '#2e7d64',
-    opacity: 1
+    backgroundColor: "#2e7d64",
+    opacity: 1,
   },
   planPillUnselected: {
-    backgroundColor: '#E5E7EB',
-    opacity: 0.65
+    backgroundColor: "#E5E7EB",
+    opacity: 0.7,
   },
   planPillText: {
-    fontWeight: '800',
-    fontSize: 12,
-    letterSpacing: 0.8
+    fontWeight: "700",
+    fontSize: 11,
+    letterSpacing: 1,
   },
   planPillTextSelected: {
-    color: '#fff'
+    color: "#fff",
   },
   planPillTextUnselected: {
-    color: '#6B7280'
+    color: "#6B7280",
   },
   planHeaderRow: {
     marginTop: 6,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between'
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   planName: {
-    fontSize: 18,
-    fontWeight: '800'
+    fontSize: 19,
+    fontWeight: "700",
+    letterSpacing: 0.2,
   },
   planNameSelected: {
-    color: '#2e7d64'
+    color: "#2e7d64",
   },
   planNameUnselected: {
-    color: '#6B7280'
+    color: "#6B7280",
   },
   radio: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 1.5,
-    borderColor: '#D1D5DB',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff'
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "#D1D5DB",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff",
   },
   radioSelected: {
-    borderColor: '#2e7d64',
-    backgroundColor: '#ECFDF5'
+    borderColor: "#2e7d64",
+    backgroundColor: "#f0fdf9",
   },
   radioDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#2e7d64'
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "#2e7d64",
   },
   planCadence: {
     marginTop: 6,
     fontSize: 14,
-    fontWeight: '700',
-    color: '#9CA3AF'
+    fontWeight: "700",
+    color: "#9CA3AF",
   },
   priceRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
+    flexDirection: "row",
+    alignItems: "flex-end",
     gap: 6,
-    marginTop: 10
+    marginTop: 12,
   },
   price: {
-    fontSize: 28,
-    fontWeight: '900'
+    fontSize: 30,
+    fontWeight: "700",
+    letterSpacing: -0.5,
   },
   priceSelected: {
-    color: '#2e7d64'
+    color: "#2e7d64",
   },
   priceUnselected: {
-    color: '#9CA3AF'
+    color: "#9CA3AF",
   },
   priceSuffix: {
     fontSize: 14,
-    fontWeight: '700',
-    color: '#9CA3AF',
-    paddingBottom: 4
+    fontWeight: "700",
+    color: "#9CA3AF",
+    paddingBottom: 4,
   },
   footnote: {
-    marginTop: 18,
-    fontSize: 12,
-    color: '#9CA3AF',
-    textAlign: 'center'
+    marginTop: 20,
+    fontSize: 13,
+    color: "#9CA3AF",
+    textAlign: "center",
+    lineHeight: 18,
   },
   bottomArea: {
-    paddingHorizontal: 24,
-    paddingTop: 10,
-    paddingBottom: 18,
-    backgroundColor: '#fff'
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 20,
+    backgroundColor: "#F9FAFB",
   },
   subscribedBadge: {
     flexDirection: 'row',
@@ -695,17 +695,23 @@ const styles = StyleSheet.create({
   continueButton: {
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#2e7d64',
-    alignItems: 'center',
-    justifyContent: 'center'
+    backgroundColor: "#2e7d64",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#2e7d64",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   continueButtonDisabled: {
     opacity: 0.6
   },
   continueText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '900'
+    color: "#fff",
+    fontSize: 17,
+    fontWeight: "700",
+    letterSpacing: 0.3,
   },
   secondaryButton: {
     marginTop: 12,
