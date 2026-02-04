@@ -1,6 +1,7 @@
 import {useRevenueCatSubscription} from '@/hooks/use-revenuecat-subscription';
 import {revenueCatService} from '@/services/revenuecat.service';
 import {useUserStore} from '@/store/userStore';
+import {showToast} from '@/components/Toast';
 import {MaterialCommunityIcons} from '@expo/vector-icons';
 import {useRouter} from 'expo-router';
 import {useEffect, useMemo, useState} from 'react';
@@ -39,7 +40,7 @@ export default function MembershipSubscriptionScreen() {
   const {isSubscribed, refresh: refreshSubscription} =
     useRevenueCatSubscription();
   const goBackToDashboard = () => {
-    router.back()
+    router.replace('/(app)/dashboard');
   };
 
   useEffect(() => {
@@ -100,15 +101,22 @@ export default function MembershipSubscriptionScreen() {
       const result = await revenueCatService.purchasePlan(effectivePlan);
       if (!result.success) {
         console.warn('[RevenueCat] Purchase failed:', result.reason);
+        showToast('error', 'Subscription Failed', 'Please try again.');
         return;
       }
 
       await refreshSubscription();
       // TODO(revenuecat): Persist entitlement state and update user profile.
       // Example: result.customerInfo.entitlements.active
+      showToast(
+        'success',
+        'Subscription Active',
+        'Your premium access is now live.'
+      );
       goBackToDashboard();
     } catch (error) {
       console.warn('[RevenueCat] Purchase error:', error);
+      showToast('error', 'Purchase Error', 'Something went wrong. Try again.');
     } finally {
       setIsPurchasing(false);
     }
