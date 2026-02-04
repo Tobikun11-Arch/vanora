@@ -584,7 +584,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    marginTop: 8,
+    marginTop: 25,
   },
   backButton: {
     width: 44,
