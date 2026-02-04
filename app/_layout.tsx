@@ -10,6 +10,7 @@ import {useColorScheme} from '@/hooks/use-color-scheme';
 import {ToastContainer} from '../components/Toast';
 import {authService} from '../services/auth.service';
 import {profileService} from '../services/profile.service';
+import {revenueCatService} from '../services/revenuecat.service';
 
 export const unstable_settings = {
   anchor: '(tabs)'
@@ -66,6 +67,10 @@ export default function RootLayout() {
       // Optional: control button style (light/dark icons)
       NavigationBar.setButtonStyleAsync('light');
     }
+  }, []);
+
+  useEffect(() => {
+    revenueCatService.initialize();
   }, []);
 
   return (

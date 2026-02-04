@@ -20,6 +20,7 @@ import {supabase} from '../../../services/supabase';
 import {useUserStore} from '../../../store/userStore';
 import LocationSearchModal from '../../newpost/LocationSearchModal';
 import {showToast} from '../../Toast';
+import {useRevenueCatSubscription} from '@/hooks/use-revenuecat-subscription';
 
 interface Event {
   id: string;
@@ -85,6 +86,7 @@ export default function EventsTab() {
   const [pickerType, setPickerType] = useState<
     'startDate' | 'startTime' | 'endDate' | 'endTime' | null
   >(null);
+  const {isSubscribed} = useRevenueCatSubscription();
 
   const dateOptions = useMemo(() => {
     const options: {label: string; value: Date}[] = [];
@@ -1361,26 +1363,30 @@ export default function EventsTab() {
                     </TouchableOpacity>
                   </View>
 
-                  <View style={styles.premiumCard}>
-                    <MaterialCommunityIcons
-                      name="star"
-                      size={24}
-                      color="#1dd1a1"
-                    />
-                    <View style={styles.premiumContent}>
-                      <Text style={styles.premiumTitle}>Go Premium</Text>
-                      <Text style={styles.premiumDescription}>
-                        Go Premium to invite up to 20 participants. Free plan
-                        is limited to 3 invites.
-                      </Text>
+                  {!isSubscribed && (
+                    <View style={styles.premiumCard}>
+                      <MaterialCommunityIcons
+                        name="star"
+                        size={24}
+                        color="#1dd1a1"
+                      />
+                      <View style={styles.premiumContent}>
+                        <Text style={styles.premiumTitle}>Go Premium</Text>
+                        <Text style={styles.premiumDescription}>
+                          Go Premium to invite up to 20 participants. Free plan
+                          is limited to 3 invites.
+                        </Text>
+                      </View>
+                      <TouchableOpacity
+                        style={styles.upgradeButton}
+                        onPress={() =>
+                          router.push('/(app)/membership-subscription')
+                        }
+                      >
+                        <Text style={styles.upgradeButtonText}>Upgrade</Text>
+                      </TouchableOpacity>
                     </View>
-                    <TouchableOpacity
-                      style={styles.upgradeButton}
-                      onPress={() => router.push('/(app)/membership-subscription')}
-                    >
-                      <Text style={styles.upgradeButtonText}>Upgrade</Text>
-                    </TouchableOpacity>
-                  </View>
+                  )}
                 </>
               )}
 
@@ -1415,28 +1421,30 @@ export default function EventsTab() {
                     </Text>
                   </TouchableOpacity>
 
-                  <View style={styles.premiumCard}>
-                    <MaterialCommunityIcons
-                      name="star"
-                      size={24}
-                      color="#1dd1a1"
-                    />
-                    <View style={styles.premiumContent}>
-                      <Text style={styles.premiumTitle}>Go Premium</Text>
-                      <Text style={styles.premiumDescription}>
-                        Upgrade to host public events with up to 100
-                        participants.
-                      </Text>
+                  {!isSubscribed && (
+                    <View style={styles.premiumCard}>
+                      <MaterialCommunityIcons
+                        name="star"
+                        size={24}
+                        color="#1dd1a1"
+                      />
+                      <View style={styles.premiumContent}>
+                        <Text style={styles.premiumTitle}>Go Premium</Text>
+                        <Text style={styles.premiumDescription}>
+                          Upgrade to host public events with up to 100
+                          participants.
+                        </Text>
+                      </View>
+                      <TouchableOpacity
+                        style={styles.upgradeButton}
+                        onPress={() =>
+                          router.push('/(app)/membership-subscription')
+                        }
+                      >
+                        <Text style={styles.upgradeButtonText}>Upgrade</Text>
+                      </TouchableOpacity>
                     </View>
-                    <TouchableOpacity
-                      style={styles.upgradeButton}
-                      onPress={() =>
-                        router.push('/(app)/membership-subscription')
-                      }
-                    >
-                      <Text style={styles.upgradeButtonText}>Upgrade</Text>
-                    </TouchableOpacity>
-                  </View>
+                  )}
                 </>
               )}
 

@@ -1,7 +1,9 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useRef, useState } from "react";
+import {useRevenueCatSubscription} from '@/hooks/use-revenuecat-subscription';
+import {MaterialCommunityIcons} from '@expo/vector-icons';
+import {useRouter} from 'expo-router';
+import {useRef, useState} from 'react';
 import {
+  ActivityIndicator,
   Dimensions,
   Image,
   Modal,
@@ -9,13 +11,13 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { authService } from "../../services/auth.service";
-import { showToast } from "../Toast";
+  View
+} from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {authService} from '../../services/auth.service';
+import {showToast} from '../Toast';
 
-const { width } = Dimensions.get("window");
+const {width} = Dimensions.get('window');
 const GALLERY_IMAGE_SIZE = (width - 60) / 3;
 const FALLBACK_HEADER_HEIGHT = 64;
 const SETTINGS_MENU_OFFSET = 8;
@@ -56,10 +58,11 @@ interface ProfileTabProps {
   profile: UserProfile;
 }
 
-export default function ProfileTab({ profile }: ProfileTabProps) {
+export default function ProfileTab({profile}: ProfileTabProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const {isSubscribed, isLoading} = useRevenueCatSubscription();
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(0);
   const [settingsAnchor, setSettingsAnchor] = useState<{
@@ -73,29 +76,37 @@ export default function ProfileTab({ profile }: ProfileTabProps) {
   const handleLogout = async () => {
     const result = await authService.signOut();
     if (result.success) {
-      showToast("success", "Success", "Logged out successfully");
-      router.replace("/(auth)/get-started");
+      showToast('success', 'Success', 'Logged out successfully');
+      router.replace('/(auth)/get-started');
     }
   };
 
   const handleSettings = () => {
     if (settingsButtonRef.current?.measureInWindow) {
       settingsButtonRef.current.measureInWindow((x, y, width, height) => {
-        setSettingsAnchor({ x, y, width, height });
-        setShowSettingsMenu((prev) => !prev);
+        setSettingsAnchor({x, y, width, height});
+        setShowSettingsMenu(prev => !prev);
       });
       return;
     }
-    setShowSettingsMenu((prev) => !prev);
+    setShowSettingsMenu(prev => !prev);
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
     });
   };
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#10B981" />
+      </View>
+    );
+  }
 
   return (
     <ScrollView
@@ -104,71 +115,75 @@ export default function ProfileTab({ profile }: ProfileTabProps) {
       showsVerticalScrollIndicator={false}
     >
       {/* Premium Modal */}
-      <Modal
-        visible={showPremiumModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowPremiumModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.premiumModalContent}>
-            <MaterialCommunityIcons
-              name="crown"
-              size={60}
-              color="#F59E0B"
-              style={styles.premiumIcon}
-            />
+      {!isSubscribed && (
+        <Modal
+          visible={showPremiumModal}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowPremiumModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.premiumModalContent}>
+              <MaterialCommunityIcons
+                name="crown"
+                size={60}
+                color="#F59E0B"
+                style={styles.premiumIcon}
+              />
 
-            <Text style={styles.premiumModalTitle}>Vandora Premium</Text>
+              <Text style={styles.premiumModalTitle}>Vandora Premium</Text>
 
-            <Text style={styles.premiumModalDescription}>
-              Unlock Challenge Match invites, boost visibility by 3x, and get
-              your exclusive verified nomad badge.
-            </Text>
+              <Text style={styles.premiumModalDescription}>
+                Unlock Challenge Match invites, boost visibility by 3x, and get
+                your exclusive verified nomad badge.
+              </Text>
 
-            <View style={styles.premiumFeatures}>
-              <View style={styles.featureItem}>
-                <MaterialCommunityIcons
-                  name="check-circle"
-                  size={20}
-                  color="#10B981"
-                />
-                <Text style={styles.featureText}>3x visibility boost</Text>
+              <View style={styles.premiumFeatures}>
+                <View style={styles.featureItem}>
+                  <MaterialCommunityIcons
+                    name="check-circle"
+                    size={20}
+                    color="#10B981"
+                  />
+                  <Text style={styles.featureText}>3x visibility boost</Text>
+                </View>
+                <View style={styles.featureItem}>
+                  <MaterialCommunityIcons
+                    name="check-circle"
+                    size={20}
+                    color="#10B981"
+                  />
+                  <Text style={styles.featureText}>
+                    Challenge Match invites
+                  </Text>
+                </View>
+                <View style={styles.featureItem}>
+                  <MaterialCommunityIcons
+                    name="check-circle"
+                    size={20}
+                    color="#10B981"
+                  />
+                  <Text style={styles.featureText}>Verified nomad badge</Text>
+                </View>
               </View>
-              <View style={styles.featureItem}>
-                <MaterialCommunityIcons
-                  name="check-circle"
-                  size={20}
-                  color="#10B981"
-                />
-                <Text style={styles.featureText}>Challenge Match invites</Text>
-              </View>
-              <View style={styles.featureItem}>
-                <MaterialCommunityIcons
-                  name="check-circle"
-                  size={20}
-                  color="#10B981"
-                />
-                <Text style={styles.featureText}>Verified nomad badge</Text>
-              </View>
+
+              <TouchableOpacity
+                style={styles.goPremiumButton}
+                onPress={() => {
+                  setShowPremiumModal(false);
+                  router.push('/(app)/membership-subscription');
+                }}
+              >
+                <Text style={styles.goPremiumButtonText}>Go Premium</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={() => setShowPremiumModal(false)}>
+                <Text style={styles.maybeLaterText}>Maybe later</Text>
+              </TouchableOpacity>
             </View>
-
-            <TouchableOpacity
-              style={styles.goPremiumButton}
-              onPress={() => {
-                setShowPremiumModal(false);
-                router.push("/(app)/membership-subscription");
-              }}
-            >
-              <Text style={styles.goPremiumButtonText}>Go Premium</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={() => setShowPremiumModal(false)}>
-              <Text style={styles.maybeLaterText}>Maybe later</Text>
-            </TouchableOpacity>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+      )}
 
       {/* Settings Menu */}
       <Modal
@@ -189,11 +204,10 @@ export default function ProfileTab({ profile }: ProfileTabProps) {
                     settingsAnchor.height +
                     SETTINGS_MENU_OFFSET
                   : headerHeight > 0
-                    ? headerHeight
-                    : insets.top + FALLBACK_HEADER_HEIGHT,
-              paddingLeft:
-                settingsAnchor?.x != null ? settingsAnchor.x : 16,
-            },
+                  ? headerHeight
+                  : insets.top + FALLBACK_HEADER_HEIGHT,
+              paddingLeft: settingsAnchor?.x != null ? settingsAnchor.x : 16
+            }
           ]}
         >
           <TouchableOpacity
@@ -207,7 +221,7 @@ export default function ProfileTab({ profile }: ProfileTabProps) {
               style={styles.settingsMenuItem}
               onPress={() => {
                 setShowSettingsMenu(false);
-                router.push("/(app)/membership-subscription");
+                router.push('/(app)/membership-subscription');
               }}
             >
               <Text style={styles.settingsMenuItemText}>
@@ -221,7 +235,7 @@ export default function ProfileTab({ profile }: ProfileTabProps) {
               style={styles.settingsMenuItem}
               onPress={() => {
                 setShowSettingsMenu(false);
-                router.push("/(app)/privacy-and-safety");
+                router.push('/(app)/privacy-and-safety');
               }}
             >
               <Text style={styles.settingsMenuItemText}>
@@ -235,8 +249,8 @@ export default function ProfileTab({ profile }: ProfileTabProps) {
       {/* Header */}
       <View
         style={styles.header}
-        onLayout={(event) => {
-          const { height } = event.nativeEvent.layout;
+        onLayout={event => {
+          const {height} = event.nativeEvent.layout;
           if (height !== headerHeight) {
             setHeaderHeight(height);
           }
@@ -262,29 +276,31 @@ export default function ProfileTab({ profile }: ProfileTabProps) {
       </View>
 
       {/* Go Premium Card */}
-      <TouchableOpacity
-        style={styles.premiumCard}
-        onPress={() => setShowPremiumModal(true)}
-      >
-        <View style={styles.premiumCardContent}>
-          <View style={styles.premiumCardLeft}>
-            <MaterialCommunityIcons name="crown" size={28} color="#10B981" />
-            <View style={styles.premiumCardText}>
-              <Text style={styles.premiumCardTitle}>Vandora Premium</Text>
-              <Text style={styles.premiumCardSubtitle}>
-                Unlock Challenge Match invites and get your verified nomad
-                badge.
-              </Text>
+      {!isSubscribed && (
+        <TouchableOpacity
+          style={styles.premiumCard}
+          onPress={() => setShowPremiumModal(true)}
+        >
+          <View style={styles.premiumCardContent}>
+            <View style={styles.premiumCardLeft}>
+              <MaterialCommunityIcons name="crown" size={28} color="#10B981" />
+              <View style={styles.premiumCardText}>
+                <Text style={styles.premiumCardTitle}>Vandora Premium</Text>
+                <Text style={styles.premiumCardSubtitle}>
+                  Unlock Challenge Match invites and get your verified nomad
+                  badge.
+                </Text>
+              </View>
             </View>
+            <TouchableOpacity
+              style={styles.premiumCardButton}
+              onPress={() => setShowPremiumModal(true)}
+            >
+              <Text style={styles.premiumCardButtonText}>Go Premium</Text>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={styles.premiumCardButton}
-            onPress={() => setShowPremiumModal(true)}
-          >
-            <Text style={styles.premiumCardButtonText}>Go Premium</Text>
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+      )}
 
       {/* Profile Picture & Basic Info - Centered Layout */}
       <View style={styles.profileHeader}>
@@ -292,7 +308,7 @@ export default function ProfileTab({ profile }: ProfileTabProps) {
           {/* Profile Picture */}
           {profile.profile_picture_url ? (
             <Image
-              source={{ uri: profile.profile_picture_url }}
+              source={{uri: profile.profile_picture_url}}
               style={styles.profilePicture}
             />
           ) : (
@@ -306,9 +322,19 @@ export default function ProfileTab({ profile }: ProfileTabProps) {
           )}
 
           {/* Name */}
-          <Text style={styles.nameText}>
-            {profile.display_name}, {profile.age}
-          </Text>
+          <View style={styles.nameRow}>
+            <Text style={styles.nameText}>
+              {profile.display_name}, {profile.age}
+            </Text>
+            {isSubscribed && (
+              <MaterialCommunityIcons
+                name="check-decagram"
+                size={18}
+                color="#10B981"
+                style={styles.premiumCheckIcon}
+              />
+            )}
+          </View>
 
           {/* Gender */}
           <Text style={styles.genderText}>{profile.gender}</Text>
@@ -358,7 +384,6 @@ export default function ProfileTab({ profile }: ProfileTabProps) {
       {/* Nomad Life Section - 4 Cards in 1 Line */}
       <View style={styles.nomadLifeSection}>
         <View style={styles.nomadCardsContainer}>
-          
           <View style={styles.nomadCard}>
             <MaterialCommunityIcons name="airplane" size={24} color="#2e7d64" />
             <Text style={styles.nomadCardValue}>{profile.travel_style}</Text>
@@ -391,10 +416,10 @@ export default function ProfileTab({ profile }: ProfileTabProps) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Photo Gallery</Text>
           <View style={styles.galleryGrid}>
-            {profile.gallery_photos.map((photo) => (
+            {profile.gallery_photos.map(photo => (
               <View key={photo.id} style={styles.galleryImageContainer}>
                 <Image
-                  source={{ uri: photo.photo_url }}
+                  source={{uri: photo.photo_url}}
                   style={styles.galleryImage}
                   resizeMode="cover"
                 />
@@ -511,190 +536,196 @@ export default function ProfileTab({ profile }: ProfileTabProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: '#fff'
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center'
   },
   scrollContent: {
-    paddingBottom: 40,
+    paddingBottom: 40
   },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 50,
-    paddingBottom: 20,
+    paddingBottom: 20
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: "bold",
-    color: "#1F2937",
+    fontWeight: 'bold',
+    color: '#1F2937',
     flex: 1,
-    textAlign: "center",
+    textAlign: 'center'
   },
   headerIconButton: {
     padding: 8,
-    borderRadius: 8,
+    borderRadius: 8
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   settingsOverlay: {
     flex: 1,
-    justifyContent: "flex-start",
-    alignItems: "flex-start",
-    paddingLeft: 16,
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
+    paddingLeft: 16
   },
   settingsMenu: {
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
     borderRadius: 12,
     minWidth: 240,
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
     shadowOpacity: 0.12,
     shadowRadius: 12,
-    elevation: 6,
+    elevation: 6
   },
   settingsMenuItem: {
     paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingHorizontal: 16
   },
   settingsMenuItemText: {
     fontSize: 14,
-    fontWeight: "600",
-    color: "#111827",
+    fontWeight: '600',
+    color: '#111827'
   },
   settingsMenuDivider: {
     height: 1,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: '#E5E7EB'
   },
   premiumModalContent: {
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
     borderRadius: 20,
     padding: 24,
-    width: "85%",
-    alignItems: "center",
+    width: '85%',
+    alignItems: 'center'
   },
   modalCloseButton: {
-    position: "absolute",
+    position: 'absolute',
     top: 16,
     right: 16,
     padding: 8,
-    zIndex: 10,
+    zIndex: 10
   },
   premiumIcon: {
     marginTop: 16,
-    marginBottom: 16,
+    marginBottom: 16
   },
   premiumModalTitle: {
     fontSize: 24,
-    fontWeight: "bold",
-    color: "#1F2937",
+    fontWeight: 'bold',
+    color: '#1F2937',
     marginBottom: 12,
-    textAlign: "center",
+    textAlign: 'center'
   },
   premiumModalDescription: {
     fontSize: 14,
-    color: "#6B7280",
-    textAlign: "center",
-    marginBottom: 24,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 24
   },
   premiumFeatures: {
-    width: "100%",
+    width: '100%',
     marginBottom: 24,
-    gap: 12,
+    gap: 12
   },
   featureItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12
   },
   featureText: {
     fontSize: 14,
-    color: "#374151",
-    fontWeight: "500",
+    color: '#374151',
+    fontWeight: '500'
   },
   goPremiumButton: {
-    width: "100%",
-    backgroundColor: "#10B981",
+    width: '100%',
+    backgroundColor: '#10B981',
     paddingVertical: 14,
     borderRadius: 12,
-    alignItems: "center",
-    marginBottom: 12,
+    alignItems: 'center',
+    marginBottom: 12
   },
   goPremiumButtonText: {
-    color: "#fff",
+    color: '#fff',
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600'
   },
   maybeLaterText: {
-    color: "#9CA3AF",
+    color: '#9CA3AF',
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: '500'
   },
   premiumCard: {
     marginHorizontal: 20,
     marginTop: 12,
     marginBottom: 24,
-    backgroundColor: "#F0F9FF",
+    backgroundColor: '#F0F9FF',
     borderRadius: 16,
     borderLeftWidth: 4,
-    borderLeftColor: "#10B981",
+    borderLeftColor: '#10B981'
   },
   premiumCardContent: {
-    flexDirection: "column",
-    alignItems: "stretch",
+    flexDirection: 'column',
+    alignItems: 'stretch',
     padding: 16,
-    rowGap: 12,
+    rowGap: 12
   },
   premiumCardLeft: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 12,
     flex: 1,
-    minWidth: 0,
+    minWidth: 0
   },
   premiumCardText: {
     gap: 4,
     flexShrink: 1,
-    minWidth: 0,
+    minWidth: 0
   },
   premiumCardTitle: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#1F2937",
-    flexShrink: 1,
+    fontWeight: '600',
+    color: '#1F2937',
+    flexShrink: 1
   },
   premiumCardSubtitle: {
     fontSize: 12,
-    color: "#6B7280",
-    flexShrink: 1,
+    color: '#6B7280',
+    flexShrink: 1
   },
   premiumCardButton: {
-    backgroundColor: "#10B981",
+    backgroundColor: '#10B981',
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 8,
-    alignSelf: "stretch",
-    alignItems: "center",
+    alignSelf: 'stretch',
+    alignItems: 'center'
   },
   premiumCardButtonText: {
-    color: "#fff",
+    color: '#fff',
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: '600'
   },
   profileHeader: {
-    alignItems: "center",
+    alignItems: 'center',
     paddingHorizontal: 20,
     marginBottom: 1,
-    marginTop: 12,
+    marginTop: 12
   },
   profileCenterContainer: {
-    alignItems: "center",
-    width: "100%",
+    alignItems: 'center',
+    width: '100%'
   },
   profilePicture: {
     width: 120,
@@ -702,40 +733,48 @@ const styles = StyleSheet.create({
     borderRadius: 60,
     marginBottom: 18,
     borderWidth: 3,
-    borderColor: "#2e7d64",
+    borderColor: '#2e7d64'
   },
   placeholderPicture: {
-    backgroundColor: "#F3F4F6",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   nameText: {
     fontSize: 24,
-    fontWeight: "800",
-    color: "#2e7d64",
+    fontWeight: '800',
+    color: '#2e7d64',
     marginBottom: 3,
-    textAlign: "center",
-    letterSpacing: 0.3,
+    textAlign: 'center',
+    letterSpacing: 0.3
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6
+  },
+  premiumCheckIcon: {
+    marginTop: 2
   },
   genderText: {
     fontSize: 14,
-    color: "#6B7280",
+    color: '#6B7280',
     marginBottom: 3,
-    textAlign: "center",
-    fontWeight: "500",
+    textAlign: 'center',
+    fontWeight: '500'
   },
   locationRowCentered: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: 5,
-    marginBottom: 8,
+    marginBottom: 8
   },
   locationCentered: {
     fontSize: 13,
-    color: "#6B7280",
-    textAlign: "center",
-    fontWeight: "500",
+    color: '#6B7280',
+    textAlign: 'center',
+    fontWeight: '500'
   },
   statsRow: {
     flexDirection: 'row',
@@ -773,184 +812,184 @@ const styles = StyleSheet.create({
   },
   verifiedStatus: {
     fontSize: 12,
-    color: "#10B981",
-    fontWeight: "600",
-    textAlign: "center",
-    marginTop: 4,
+    color: '#10B981',
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 4
   },
   section: {
     paddingHorizontal: 20,
-    marginBottom: 30,
+    marginBottom: 30
   },
   nomadLifeSection: {
     paddingHorizontal: 20,
     marginBottom: 20,
-    marginTop: 12,
+    marginTop: 12
   },
   nomadLifeTitle: {
     fontSize: 15,
-    fontWeight: "700",
-    color: "#2e7d64",
+    fontWeight: '700',
+    color: '#2e7d64',
     marginBottom: 10,
-    textAlign: "center",
-    letterSpacing: 0.3,
+    textAlign: 'center',
+    letterSpacing: 0.3
   },
   nomadCardsContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 5
   },
   nomadCard: {
     flex: 1,
     height: 110,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#F0FDF4",
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F0FDF4',
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 8,
     borderWidth: 1.5,
-    borderColor: "#2e7d64",
+    borderColor: '#2e7d64'
   },
   nomadCardValue: {
     fontSize: 11,
-    fontWeight: "700",
-    color: "#2e7d64",
+    fontWeight: '700',
+    color: '#2e7d64',
     marginTop: 10,
-    textAlign: "center",
-    numberOfLines: 2,
+    textAlign: 'center',
+    numberOfLines: 2
   },
   sectionTitle: {
     fontSize: 17,
-    fontWeight: "700",
-    color: "#2e7d64",
+    fontWeight: '700',
+    color: '#2e7d64',
     marginBottom: 10,
-    letterSpacing: 0.3,
+    letterSpacing: 0.3
   },
   bioText: {
     fontSize: 14,
-    color: "#4B5563",
-    fontWeight: "500",
+    color: '#4B5563',
+    fontWeight: '500'
   },
   tagsContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10
   },
   intentTag: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FEE2E2",
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEE2E2',
     paddingHorizontal: 13,
     paddingVertical: 8,
     borderRadius: 22,
     gap: 6,
     borderWidth: 1,
-    borderColor: "#FECACA",
+    borderColor: '#FECACA'
   },
   intentTagText: {
     fontSize: 13,
-    color: "#991B1B",
-    fontWeight: "600",
+    color: '#991B1B',
+    fontWeight: '600'
   },
   hobbyTag: {
-    backgroundColor: "#DBEAFE",
+    backgroundColor: '#DBEAFE',
     paddingHorizontal: 13,
     paddingVertical: 8,
     borderRadius: 22,
     borderWidth: 1,
-    borderColor: "#BAE6FD",
+    borderColor: '#BAE6FD'
   },
   hobbyTagText: {
     fontSize: 13,
-    color: "#0C4A6E",
-    fontWeight: "600",
+    color: '#0C4A6E',
+    fontWeight: '600'
   },
   skillTag: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FEF3C7",
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF3C7',
     paddingHorizontal: 13,
     paddingVertical: 8,
     borderRadius: 22,
     gap: 5,
     borderWidth: 1,
-    borderColor: "#FDE68A",
+    borderColor: '#FDE68A'
   },
   skillTagText: {
     fontSize: 13,
-    color: "#B45309",
-    fontWeight: "600",
+    color: '#B45309',
+    fontWeight: '600'
   },
   lifestyleTag: {
-    backgroundColor: "#E0E7FF",
+    backgroundColor: '#E0E7FF',
     paddingHorizontal: 13,
     paddingVertical: 8,
     borderRadius: 22,
     borderWidth: 1,
-    borderColor: "#C7D2FE",
+    borderColor: '#C7D2FE'
   },
   lifestyleTagText: {
     fontSize: 13,
-    color: "#4338CA",
-    fontWeight: "600",
+    color: '#4338CA',
+    fontWeight: '600'
   },
   activityTag: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#D1FAE5",
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#D1FAE5',
     paddingHorizontal: 13,
     paddingVertical: 8,
     borderRadius: 22,
     gap: 6,
     borderWidth: 1,
-    borderColor: "#A7F3D0",
+    borderColor: '#A7F3D0'
   },
   activityTagText: {
     fontSize: 13,
-    color: "#047857",
-    fontWeight: "600",
+    color: '#047857',
+    fontWeight: '600'
   },
   galleryGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8
   },
   galleryImageContainer: {
-    position: "relative",
+    position: 'relative'
   },
   galleryImage: {
     width: GALLERY_IMAGE_SIZE,
     height: GALLERY_IMAGE_SIZE,
-    borderRadius: 12,
+    borderRadius: 12
   },
   photoTypeLabel: {
-    position: "absolute",
+    position: 'absolute',
     bottom: 6,
     left: 6,
-    backgroundColor: "rgba(0,0,0,0.6)",
+    backgroundColor: 'rgba(0,0,0,0.6)',
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 6,
+    borderRadius: 6
   },
   photoTypeLabelText: {
     fontSize: 10,
-    color: "#fff",
-    fontWeight: "500",
+    color: '#fff',
+    fontWeight: '500'
   },
   memberSection: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: 8,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-    marginHorizontal: 20,
+    borderTopColor: '#E5E7EB',
+    marginHorizontal: 20
   },
   memberSince: {
     fontSize: 13,
-    color: "#9CA3AF",
-  },
+    color: '#9CA3AF'
+  }
 });
