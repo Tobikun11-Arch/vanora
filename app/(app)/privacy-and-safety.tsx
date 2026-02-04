@@ -1,6 +1,7 @@
+import { useUserStore } from "@/store/userStore";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import * as Location from "expo-location";
+import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   SafeAreaView,
@@ -11,7 +12,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useUserStore } from "@/store/userStore";
 import MapView, { Circle, Marker } from "react-native-maps";
 
 type LocationPrecision = "approximate" | "exact";
@@ -88,7 +88,10 @@ export default function PrivacyAndSafetyScreen() {
         if (!isMounted) return;
         const first = results[0];
         if (first) {
-          setMapCoords({ latitude: first.latitude, longitude: first.longitude });
+          setMapCoords({
+            latitude: first.latitude,
+            longitude: first.longitude,
+          });
         } else {
           setMapCoords(null);
         }
@@ -370,7 +373,7 @@ export default function PrivacyAndSafetyScreen() {
             <MaterialCommunityIcons
               name="plus"
               size={18}
-              color="#E5E7EB"
+              color="#2e7d64"
               style={styles.addTrustedButtonIcon}
             />
             <Text style={styles.addTrustedButtonText}>Add Trusted Friend</Text>
@@ -394,7 +397,7 @@ export default function PrivacyAndSafetyScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#F9FAFB",
   },
   header: {
     flexDirection: "row",
@@ -411,49 +414,55 @@ const styles = StyleSheet.create({
     width: 40,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#111827",
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#1F2937",
     textAlign: "center",
     flex: 1,
+    letterSpacing: 0.2,
   },
   scroll: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 28,
+    paddingHorizontal: 20,
+    paddingBottom: 32,
   },
   sectionLabel: {
-    marginTop: 8,
-    fontSize: 12,
-    letterSpacing: 1,
+    marginTop: 12,
+    fontSize: 11,
+    letterSpacing: 1.2,
     color: "#2e7d64",
     fontWeight: "700",
+    textTransform: "uppercase",
   },
   sectionLabelSpacing: {
-    marginTop: 18,
+    marginTop: 24,
   },
   sectionTitle: {
-    marginTop: 6,
-    fontSize: 18,
+    marginTop: 8,
+    fontSize: 20,
     fontWeight: "700",
-    color: "#111827",
+    color: "#1F2937",
+    letterSpacing: 0.2,
   },
   mapCard: {
-    marginTop: 12,
-    borderRadius: 16,
+    marginTop: 16,
+    borderRadius: 18,
     backgroundColor: "#ffffff",
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
+    padding: 16,
+    borderWidth: 0,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
   mapPreview: {
-    height: 190,
-    borderRadius: 14,
-    backgroundColor: "#E5E7EB",
-    borderWidth: 1,
-    borderColor: "#D1D5DB",
+    height: 200,
+    borderRadius: 16,
+    backgroundColor: "#F3F4F6",
+    borderWidth: 0,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
@@ -491,26 +500,34 @@ const styles = StyleSheet.create({
     left: 12,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
     backgroundColor: "#2e7d64",
     borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "#2e7d64",
+    borderWidth: 0,
+    shadowColor: "#2e7d64",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   mapBadgeText: {
     marginLeft: 6,
     fontSize: 12,
-    fontWeight: "500",
-    color: "#D1FAE5",
+    fontWeight: "600",
+    color: "#ffffff",
   },
   card: {
-    marginTop: 12,
-    borderRadius: 16,
+    marginTop: 16,
+    borderRadius: 18,
     backgroundColor: "#ffffff",
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
+    padding: 16,
+    borderWidth: 0,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
   cardEyebrow: {
     fontSize: 12,
@@ -519,34 +536,39 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     marginTop: 6,
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "700",
-    color: "#5c6069ff",
+    color: "#1F2937",
+    letterSpacing: 0.2,
   },
   cardDescription: {
-    marginTop: 6,
-    fontSize: 13,
-    lineHeight: 18,
-    color: "#9CA3AF",
+    marginTop: 8,
+    fontSize: 14,
+    lineHeight: 20,
+    color: "#6B7280",
   },
   segmented: {
-    marginTop: 12,
+    marginTop: 14,
     flexDirection: "row",
     padding: 4,
     borderRadius: 14,
     backgroundColor: "#F3F4F6",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderWidth: 0,
   },
   segment: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 11,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
   segmentSelected: {
     backgroundColor: "#2e7d64",
+    shadowColor: "#2e7d64",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 2,
   },
   segmentText: {
     fontSize: 13,
@@ -557,12 +579,12 @@ const styles = StyleSheet.create({
     color: "#ffffff",
   },
   topBar: {
-    height: 44,
+    height: 48,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    marginTop: 6,
+    marginTop: 8,
   },
   backButton: {
     width: 44,
@@ -579,7 +601,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 10,
+    paddingVertical: 12,
   },
   rowLeft: {
     flexDirection: "row",
@@ -588,28 +610,28 @@ const styles = StyleSheet.create({
     paddingRight: 10,
   },
   rowIconWrap: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: "#F3F4F6",
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: "#F9FAFB",
     borderWidth: 1,
     borderColor: "#E5E7EB",
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 10,
+    marginRight: 12,
   },
   rowTextWrap: {
     flex: 1,
   },
   rowTitle: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: "#5c6069ff",
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#1F2937",
   },
   rowSubtitle: {
-    marginTop: 2,
-    fontSize: 12,
-    color: "#9CA3AF",
+    marginTop: 3,
+    fontSize: 13,
+    color: "#6B7280",
   },
   divider: {
     height: 1,
@@ -628,85 +650,94 @@ const styles = StyleSheet.create({
     paddingRight: 10,
   },
   avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#E5E7EB",
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#f0fdf9",
+    borderWidth: 2,
+    borderColor: "#2e7d64",
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 10,
+    marginRight: 12,
   },
   avatarText: {
-    color: "#5c6069ff",
-    fontWeight: "900",
+    color: "#2e7d64",
+    fontWeight: "700",
+    fontSize: 16,
   },
   contactTextWrap: {
     flex: 1,
   },
   contactName: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: "#5c6069ff",
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#1F2937",
   },
   contactSubtitle: {
-    marginTop: 2,
+    marginTop: 3,
     fontSize: 12,
     color: "#2e7d64",
-    fontWeight: "700",
+    fontWeight: "600",
   },
   contactAction: {
     padding: 8,
-    borderRadius: 10,
-    backgroundColor: "#F3F4F6",
+    borderRadius: 12,
+    backgroundColor: "#F9FAFB",
     borderWidth: 1,
     borderColor: "#E5E7EB",
   },
   addTrustedButton: {
-    marginTop: 12,
+    marginTop: 14,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 12,
+    paddingVertical: 13,
     borderRadius: 14,
-    backgroundColor: "#F9FAFB",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
+    backgroundColor: "#f0fdf9",
+    borderWidth: 1.5,
+    borderColor: "#2e7d64",
+    borderStyle: "dashed",
   },
   addTrustedButtonIcon: {
     marginRight: 8,
   },
   addTrustedButtonText: {
     fontSize: 14,
-    fontWeight: "800",
-    color: "#5c6069ff",
+    fontWeight: "700",
+    color: "#2e7d64",
   },
   tipCard: {
-    marginTop: 14,
+    marginTop: 18,
     flexDirection: "row",
     alignItems: "flex-start",
     borderRadius: 16,
-    backgroundColor: "#ECFDF5",
+    backgroundColor: "#f0fdf9",
     borderWidth: 1,
-    borderColor: "#A7F3D0",
-    padding: 12,
+    borderColor: "#9ed6c3",
+    padding: 14,
+    shadowColor: "#2e7d64",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   tipIconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 10,
-    backgroundColor: "#10B981",
+    width: 30,
+    height: 30,
+    borderRadius: 12,
+    backgroundColor: "#2e7d64",
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 10,
+    marginRight: 12,
   },
   tipText: {
     flex: 1,
     color: "#065F46",
-    fontSize: 12,
-    lineHeight: 18,
-    fontWeight: "600",
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: "500",
   },
   mapContent: {
-    marginTop: 12,
+    marginTop: 16,
   },
 });
