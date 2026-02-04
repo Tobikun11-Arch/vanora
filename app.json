@@ -12,9 +12,9 @@
       "backgroundColor": "#ffffff"
     },
     "assetBundlePatterns": ["**/*"],
-    "ios": {
-    },
+    "ios": {},
     "android": {
+      "package": "com.shipyard.vanora",
       "adaptiveIcon": {
         "foregroundImage": "@/assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -23,9 +23,7 @@
     "web": {
       "favicon": "@/assets/favicon.png"
     },
-    "plugins": [
-      "expo-image-picker"
-    ],
+    "plugins": ["expo-image-picker"],
     "scheme": "vanora",
     "extra": {
       "eas": {

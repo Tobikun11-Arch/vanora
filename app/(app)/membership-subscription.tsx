@@ -1,7 +1,9 @@
-import { useUserStore } from "@/store/userStore";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import {useRevenueCatSubscription} from '@/hooks/use-revenuecat-subscription';
+import {revenueCatService} from '@/services/revenuecat.service';
+import {useUserStore} from '@/store/userStore';
+import {MaterialCommunityIcons} from '@expo/vector-icons';
+import {useRouter} from 'expo-router';
+import {useEffect, useMemo, useState} from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -9,7 +11,8 @@ import {
   Text,
   TouchableOpacity,
   View
-} from "react-native";
+} from 'react-native';
+import {PurchasesPackage} from 'react-native-purchases';
 
 type PlanType = "vanora" | "mechanic";
 
@@ -21,16 +24,106 @@ type Benefit = {
 
 export default function MembershipSubscriptionScreen() {
   const router = useRouter();
-  const [selectedPlan, setSelectedPlan] = useState<PlanType>("vanora");
-  const profile = useUserStore((state) => state.profile);
-  const isMechanic = profile?.nomad_type?.toLowerCase() === "mechanic";
-  const effectivePlan = isMechanic ? selectedPlan : "vanora";
+  const [selectedPlan, setSelectedPlan] = useState<PlanType>('vanora');
+  const [isPurchasing, setIsPurchasing] = useState(false);
+  const [planPackages, setPlanPackages] = useState<
+    Record<PlanType, PurchasesPackage | null>
+  >({
+    vanora: null,
+    mechanic: null
+  });
+  const [isLoadingOfferings, setIsLoadingOfferings] = useState(true);
+  const profile = useUserStore(state => state.profile);
+  const isMechanic = profile?.nomad_type?.toLowerCase() === 'mechanic';
+  const effectivePlan = isMechanic ? selectedPlan : 'vanora';
+  const {isSubscribed, refresh: refreshSubscription} =
+    useRevenueCatSubscription();
+  const goBackToDashboard = () => {
+    router.replace('/(app)/dashboard');
+  };
 
   useEffect(() => {
     if (!isMechanic && selectedPlan === "mechanic") {
       setSelectedPlan("vanora");
     }
   }, [isMechanic, selectedPlan]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadOfferings = async () => {
+      setIsLoadingOfferings(true);
+      try {
+        const [vanoraPkg, mechanicPkg] = await Promise.all([
+          revenueCatService.getPlanPackage('vanora'),
+          revenueCatService.getPlanPackage('mechanic')
+        ]);
+        if (isMounted) {
+          setPlanPackages({
+            vanora: vanoraPkg,
+            mechanic: mechanicPkg
+          });
+        }
+      } catch (error) {
+        console.warn('[RevenueCat] Offerings error:', error);
+      } finally {
+        if (isMounted) {
+          setIsLoadingOfferings(false);
+        }
+      }
+    };
+
+    loadOfferings();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleContinue = async () => {
+    if (isPurchasing) {
+      return;
+    }
+
+    if (isSubscribed) {
+      return;
+    }
+
+    try {
+      setIsPurchasing(true);
+      const pkg =
+        effectivePlan === 'vanora'
+          ? planPackages.vanora
+          : planPackages.mechanic;
+      if (!pkg && !isLoadingOfferings) {
+        console.warn('[RevenueCat] Package not available for', effectivePlan);
+        return;
+      }
+      const result = await revenueCatService.purchasePlan(effectivePlan);
+      if (!result.success) {
+        console.warn('[RevenueCat] Purchase failed:', result.reason);
+        return;
+      }
+
+      await refreshSubscription();
+      // TODO(revenuecat): Persist entitlement state and update user profile.
+      // Example: result.customerInfo.entitlements.active
+      goBackToDashboard();
+    } catch (error) {
+      console.warn('[RevenueCat] Purchase error:', error);
+    } finally {
+      setIsPurchasing(false);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    try {
+      await revenueCatService.showManageSubscriptions();
+    } catch (error) {
+      console.warn('[RevenueCat] Manage subscription error:', error);
+    }
+  };
+
+  const vanoraPrice = planPackages.vanora?.product?.priceString ?? '$10.00';
+  const mechanicPrice = planPackages.mechanic?.product?.priceString ?? '$15.99';
 
   const planContent = useMemo(() => {
     const common = {
@@ -43,11 +136,11 @@ export default function MembershipSubscriptionScreen() {
         ...common,
         heading: "Vanora Premium",
         subheading:
-          "Upgrade your experience and stand out in the Vanora community.",
-        price: "$10.00",
-        cadenceLabel: "Monthly",
-        cadenceSuffix: "/mo",
-        footnote: "Billed monthly. Cancel anytime in settings.",
+          'Upgrade your experience and stand out in the Vanora community.',
+        price: vanoraPrice,
+        cadenceLabel: 'Monthly',
+        cadenceSuffix: '/mo',
+        footnote: 'Billed monthly. Cancel anytime in settings.',
         benefits: [
           {
             icon: "rocket-launch",
@@ -79,12 +172,12 @@ export default function MembershipSubscriptionScreen() {
 
     return {
       ...common,
-      heading: "Mechanic Subscription",
-      subheading: "Turn visibility into real opportunities and future clients.",
-      price: "$15.99",
-      cadenceLabel: "Quarterly",
-      cadenceSuffix: "/qtr",
-      footnote: "Billed quarterly. Cancel anytime in settings.",
+      heading: 'Mechanic Subscription',
+      subheading: 'Turn visibility into real opportunities and future clients.',
+      price: mechanicPrice,
+      cadenceLabel: 'Quarterly',
+      cadenceSuffix: '/qtr',
+      footnote: 'Billed quarterly. Cancel anytime in settings.',
       benefits: [
         {
           icon: "tools",
@@ -111,13 +204,13 @@ export default function MembershipSubscriptionScreen() {
         },
       ] as Benefit[],
     };
-  }, [effectivePlan]);
+  }, [effectivePlan, mechanicPrice, vanoraPrice]);
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.topBar}>
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={goBackToDashboard}
           style={styles.backButton}
           accessibilityRole="button"
           accessibilityLabel="Back"
@@ -223,7 +316,7 @@ export default function MembershipSubscriptionScreen() {
                     : styles.priceUnselected,
                 ]}
               >
-                $10.00
+                {vanoraPrice}
               </Text>
               <Text style={styles.priceSuffix}>/mo</Text>
             </View>
@@ -294,7 +387,7 @@ export default function MembershipSubscriptionScreen() {
                       : styles.priceUnselected,
                   ]}
                 >
-                  $15.99
+                  {mechanicPrice}
                 </Text>
                 <Text style={styles.priceSuffix}>/qtr</Text>
               </View>
@@ -306,13 +399,43 @@ export default function MembershipSubscriptionScreen() {
       </ScrollView>
 
       <View style={styles.bottomArea}>
-        <TouchableOpacity
-          style={styles.continueButton}
-          accessibilityRole="button"
-          accessibilityLabel="Continue"
-        >
-          <Text style={styles.continueText}>Continue</Text>
-        </TouchableOpacity>
+        {isSubscribed ? (
+          <>
+            <View style={styles.subscribedBadge}>
+              <MaterialCommunityIcons
+                name="check-decagram"
+                size={18}
+                color="#2e7d64"
+              />
+              <Text style={styles.subscribedText}>
+                You are already premium.
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.continueButton}
+              onPress={handleManageSubscription}
+              accessibilityRole="button"
+              accessibilityLabel="Manage subscription"
+            >
+              <Text style={styles.continueText}>Manage Subscription</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <TouchableOpacity
+            style={[
+              styles.continueButton,
+              isPurchasing && styles.continueButtonDisabled
+            ]}
+            onPress={handleContinue}
+            disabled={isPurchasing}
+            accessibilityRole="button"
+            accessibilityLabel="Continue"
+          >
+            <Text style={styles.continueText}>
+              {isPurchasing ? 'Processing...' : 'Continue'}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -557,6 +680,18 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
     backgroundColor: "#F9FAFB",
   },
+  subscribedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 12
+  },
+  subscribedText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#2e7d64'
+  },
   continueButton: {
     height: 56,
     borderRadius: 28,
@@ -569,10 +704,27 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 5,
   },
+  continueButtonDisabled: {
+    opacity: 0.6
+  },
   continueText: {
     color: "#fff",
     fontSize: 17,
     fontWeight: "700",
     letterSpacing: 0.3,
   },
+  secondaryButton: {
+    marginTop: 12,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  secondaryButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#374151'
+  }
 });
