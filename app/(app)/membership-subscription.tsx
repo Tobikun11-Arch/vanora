@@ -221,7 +221,7 @@ export default function MembershipSubscriptionScreen() {
             color="#111827"
           />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Membership &amp; Subscription</Text>
+        <Text style={styles.headerTitle}>Subscription</Text>
         <View style={styles.topBarSpacer} />
       </View>
 
@@ -452,7 +452,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    marginTop: 8,
+    marginTop: 20,
     backgroundColor: "#F9FAFB",
   },
   headerTitle: {
