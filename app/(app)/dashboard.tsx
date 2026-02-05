@@ -16,7 +16,8 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
+  ViewStyle
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
@@ -67,6 +68,22 @@ export default function DashboardScreen() {
   const contentPaddingBottom = useMemo(
     () => bottomBarHeight + bottomInset + 12,
     [bottomInset]
+  );
+  const tabVisibilityStyle = (tab: TabType): ViewStyle => ({
+    display: activeTab === tab ? 'flex' : 'none',
+    flex: 1
+  });
+
+  const findTechTab = useMemo(() => <FindTechTab />, []);
+  const exploreTab = useMemo(() => <ExploreTab />, []);
+  const notificationsTab = useMemo(() => <NotificationsTab />, []);
+  const homeTab = useMemo(
+    () => (profile ? <HomeTab profile={profile} /> : null),
+    [profile]
+  );
+  const profileTab = useMemo(
+    () => (profile ? <ProfileTab profile={profile} /> : null),
+    [profile]
   );
 
   useEffect(() => {
@@ -160,28 +177,11 @@ export default function DashboardScreen() {
     };
 
     fetchUserProfile();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
   const handleTabPress = (tab: TabType) => {
     setActiveTab(tab);
-  };
-
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'findtech':
-        return <FindTechTab />;
-      case 'explore':
-        return <ExploreTab />;
-      case 'home':
-        return profile ? <HomeTab profile={profile} /> : null;
-      case 'notifications':
-        return <NotificationsTab />;
-      case 'profile':
-        return profile ? <ProfileTab profile={profile} /> : null;
-      default:
-        return profile ? <HomeTab profile={profile} /> : null;
-    }
   };
 
   if (loading) {
@@ -203,12 +203,25 @@ export default function DashboardScreen() {
   return (
     <View style={styles.mainContainer}>
       {/* Tab Content */}
-      <View style={[styles.contentContainer, {paddingBottom: contentPaddingBottom}]}>
-        {renderTabContent()}
+      <View
+        style={[styles.contentContainer, {paddingBottom: contentPaddingBottom}]}
+      >
+        <View style={tabVisibilityStyle('findtech')}>{findTechTab}</View>
+        <View style={tabVisibilityStyle('explore')}>{exploreTab}</View>
+        <View style={tabVisibilityStyle('home')}>{homeTab}</View>
+        <View style={tabVisibilityStyle('notifications')}>
+          {notificationsTab}
+        </View>
+        <View style={tabVisibilityStyle('profile')}>{profileTab}</View>
       </View>
 
       {/* Bottom Navigation Bar */}
-      <View style={[styles.bottomBar, {bottom: bottomInset, minHeight: bottomBarHeight}]}>
+      <View
+        style={[
+          styles.bottomBar,
+          {bottom: bottomInset, minHeight: bottomBarHeight}
+        ]}
+      >
         <TouchableOpacity
           style={[
             styles.tabItem,
