@@ -1,15 +1,19 @@
 import {supabase} from '@/services/supabase';
 import {feedTabStyles as styles} from '@/styles';
 import {MaterialCommunityIcons} from '@expo/vector-icons';
-import {useEffect, useState} from 'react';
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+import {useEffect, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   Image,
+  Modal,
+  Pressable,
+  ScrollView,
   Text,
+  TextInput,
   TouchableOpacity,
   View
 } from 'react-native';
-import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 interface PostMedia {
   id: string;
@@ -58,11 +62,33 @@ interface FeedTabProps {
 }
 
 const CACHE_TTL_MS = 60 * 1000;
+const MENU_WIDTH = 140;
+const MENU_OFFSET = 8;
 
 export default function FeedTab({refreshTrigger}: FeedTabProps) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [votingPollIds, setVotingPollIds] = useState<Record<string, boolean>>({});
+  const [votingPollIds, setVotingPollIds] = useState<Record<string, boolean>>(
+    {}
+  );
+  const [followingUserIds, setFollowingUserIds] = useState<
+    Record<string, boolean>
+  >({});
+  const [likedPostIds, setLikedPostIds] = useState<Record<string, boolean>>({});
+  const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
+  const [sharedPostIds, setSharedPostIds] = useState<Record<string, boolean>>(
+    {}
+  );
+  const [shareCounts, setShareCounts] = useState<Record<string, number>>({});
+  const [showMenu, setShowMenu] = useState(false);
+  const [menuAnchor, setMenuAnchor] = useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
+  const [commentPostId, setCommentPostId] = useState<string | null>(null);
   const queryClient = useQueryClient();
+  const menuButtonRefs = useRef<Record<string, View | null>>({});
 
   const fetchPosts = async (userId: string | null) => {
     try {
@@ -254,13 +280,11 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
       optionId: string;
       userId: string;
     }) => {
-      const {error} = await supabase
-        .from('poll_votes')
-        .insert({
-          poll_id: pollId,
-          option_id: optionId,
-          user_id: userId
-        });
+      const {error} = await supabase.from('poll_votes').insert({
+        poll_id: pollId,
+        option_id: optionId,
+        user_id: userId
+      });
 
       if (error && error.code !== '23505') {
         throw error;
@@ -270,7 +294,8 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
       const {pollId, optionId, userId} = variables;
       setVotingPollIds(prev => ({...prev, [pollId]: true}));
       await queryClient.cancelQueries({queryKey: ['feed', userId]});
-      const previous = queryClient.getQueryData<FeedPost[]>(['feed', userId]) || [];
+      const previous =
+        queryClient.getQueryData<FeedPost[]>(['feed', userId]) || [];
 
       const next = previous.map(post => {
         if (!post.poll_results?.length) return post;
@@ -324,12 +349,51 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
     });
   };
 
+  const handleFollow = (authorId?: string | null) => {
+    if (!authorId) return;
+    setFollowingUserIds(prev => ({...prev, [authorId]: !prev[authorId]}));
+  };
+
+  const handleLike = (postId: string, baseCount: number) => {
+    setLikedPostIds(prev => {
+      const nextLiked = !prev[postId];
+      setLikeCounts(counts => {
+        const current = counts[postId] ?? baseCount;
+        const next = nextLiked ? current + 1 : Math.max(baseCount, current - 1);
+        return {...counts, [postId]: next};
+      });
+      return {...prev, [postId]: nextLiked};
+    });
+  };
+
+  const handleShare = (postId: string, baseCount: number) => {
+    setSharedPostIds(prev => {
+      const nextShared = !prev[postId];
+      setShareCounts(counts => {
+        const current = counts[postId] ?? baseCount;
+        const next = nextShared
+          ? current + 1
+          : Math.max(baseCount, current - 1);
+        return {...counts, [postId]: next};
+      });
+      return {...prev, [postId]: nextShared};
+    });
+  };
+
   const renderItem = ({item}: {item: FeedPost}) => {
     const author = item.profiles;
+    const authorId = author?.id || item.user_id;
     const displayName = author?.username
       ? `@${author.username}`
       : author?.display_name || 'Unknown';
     const firstMedia = item.post_media?.[0];
+    const tags = item.category
+      ? item.category
+          .split(',')
+          .map(tag => tag.trim())
+          .filter(Boolean)
+      : [];
+    const actionTags = tags.slice(0, 2);
     const pollOptions = item.poll_results || [];
     const pollId = pollOptions[0]?.poll_id;
     const totalVotes = pollOptions[0]?.total_votes || 0;
@@ -337,64 +401,95 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
     const isVoting = pollId ? !!votingPollIds[pollId] : false;
     const isPoll = item.post_type === 'poll';
     const isImagePoll = item.post_type === 'image_poll';
+    const isFollowing = !!followingUserIds[authorId];
+    const isLiked = !!likedPostIds[item.id];
+    const isShared = !!sharedPostIds[item.id];
+    const likeCount = likeCounts[item.id] ?? item.likes_count;
+    const shareCount = shareCounts[item.id] ?? 0;
 
     return (
       <View style={styles.feedPost}>
-        <View
-          style={{flexDirection: 'row', alignItems: 'center', marginBottom: 8}}
-        >
-          {author?.profile_picture_url ? (
-            <Image
-              source={{uri: author.profile_picture_url}}
-              style={{width: 32, height: 32, borderRadius: 16, marginRight: 8}}
-            />
-          ) : (
-            <View
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 16,
-                backgroundColor: '#E5E7EB',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginRight: 8
+        <View style={styles.feedHeader}>
+          <View style={styles.feedHeaderLeft}>
+            {author?.profile_picture_url ? (
+              <Image
+                source={{uri: author.profile_picture_url}}
+                style={styles.feedHeaderAvatar}
+              />
+            ) : (
+              <View
+                style={[
+                  styles.feedHeaderAvatar,
+                  styles.feedHeaderAvatarPlaceholder
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name="account"
+                  size={20}
+                  color="#6B7280"
+                />
+              </View>
+            )}
+            <View style={styles.feedHeaderInfo}>
+              <View style={styles.feedHeaderTopRow}>
+                <Text style={styles.feedHeaderName}>{displayName}</Text>
+                <TouchableOpacity
+                  style={[
+                    styles.followButton,
+                    isFollowing && styles.followButtonActive
+                  ]}
+                  onPress={() => handleFollow(authorId)}
+                >
+                  <Text
+                    style={[
+                      styles.followButtonText,
+                      isFollowing && styles.followButtonTextActive
+                    ]}
+                  >
+                    {isFollowing ? 'Following' : 'Follow'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              {!!item.location && (
+                <View style={styles.feedHeaderLocationRow}>
+                  <MaterialCommunityIcons
+                    name="map-marker"
+                    size={12}
+                    color="#6B7280"
+                  />
+                  <Text style={styles.feedHeaderLocationText}>
+                    {item.location}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+          <View
+            ref={ref => {
+              menuButtonRefs.current[item.id] = ref;
+            }}
+            collapsable={false}
+          >
+            <TouchableOpacity
+              style={styles.feedHeaderMenu}
+              onPress={() => {
+                const ref = menuButtonRefs.current[item.id];
+                if (ref?.measureInWindow) {
+                  ref.measureInWindow((x, y, width, height) => {
+                    setMenuAnchor({x, y, width, height});
+                    setShowMenu(prev => !prev);
+                  });
+                  return;
+                }
+                setShowMenu(prev => !prev);
               }}
             >
               <MaterialCommunityIcons
-                name="account"
-                size={18}
-                color="#6B7280"
+                name="dots-horizontal"
+                size={20}
+                color="#9CA3AF"
               />
-            </View>
-          )}
-          <View>
-            <Text style={{fontWeight: '600', color: '#1F2937'}}>
-              {displayName}
-            </Text>
-            {(isPoll || isImagePoll) && (
-              <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 2}}>
-                <MaterialCommunityIcons
-                  name={isImagePoll ? 'image' : 'poll'}
-                  size={12}
-                  color="#6B7280"
-                />
-                <Text style={{fontSize: 12, color: '#6B7280', marginLeft: 4}}>
-                  {isImagePoll ? 'Image Poll' : 'Community Poll'}
-                </Text>
-              </View>
-            )}
-            {!!item.location && (
-              <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                <MaterialCommunityIcons
-                  name="map-marker"
-                  size={12}
-                  color="#4A7C59"
-                />
-                <Text style={{fontSize: 12, color: '#4A7C59', marginLeft: 2}}>
-                  {item.location}
-                </Text>
-              </View>
-            )}
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -432,7 +527,10 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
                     isSelected && styles.pollOptionSelected
                   ]}
                   onPress={() =>
-                    pollId && !hasVoted && !isVoting && handleVote(item.id, pollId, option.option_id)
+                    pollId &&
+                    !hasVoted &&
+                    !isVoting &&
+                    handleVote(item.id, pollId, option.option_id)
                   }
                   disabled={hasVoted || isVoting}
                 >
@@ -452,33 +550,70 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
                 </TouchableOpacity>
               );
             })}
-            <Text style={styles.pollMetaText}>
-              {totalVotes} votes
-            </Text>
+            <Text style={styles.pollMetaText}>{totalVotes} votes</Text>
           </View>
         )}
 
+        <View style={styles.feedActionsSeparator} />
         <View style={styles.feedPostActions}>
-          <View style={styles.feedAction}>
-            <MaterialCommunityIcons name="heart" size={18} color="#6B7280" />
-            <Text style={styles.feedActionText}>{item.likes_count}</Text>
-          </View>
-          <View style={styles.feedAction}>
+          <TouchableOpacity
+            style={styles.feedAction}
+            onPress={() => handleLike(item.id, item.likes_count)}
+          >
+            <MaterialCommunityIcons
+              name={isLiked ? 'heart' : 'heart-outline'}
+              size={20}
+              color={isLiked ? '#2E7D64' : '#6B7280'}
+            />
+            <Text
+              style={[
+                styles.feedActionText,
+                isLiked && styles.actionActiveText
+              ]}
+            >
+              {likeCount}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.feedAction}
+            onPress={() => setCommentPostId(item.id)}
+          >
             <MaterialCommunityIcons
               name="comment-outline"
-              size={18}
+              size={20}
               color="#6B7280"
             />
-            <Text style={styles.feedActionText}>{item.comments_count}</Text>
-          </View>
-          <TouchableOpacity style={styles.feedAction}>
+            <Text style={styles.feedActionText}>Comment</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.feedAction}
+            onPress={() => handleShare(item.id, 0)}
+          >
             <MaterialCommunityIcons
               name="share-outline"
-              size={18}
-              color="#6B7280"
+              size={20}
+              color={isShared ? '#2E7D64' : '#6B7280'}
             />
-            <Text style={styles.feedActionText}>Share</Text>
+            <Text
+              style={[
+                styles.feedActionText,
+                isShared && styles.actionActiveText
+              ]}
+            >
+              {shareCount}
+            </Text>
           </TouchableOpacity>
+          {actionTags.length > 0 && (
+            <View style={styles.actionTagsWrap}>
+              {actionTags.map(tag => (
+                <View key={tag} style={styles.actionTagPill}>
+                  <Text style={styles.actionTagText}>
+                    {tag.toUpperCase().replace(/-/g, ' ')}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
       </View>
     );
@@ -515,6 +650,167 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
       {posts.map(item => (
         <View key={item.id}>{renderItem({item})}</View>
       ))}
+
+      <Modal
+        transparent
+        animationType="fade"
+        visible={showMenu}
+        onRequestClose={() => setShowMenu(false)}
+      >
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => setShowMenu(false)}
+          style={[
+            styles.menuBackdrop,
+            {
+              paddingTop:
+                menuAnchor?.y != null
+                  ? menuAnchor.y + menuAnchor.height + MENU_OFFSET
+                  : 0,
+              paddingLeft:
+                menuAnchor?.x != null
+                  ? Math.max(8, menuAnchor.x + menuAnchor.width - MENU_WIDTH)
+                  : 0
+            }
+          ]}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={() => {
+              // keep menu open when tapping inside
+            }}
+            style={styles.menuSheet}
+          >
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => setShowMenu(false)}
+            >
+              <MaterialCommunityIcons
+                name="eye-off-outline"
+                size={16}
+                color="#334155"
+              />
+              <Text style={styles.menuItemText}>Hide</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => setShowMenu(false)}
+            >
+              <MaterialCommunityIcons
+                name="bookmark-outline"
+                size={16}
+                color="#334155"
+              />
+              <Text style={styles.menuItemText}>Save</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
+      <Modal
+        transparent
+        animationType="slide"
+        visible={!!commentPostId}
+        onRequestClose={() => setCommentPostId(null)}
+      >
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => setCommentPostId(null)}
+        >
+          <Pressable style={styles.modalCard}>
+            <View style={styles.commentHeaderRow}>
+              <Text style={styles.commentHeaderTitle}>Comments</Text>
+            </View>
+            <ScrollView
+              contentContainerStyle={styles.commentList}
+              showsVerticalScrollIndicator={false}
+            >
+              {[
+                {
+                  id: '1',
+                  name: 'ashahfawgs',
+                  time: '6d',
+                  text: "Where is this? Can the public view it? It's unbelievably beautiful",
+                  likes: '80'
+                },
+                {
+                  id: '2',
+                  name: 'towstudios',
+                  time: '6d',
+                  text: 'Where is this? Its amazing',
+                  likes: '10'
+                },
+                {
+                  id: '3',
+                  name: 'challah_cat',
+                  time: '3d',
+                  text: 'This reminds me of the airport in Madrid...',
+                  likes: '4'
+                }
+              ].map(comment => (
+                <View key={comment.id} style={styles.commentItem}>
+                  <View style={styles.commentAvatar}>
+                    <MaterialCommunityIcons
+                      name="account"
+                      size={18}
+                      color="#6B7280"
+                    />
+                  </View>
+                  <View style={styles.commentContent}>
+                    <View style={styles.commentRowTop}>
+                      <View style={styles.commentNameRow}>
+                        <Text style={styles.commentUsername}>
+                          {comment.name}
+                        </Text>
+                        <Text style={styles.commentMeta}>{comment.time}</Text>
+                        <TouchableOpacity
+                          style={styles.commentFollowButton}
+                          onPress={() => handleFollow(`comment-${comment.id}`)}
+                        >
+                          <Text style={styles.commentFollowText}>Follow</Text>
+                        </TouchableOpacity>
+                      </View>
+                      <View style={styles.commentLikeRow}>
+                        <MaterialCommunityIcons
+                          name="heart-outline"
+                          size={16}
+                          color="#9CA3AF"
+                        />
+                        <Text style={styles.commentLikeText}>
+                          {comment.likes}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text style={styles.commentText}>{comment.text}</Text>
+                    <Text style={styles.commentReply}>Reply</Text>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+            <View style={styles.commentComposer}>
+              <View style={styles.commentComposerAvatar}>
+                <MaterialCommunityIcons
+                  name="account"
+                  size={18}
+                  color="#6B7280"
+                />
+              </View>
+              <View style={styles.commentComposerField}>
+                <TextInput
+                  style={styles.commentComposerInput}
+                  placeholder="Add a comment for architectand..."
+                  placeholderTextColor="#9CA3AF"
+                />
+                <MaterialCommunityIcons
+                  name="sticker-emoji"
+                  size={18}
+                  color="#9CA3AF"
+                />
+              </View>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
