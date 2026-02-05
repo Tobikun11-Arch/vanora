@@ -12,6 +12,7 @@ import {authService} from '../services/auth.service';
 import {profileService} from '../services/profile.service';
 import {revenueCatService} from '../services/revenuecat.service';
 import {ReactQueryProvider} from '@/lib/provider/ReactQueryProvider';
+import {supabase} from '../services/supabase';
 
 export const unstable_settings = {
   anchor: '(tabs)'
@@ -70,9 +71,57 @@ export default function RootLayout() {
     }
   }, []);
 
+useEffect(() => {
+  const bootstrapAsync = async () => {
+    try {
+      const session = await authService.getSession();
+      if (session?.user) {
+        const profileResult = await profileService.getProfile(session.user.id);
+
+        // Initialize RevenueCat with user ID
+        revenueCatService.initialize(session.user.id);
+
+        dispatch(prev => ({
+          ...prev,
+          userToken: session.access_token,
+          user: session.user,
+          profileComplete: profileResult.success,
+          isLoading: false
+        }));
+      } else {
+        // Initialize RevenueCat without a user (anonymous)
+        revenueCatService.initialize();
+
+        dispatch(prev => ({
+          ...prev,
+          isLoading: false
+        }));
+      }
+    } catch {
+      dispatch(prev => ({
+        ...prev,
+        isLoading: false
+      }));
+    }
+  };
+
+  bootstrapAsync();
+}, []);
+
   useEffect(() => {
-    revenueCatService.initialize();
+    const {data: {subscription}} = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (session?.user) {
+          revenueCatService.initialize(session.user.id);
+        } else {
+          revenueCatService.initialize();
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
+
 
   return (
     <ReactQueryProvider>
