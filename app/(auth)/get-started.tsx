@@ -1,63 +1,70 @@
-import { useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import {MaterialIcons} from '@expo/vector-icons';
+import {BlurView} from 'expo-blur';
+import {useRouter} from 'expo-router';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   Dimensions,
   Image,
   ImageBackground,
+  type ImageSourcePropType,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
-  View,
-} from "react-native";
-import { Button } from "../../components/Button";
+  View
+} from 'react-native';
+import {Button} from '../../components/Button';
 
-const { width } = Dimensions.get("window");
+const {width} = Dimensions.get('window');
+
+const CARD_SIDE_PADDING = 40;
+const CARD_WIDTH = width - CARD_SIDE_PADDING * 2;
 
 interface CardData {
   icon: string;
   title: string;
   description: string;
-  image: string;
+  image: ImageSourcePropType;
 }
 
 const cardsData: CardData[] = [
   {
-    icon: "❤️",
-    title: "Find Your Co-Pilot",
+    icon: 'favorite',
+    title: 'Find Your Co-Pilot',
     description:
-      "Connect with fellow travelers who share your passion for the open road and the freedom of van life.",
-    image: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=500",
+      'Connect with fellow travelers who share your passion for the open road and the freedom of van life.',
+    image: require('../../assets/images/copilot-bg-removed.png')
   },
   {
-    icon: "🗺️",
-    title: "Discover Adventures",
+    icon: 'explore',
+    title: 'Discover Adventures',
     description:
-      "Explore hidden gems and popular destinations recommended by our community of experienced nomads.",
-    image: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=500",
+      'Explore hidden gems and popular destinations recommended by our community of experienced nomads.',
+    image: require('../../assets/images/discover-bg-removed.png')
   },
   {
-    icon: "🤝",
-    title: "Build Community",
+    icon: 'groups',
+    title: 'Build Community',
     description:
-      "Join groups, share experiences, and find support from people who understand the van life lifestyle.",
-    image: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=500",
+      'Join groups, share experiences, and find support from people who understand the van life lifestyle.',
+    image: require('../../assets/images/community-bg-removed.png')
   },
   {
-    icon: "📍",
-    title: "Share Your Journey",
+    icon: 'photo-camera',
+    title: 'Share Your Journey',
     description:
-      "Document your travels, post photos, and inspire others with your unique nomadic lifestyle stories.",
-    image: "https://images.unsplash.com/photo-1516238323209-271f07db0f5f?w=500",
+      'Document your travels, post photos, and inspire others with your unique nomadic lifestyle stories.',
+    image: require('../../assets/images/share-bg-removed.png')
   },
   {
-    icon: "🚐",
-    title: "Van Life Made Easy",
+    icon: 'airport-shuttle',
+    title: 'Van Life Made Easy',
     description:
-      "Find tips, resources, and connect with mechanics and service providers trusted by van lifers.",
-    image: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=500",
-  },
+      'Find tips, resources, and connect with mechanics and service providers trusted by van lifers.',
+    image: require('../../assets/images/van-bg-removed.png')
+  }
 ];
 
 export default function GetStartedScreen() {
@@ -67,11 +74,11 @@ export default function GetStartedScreen() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setActiveIndex((prev) => {
+      setActiveIndex(prev => {
         const next = (prev + 1) % cardsData.length;
         scrollViewRef.current?.scrollTo({
           x: next * width,
-          animated: true,
+          animated: true
         });
         return next;
       });
@@ -83,15 +90,17 @@ export default function GetStartedScreen() {
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
     const index = Math.round(contentOffsetX / width);
-    setActiveIndex(index);
+    const clampedIndex = Math.max(0, Math.min(cardsData.length - 1, index));
+    setActiveIndex(clampedIndex);
   };
 
   return (
     <ImageBackground
       source={{
-        uri: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=1000&auto=format&fit=crop",
+        uri: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=1000&auto=format&fit=crop'
       }}
       style={styles.backgroundImage}
+      imageStyle={styles.backgroundImageStyle}
     >
       {/* Overlay */}
       <View style={styles.overlay} />
@@ -99,8 +108,12 @@ export default function GetStartedScreen() {
       <View style={styles.container}>
         {/* Top Section with Logo and Name */}
         <View style={styles.topSection}>
-          <Text style={styles.logoIcon}>🚐</Text>
-          <Text style={styles.appName}>Vanora</Text>
+          <Image
+            source={require('../../assets/images/vanora-logo-only.png')}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
+          <Text style={styles.appName}>anora</Text>
         </View>
 
         {/* Swipeable Cards */}
@@ -115,18 +128,38 @@ export default function GetStartedScreen() {
         >
           {cardsData.map((card, index) => (
             <View key={index} style={styles.cardWrapper}>
-              <View style={styles.glassCard}>
-                {/* Card Icon */}
-                <Text style={styles.cardIcon}>{card.icon}</Text>
+              <View style={styles.cardShadowContainer}>
+                <BlurView
+                  intensity={Platform.OS === 'ios' ? 40 : 10}
+                  tint="light"
+                  style={styles.glassCardSurface}
+                >
+                  <View style={styles.glassCard}>
+                    {/* Card Header with Icon */}
+                    <View style={styles.cardHeader}>
+                      <View style={styles.cardIconCircle}>
+                        <MaterialIcons
+                          name={card.icon as any}
+                          size={30}
+                          color="#2e7d64"
+                        />
+                      </View>
+                      <Text style={styles.cardTitle}>{card.title}</Text>
+                    </View>
 
-                {/* Card Header */}
-                <Text style={styles.cardTitle}>{card.title}</Text>
+                    {/* Card Description */}
+                    <Text style={styles.cardDescription}>
+                      {card.description}
+                    </Text>
 
-                {/* Card Description */}
-                <Text style={styles.cardDescription}>{card.description}</Text>
-
-                {/* Card Image */}
-                <Image source={{ uri: card.image }} style={styles.cardImage} />
+                    {/* Card Image */}
+                    <Image
+                      source={card.image}
+                      style={styles.cardImage}
+                      resizeMode="contain"
+                    />
+                  </View>
+                </BlurView>
               </View>
             </View>
           ))}
@@ -146,13 +179,13 @@ export default function GetStartedScreen() {
         <View style={styles.bottomSection}>
           <Button
             title="Get Started"
-            onPress={() => router.push("/(auth)/signup")}
+            onPress={() => router.push('/(auth)/signup')}
           />
           <View style={styles.loginPrompt}>
             <Text style={styles.loginText}>Already have an account? </Text>
             <Text
               style={styles.loginLink}
-              onPress={() => router.push("/(auth)/login")}
+              onPress={() => router.push('/login')}
             >
               Log In
             </Text>
@@ -166,112 +199,168 @@ export default function GetStartedScreen() {
 const styles = StyleSheet.create({
   backgroundImage: {
     flex: 1,
-    width: "100%",
-    height: "100%",
+    width: '100%',
+    height: '100%'
+  },
+  backgroundImageStyle: {
+    resizeMode: 'cover'
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.08)'
   },
   container: {
     flex: 1,
-    justifyContent: "space-between",
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical: 40,
-    zIndex: 1,
+    paddingVertical: Platform.OS === 'android' ? 28 : 40,
+    zIndex: 1
   },
   topSection: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 30,
-    marginBottom: 60,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20
   },
-  logoIcon: {
-    fontSize: 48,
-    marginRight: 12,
+  logoImage: {
+    width: width * 0.35, // scales to ~22% of screen width
+    height: width * 0.35, // keeps square ratio
+    tintColor: '#2e7d64',
+    resizeMode: 'contain',
+    marginRight: -25,
   },
   appName: {
-    fontSize: 32,
-    fontWeight: "700",
-    color: "#FFFFFF",
+    fontSize: width * 0.1, // scales with screen width
+    fontWeight: '900',
+    color: '#2e7d64',
     letterSpacing: 1,
+    marginLeft: -8, // consistent spacing from logo
+    marginTop:15,
   },
+
   cardsContainer: {
     flex: 1,
-    marginVertical: 20,
+    marginTop: Platform.OS === 'android' ? 10 : 140,
+    marginBottom: 20,
+    marginHorizontal: -20
   },
   cardWrapper: {
-    width: width - 40,
-    paddingHorizontal: 0,
-    justifyContent: "center",
+    width,
+    paddingHorizontal: CARD_SIDE_PADDING,
+    justifyContent: 'center',
+    height: '100%'
+  },
+  cardShadowContainer: {
+    width: CARD_WIDTH,
+    alignSelf: 'center',
+    flex: 1,
+    minHeight: 460,
+    borderRadius: 20,
+    // Shadow for iOS - light from top
+
+    shadowOffset: {
+      width: 0,
+      height: 10
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 30
+    // Shadow for Android - light from top
+  },
+  glassCardSurface: {
+    flex: 1,
+    minHeight: 460,
+    borderRadius: 20,
+    overflow: 'hidden',
+    backgroundColor:
+      Platform.OS === 'android' ? 'rgba(235, 232, 232, 0)' : 'transparent'
   },
   glassCard: {
-    backgroundColor: "rgba(202, 238, 227, 0.15)",
-    backdropFilter: "blur(10px)",
+    flex: 1,
+    minHeight: 460,
+    backgroundColor:
+      Platform.OS === 'android'
+        ? 'rgba(198, 205, 207, 0)'
+        : 'rgba(153, 74, 74, 0.21)',
     borderRadius: 20,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.35)",
-    alignItems: "center",
-    overflow: "hidden",
+    padding: 32,
+    borderWidth: 1.5,
+    borderColor:
+      Platform.OS === 'android'
+        ? 'rgba(214, 247, 245, 0.14)'
+        : 'rgba(255, 255, 255, 0.75)',
+    alignItems: 'stretch',
+    justifyContent: 'flex-start'
   },
-  cardIcon: {
-    fontSize: 56,
-    marginBottom: 16,
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6
+  },
+  cardIconCircle: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: '#cfe7deff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14
   },
   cardTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#fff",
-    marginBottom: 12,
-    textAlign: "center",
+    fontSize: Platform.OS === 'android' ? 20 : 26,
+    fontWeight: Platform.OS === 'android' ? '800' : '700',
+    color: '#2e7d64',
+    marginBottom: 0,
+    textAlign: 'center'
   },
   cardDescription: {
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.9)",
-    textAlign: "center",
-    lineHeight: 20,
-    marginBottom: 16,
+    fontSize: Platform.OS === 'android' ? 14 : 15,
+    color: 'rgba(255, 255, 255, 0.95)',
+    textAlign: 'center',
+    lineHeight: Platform.OS === 'android' ? 17 : 22,
+    marginTop: 2,
+    marginBottom: 24
   },
   cardImage: {
-    width: "100%",
-    height: 180,
+    width: '100%',
+    flex: 1,
+    minHeight: 240,
     borderRadius: 12,
-    marginBottom: 0,
+    marginBottom: 0
   },
   pagination: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 20,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20
   },
   dot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "rgba(255, 255, 255, 0.5)",
-    marginHorizontal: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    marginHorizontal: 6
   },
   dotActive: {
-    backgroundColor: "#2e7d64",
-    width: 24,
+    backgroundColor: '#2e7d64',
+    width: 24
   },
   bottomSection: {
-    paddingBottom: 10,
+    paddingBottom: 10
   },
   loginPrompt: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginTop: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 16
   },
   loginText: {
-    color: "rgba(255, 255, 255, 0.8)",
-    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 14
   },
   loginLink: {
-    color: "#fff",
+    color: '#fff',
     fontSize: 14,
-    fontWeight: "600",
-    textDecorationLine: "underline",
-  },
+    fontWeight: '600',
+    textDecorationLine: 'underline'
+  }
 });

@@ -22,6 +22,7 @@
     "base-64": "^1.0.0",
     "expo": "~54.0.32",
     "expo-auth-session": "^7.0.10",
+    "expo-blur": "~15.0.8",
     "expo-camera": "~17.0.10",
     "expo-constants": "~18.0.13",
     "expo-dev-client": "~6.0.20",
