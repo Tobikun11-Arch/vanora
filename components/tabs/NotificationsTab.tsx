@@ -2,6 +2,7 @@ import {showToast} from '@/components/Toast';
 import {supabase} from '@/services/supabase';
 import {useUserStore} from '@/store/userStore';
 import {MaterialCommunityIcons} from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import {useEffect, useState} from 'react';
 import {
   Image,
@@ -31,6 +32,12 @@ interface Notification {
 
 export default function NotificationsTab() {
   const [showLegacyModal, setShowLegacyModal] = useState(false);
+  const [showCreateCommunityModal, setShowCreateCommunityModal] =
+    useState(false);
+  const [newCommunityName, setNewCommunityName] = useState('');
+  const [communityImageUri, setCommunityImageUri] = useState<string | null>(
+    null
+  );
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [localReadIds, setLocalReadIds] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
@@ -67,6 +74,19 @@ export default function NotificationsTab() {
     }
   ];
 
+  const [joinedCommunities, setJoinedCommunities] = useState([
+    {
+      name: 'Stealth Camping Elites',
+      subtitle: '4 new posts today',
+      image: require('../../assets/images/duo_camper.jpg')
+    },
+    {
+      name: 'Mountain Wanderer Hub',
+      subtitle: 'Up to date',
+      image: require('../../assets/images/solar_van.jpg')
+    }
+  ]);
+
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
     if (Number.isNaN(date.getTime())) {
@@ -86,6 +106,65 @@ export default function NotificationsTab() {
 
   const isLocalNotification = (id: string) =>
     id === 'welcome-vanora' || id === 'promo-premium';
+
+  const resetCreateCommunityForm = () => {
+    setNewCommunityName('');
+    setCommunityImageUri(null);
+  };
+
+  const handlePickCommunityImage = async () => {
+    const permission =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      showToast(
+        'error',
+        'Permission required',
+        'Allow photo access to pick a community image.'
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.85
+    });
+
+    if (!result.canceled && result.assets?.length) {
+      const asset = result.assets[0];
+      if (asset?.uri) {
+        setCommunityImageUri(asset.uri);
+      }
+    }
+  };
+
+  const handleCreateCommunity = () => {
+    const trimmedName = newCommunityName.trim();
+    if (!trimmedName) {
+      showToast('error', 'Missing name', 'Add a community name to continue.');
+      return;
+    }
+    if (!communityImageUri) {
+      showToast(
+        'error',
+        'Missing photo',
+        'Pick a community image to continue.'
+      );
+      return;
+    }
+
+    setJoinedCommunities(prev => [
+      {
+        name: trimmedName,
+        subtitle: 'New community',
+        image: {uri: communityImageUri}
+      },
+      ...prev
+    ]);
+    resetCreateCommunityForm();
+    setShowCreateCommunityModal(false);
+  };
 
   useEffect(() => {
     if (!userProfile?.id) return;
@@ -318,7 +397,10 @@ export default function NotificationsTab() {
 
       <View style={styles.sectionHeaderRow}>
         <Text style={styles.sectionHeaderText}>SUGGESTED COMMUNITIES</Text>
-        <TouchableOpacity style={styles.createButton}>
+        <TouchableOpacity
+          style={styles.createButton}
+          onPress={() => setShowCreateCommunityModal(true)}
+        >
           <Text style={styles.createPlus}>+</Text>
           <Text style={styles.createButtonText}>Create</Text>
         </TouchableOpacity>
@@ -334,15 +416,26 @@ export default function NotificationsTab() {
             {
               name: 'VanLifer Creator',
               members: '12.4k',
-              creator: 'by Vanora Team'
+              creator: 'by Vanora Team',
+              image: require('../../assets/images/cozy_van.jpg')
             },
-            {name: 'Nomadcom', members: '8.9k', creator: 'by Nomadcom'},
-            {name: 'Campfire Stories', members: '6.2k', creator: 'by Jesse R.'}
+            {
+              name: 'Nomadcom',
+              members: '8.9k',
+              creator: 'by Nomadcom',
+              image: require('../../assets/images/solo_camper.jpg')
+            },
+            {
+              name: 'Campfire Stories',
+              members: '6.2k',
+              creator: 'by Jesse R.',
+              image: require('../../assets/images/stones.jpg')
+            }
           ].map(item => (
             <View key={item.name} style={styles.communityCard}>
               <View style={styles.communityImage}>
                 <Image
-                  source={require('../../assets/images/vanora.png')}
+                  source={item.image}
                   style={styles.communityImageFill}
                 />
               </View>
@@ -358,17 +451,11 @@ export default function NotificationsTab() {
 
         <Text style={styles.sectionHeaderText}>JOINED COMMUNITIES</Text>
         <View style={styles.listCard}>
-          {[
-            {
-              name: 'Stealth Camping Elites',
-              subtitle: '4 new posts today'
-            },
-            {name: 'Mountain Wanderer Hub', subtitle: 'Up to date'}
-          ].map(item => (
+          {joinedCommunities.map(item => (
             <View key={item.name} style={styles.listItem}>
               <View style={styles.listAvatar}>
                 <Image
-                  source={require('../../assets/images/vanora.png')}
+                  source={item.image}
                   style={styles.listAvatarImage}
                 />
               </View>
@@ -393,31 +480,35 @@ export default function NotificationsTab() {
               subtitle:
                 'Hey! Did you find that water fill station near the... ',
               time: '2m ago',
-              online: true
+              online: true,
+              image: require('../../assets/images/theo.jpg')
             },
             {
               name: 'Chloe Brooks',
               subtitle: 'Sent you a photo',
               time: '1h ago',
-              online: true
+              online: true,
+              image: require('../../assets/images/aria.jpg')
             },
             {
               name: 'Liam Nomad',
               subtitle: 'That build looks incredible. How many watts is th...',
               time: 'Yesterday',
-              online: false
+              online: false,
+              image: require('../../assets/images/Noah.jpg')
             },
             {
               name: 'Sarah Wanderlust',
               subtitle: 'The meet-up next Saturday is still on! See you...',
               time: 'Tue',
-              online: false
+              online: false,
+              image: require('../../assets/images/featured_news.jpg')
             }
           ].map(item => (
             <View key={item.name} style={styles.listItem}>
               <View style={styles.listAvatar}>
                 <Image
-                  source={require('../../assets/images/vanora.png')}
+                  source={item.image}
                   style={styles.listAvatarImage}
                 />
                 {item.online && <View style={styles.onlineDot} />}
@@ -462,6 +553,88 @@ export default function NotificationsTab() {
               </TouchableOpacity>
             </View>
             {renderLegacyNotifications()}
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showCreateCommunityModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setShowCreateCommunityModal(false);
+          resetCreateCommunityForm();
+        }}
+      >
+        <View style={styles.createModalOverlay}>
+          <View style={styles.createModalCard}>
+            <View style={styles.createModalHeader}>
+              <Text style={styles.createModalTitle}>Create Community</Text>
+              <TouchableOpacity
+                style={styles.createModalClose}
+                onPress={() => {
+                  setShowCreateCommunityModal(false);
+                  resetCreateCommunityForm();
+                }}
+              >
+                <MaterialCommunityIcons
+                  name="close"
+                  size={18}
+                  color="#1F2937"
+                />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.createLabel}>Community name</Text>
+            <TextInput
+              style={styles.createInput}
+              placeholder="e.g. Weekend Van Builders"
+              placeholderTextColor="#94A3B8"
+              value={newCommunityName}
+              onChangeText={setNewCommunityName}
+              maxLength={40}
+            />
+
+            <Text style={styles.createLabel}>Pick a photo</Text>
+            <TouchableOpacity
+              style={styles.photoPickerButton}
+              onPress={handlePickCommunityImage}
+            >
+              <MaterialCommunityIcons
+                name="image-plus"
+                size={18}
+                color="#2E7D64"
+              />
+              <Text style={styles.photoPickerText}>
+                {communityImageUri ? 'Change photo' : 'Choose photo'}
+              </Text>
+            </TouchableOpacity>
+            {communityImageUri && (
+              <View style={styles.photoPreview}>
+                <Image
+                  source={{uri: communityImageUri}}
+                  style={styles.photoPreviewImage}
+                />
+              </View>
+            )}
+
+            <View style={styles.createModalActions}>
+              <TouchableOpacity
+                style={styles.createCancelButton}
+                onPress={() => {
+                  setShowCreateCommunityModal(false);
+                  resetCreateCommunityForm();
+                }}
+              >
+                <Text style={styles.createCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.createSubmitButton}
+                onPress={handleCreateCommunity}
+              >
+                <Text style={styles.createSubmitText}>Create</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -555,6 +728,115 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#2E7D64'
+  },
+  createModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    justifyContent: 'center',
+    paddingHorizontal: 20
+  },
+  createModalCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 18,
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    shadowOffset: {width: 0, height: 10},
+    elevation: 4
+  },
+  createModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 14
+  },
+  createModalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0F172A'
+  },
+  createModalClose: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  createLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748B',
+    marginBottom: 6
+  },
+  createInput: {
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 13,
+    color: '#0F172A',
+    marginBottom: 14
+  },
+  photoPickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#2E7D64',
+    borderRadius: 12,
+    paddingVertical: 10,
+    justifyContent: 'center',
+    marginBottom: 12
+  },
+  photoPickerText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#2E7D64'
+  },
+  photoPreview: {
+    height: 140,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#E2E8F0',
+    marginBottom: 18
+  },
+  photoPreviewImage: {
+    width: '100%',
+    height: '100%'
+  },
+  createModalActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 12
+  },
+  createCancelButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingVertical: 10,
+    borderRadius: 12,
+    alignItems: 'center'
+  },
+  createCancelText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#64748B'
+  },
+  createSubmitButton: {
+    flex: 1,
+    backgroundColor: '#2E7D64',
+    paddingVertical: 10,
+    borderRadius: 12,
+    alignItems: 'center'
+  },
+  createSubmitText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFFFFF'
   },
   suggestedRow: {
     flexDirection: 'row',
@@ -730,7 +1012,7 @@ const styles = StyleSheet.create({
   markAllText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#1dd1a1'
+    color: '#2E7D64'
   },
   markAllButton: {
     marginLeft: 'auto'
@@ -750,7 +1032,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5'
   },
   tabActive: {
-    backgroundColor: '#1dd1a1'
+    backgroundColor: '#2E7D64'
   },
   tabText: {
     fontSize: 13,
@@ -810,7 +1092,7 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#1dd1a1',
+    backgroundColor: '#2E7D64',
     position: 'absolute',
     top: 12,
     right: 12,
@@ -856,7 +1138,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#1dd1a1',
+    backgroundColor: '#2E7D64',
     marginLeft: 12,
     alignSelf: 'center'
   }

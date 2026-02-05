@@ -857,7 +857,7 @@ export default function EventsTab() {
                       <MaterialCommunityIcons
                         name="account-multiple"
                         size={12}
-                        color="#1dd1a1"
+                        color="#2E7D64"
                       />
                       <Text style={styles.eventAttendees}>{event.attendees}</Text>
                     </View>
@@ -915,7 +915,7 @@ export default function EventsTab() {
                     <MaterialCommunityIcons
                       name="share-outline"
                       size={18}
-                      color="#1dd1a1"
+                      color="#2E7D64"
                     />
                   </TouchableOpacity>
                 </View>
@@ -977,7 +977,7 @@ export default function EventsTab() {
                   <MaterialCommunityIcons
                     name="calendar"
                     size={16}
-                    color="#1dd1a1"
+                    color="#2E7D64"
                   />
                   <View style={styles.cardContent}>
                     <Text style={styles.cardLabel}>Start</Text>
@@ -993,7 +993,7 @@ export default function EventsTab() {
                   <MaterialCommunityIcons
                     name="calendar"
                     size={16}
-                    color="#1dd1a1"
+                    color="#2E7D64"
                   />
                   <View style={styles.cardContent}>
                     <Text style={styles.cardLabel}>End</Text>
@@ -1011,7 +1011,7 @@ export default function EventsTab() {
                 <MaterialCommunityIcons
                   name="map-marker"
                   size={18}
-                  color="#1dd1a1"
+                  color="#2E7D64"
                 />
                 <View style={styles.locationContent}>
                   <Text style={styles.locationTitle}>Location</Text>
@@ -1167,7 +1167,7 @@ export default function EventsTab() {
                     <MaterialCommunityIcons
                       name="calendar"
                       size={18}
-                      color="#1dd1a1"
+                      color="#2E7D64"
                     />
                     <Text
                       style={[
@@ -1189,7 +1189,7 @@ export default function EventsTab() {
                     <MaterialCommunityIcons
                       name="clock"
                       size={18}
-                      color="#1dd1a1"
+                      color="#2E7D64"
                     />
                     <Text
                       style={[
@@ -1214,7 +1214,7 @@ export default function EventsTab() {
                     <MaterialCommunityIcons
                       name="calendar"
                       size={18}
-                      color="#1dd1a1"
+                      color="#2E7D64"
                     />
                     <Text
                       style={[
@@ -1236,7 +1236,7 @@ export default function EventsTab() {
                     <MaterialCommunityIcons
                       name="clock"
                       size={18}
-                      color="#1dd1a1"
+                      color="#2E7D64"
                     />
                     <Text
                       style={[
@@ -1260,7 +1260,7 @@ export default function EventsTab() {
                   <MaterialCommunityIcons
                     name="map-marker"
                     size={18}
-                    color="#1dd1a1"
+                    color="#2E7D64"
                   />
                   <Text
                     style={[
@@ -1341,7 +1341,7 @@ export default function EventsTab() {
                     <MaterialCommunityIcons
                       name="lock"
                       size={20}
-                      color="#1dd1a1"
+                      color="#2E7D64"
                     />
                     <View style={styles.privateEventTextContainer}>
                       <Text style={styles.privateEventTitle}>
@@ -1445,7 +1445,7 @@ export default function EventsTab() {
                       <MaterialCommunityIcons
                         name="share-variant"
                         size={16}
-                        color="#1dd1a1"
+                        color="#2E7D64"
                       />
                       <Text style={styles.shareInviteText}>
                         Share invite link
@@ -1458,7 +1458,7 @@ export default function EventsTab() {
                       <MaterialCommunityIcons
                         name="star"
                         size={24}
-                        color="#1dd1a1"
+                        color="#2E7D64"
                       />
                       <View style={styles.premiumContent}>
                         <Text style={styles.premiumTitle}>Go Premium</Text>
@@ -1504,7 +1504,7 @@ export default function EventsTab() {
                     <MaterialCommunityIcons
                       name="share-variant"
                       size={16}
-                      color="#1dd1a1"
+                      color="#2E7D64"
                     />
                     <Text style={styles.shareInviteText}>
                       Share event link
@@ -1516,7 +1516,7 @@ export default function EventsTab() {
                       <MaterialCommunityIcons
                         name="star"
                         size={24}
-                        color="#1dd1a1"
+                        color="#2E7D64"
                       />
                       <View style={styles.premiumContent}>
                         <Text style={styles.premiumTitle}>Go Premium</Text>
@@ -1650,7 +1650,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#1dd1a1',
+    backgroundColor: '#2E7D64',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -1673,7 +1673,7 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   eventSubtabActive: {
-    backgroundColor: '#1dd1a1'
+    backgroundColor: '#2E7D64'
   },
   eventSubtabText: {
     fontSize: 11,
@@ -1726,12 +1726,12 @@ const styles = StyleSheet.create({
   dateDay: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1dd1a1'
+    color: '#2E7D64'
   },
   dateSeparator: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#1dd1a1'
+    color: '#2E7D64'
   },
   eventInfo: {
     padding: 12
@@ -1773,7 +1773,7 @@ const styles = StyleSheet.create({
   eventAttendees: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#1dd1a1'
+    color: '#2E7D64'
   },
   dateTimeColumn: {
     marginVertical: 8,
@@ -1804,7 +1804,7 @@ const styles = StyleSheet.create({
   },
   viewButton: {
     flex: 1,
-    backgroundColor: '#1dd1a1',
+    backgroundColor: '#2E7D64',
     paddingVertical: 10,
     borderRadius: 8,
     alignItems: 'center'
@@ -1862,7 +1862,7 @@ const styles = StyleSheet.create({
   eventTag: {
     fontSize: 10,
     fontWeight: '600',
-    color: '#1dd1a1',
+    color: '#2E7D64',
     backgroundColor: '#e8faf6',
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -1972,7 +1972,7 @@ const styles = StyleSheet.create({
   openMapsLink: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#1dd1a1'
+    color: '#2E7D64'
   },
   aboutSection: {
     marginBottom: 16
@@ -2000,7 +2000,7 @@ const styles = StyleSheet.create({
   seeAllLink: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#1dd1a1'
+    color: '#2E7D64'
   },
   avatarContainer: {
     flexDirection: 'row',
@@ -2021,7 +2021,7 @@ const styles = StyleSheet.create({
     borderTopColor: '#f0f0f0'
   },
   modalJoinButton: {
-    backgroundColor: '#1dd1a1',
+    backgroundColor: '#2E7D64',
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center'
@@ -2035,7 +2035,7 @@ const styles = StyleSheet.create({
     color: '#ffffff'
   },
   modalJoinButtonTextActive: {
-    color: '#1dd1a1'
+    color: '#2E7D64'
   },
   createModalOverlay: {
     position: 'absolute',
@@ -2172,8 +2172,8 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   eventTypeButtonActive: {
-    backgroundColor: '#1dd1a1',
-    borderColor: '#1dd1a1'
+    backgroundColor: '#2E7D64',
+    borderColor: '#2E7D64'
   },
   eventTypeButtonText: {
     fontSize: 12,
@@ -2197,7 +2197,7 @@ const styles = StyleSheet.create({
   privateEventTitle: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#1dd1a1',
+    color: '#2E7D64',
     marginBottom: 2
   },
   privateEventSubtitle: {
@@ -2242,7 +2242,7 @@ const styles = StyleSheet.create({
   inviteCount: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#1dd1a1'
+    color: '#2E7D64'
   },
   searchInput: {
     flexDirection: 'row',
@@ -2290,8 +2290,8 @@ const styles = StyleSheet.create({
     borderColor: '#cbd5e0'
   },
   checkboxSelected: {
-    backgroundColor: '#1dd1a1',
-    borderColor: '#1dd1a1',
+    backgroundColor: '#2E7D64',
+    borderColor: '#2E7D64',
     alignItems: 'center',
     justifyContent: 'center'
   },
@@ -2311,7 +2311,7 @@ const styles = StyleSheet.create({
   shareInviteText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#1dd1a1'
+    color: '#2E7D64'
   },
   premiumCard: {
     flexDirection: 'row',
@@ -2338,7 +2338,7 @@ const styles = StyleSheet.create({
     lineHeight: 16
   },
   upgradeButton: {
-    backgroundColor: '#1dd1a1',
+    backgroundColor: '#2E7D64',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 6
@@ -2374,7 +2374,7 @@ const styles = StyleSheet.create({
     flex: 1.2,
     paddingVertical: 12,
     borderRadius: 8,
-    backgroundColor: '#1dd1a1',
+    backgroundColor: '#2E7D64',
     alignItems: 'center'
   },
   createButtonDisabled: {

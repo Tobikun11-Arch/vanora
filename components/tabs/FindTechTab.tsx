@@ -219,7 +219,9 @@ export default function FindTechTab() {
           status: item.status,
           description: item.description ?? null,
           created_at: item.created_at ?? null,
-          profile: item.profiles ?? null
+          profile: Array.isArray(item.profiles)
+            ? item.profiles[0] ?? null
+            : item.profiles ?? null
         }));
 
         setHelpSignals(normalized);
@@ -445,6 +447,7 @@ export default function FindTechTab() {
       comments_count: 0,
       shares_count: 0,
       liked: false,
+      disliked: false,
       shared: false
     };
 
@@ -751,7 +754,7 @@ export default function FindTechTab() {
   if (!userProfile) {
     return (
       <View style={styles.loadingScreen}>
-        <ActivityIndicator size="large" color="#1dd1a1" />
+        <ActivityIndicator size="large" color="#2E7D64" />
         <Text style={styles.loadingText}>Loading your profile...</Text>
       </View>
     );
@@ -795,7 +798,7 @@ export default function FindTechTab() {
             </View>
             {loadingHelpSignals ? (
               <View style={styles.loadingRow}>
-                <ActivityIndicator size="large" color="#1dd1a1" />
+                <ActivityIndicator size="large" color="#2E7D64" />
               </View>
             ) : helpSignals.length === 0 ? (
               <View style={styles.emptyState}>
@@ -986,7 +989,7 @@ export default function FindTechTab() {
                         <MaterialCommunityIcons
                           name={post.liked ? 'heart' : 'heart-outline'}
                           size={22}
-                          color={post.liked ? '#1dd1a1' : '#64748b'}
+                          color={post.liked ? '#2E7D64' : '#64748b'}
                         />
                         <Text
                           style={[
@@ -1029,7 +1032,7 @@ export default function FindTechTab() {
                         <MaterialCommunityIcons
                           name="share-variant-outline"
                           size={22}
-                          color={post.shared ? '#1dd1a1' : '#64748b'}
+                          color={post.shared ? '#2E7D64' : '#64748b'}
                         />
                         <Text
                           style={[
@@ -1200,7 +1203,7 @@ export default function FindTechTab() {
                     <MaterialCommunityIcons
                       name="send"
                       size={18}
-                      color="#1dd1a1"
+                      color="#2E7D64"
                     />
                   </TouchableOpacity>
                 </View>
@@ -1246,7 +1249,7 @@ export default function FindTechTab() {
           <Text style={styles.resultsTitle}>Verified Mechanics</Text>
           {loading ? (
             <View style={styles.loadingRow}>
-              <ActivityIndicator size="large" color="#1dd1a1" />
+              <ActivityIndicator size="large" color="#2E7D64" />
             </View>
           ) : featuredList.length === 0 ? (
             renderEmpty()
@@ -1388,7 +1391,7 @@ export default function FindTechTab() {
               <Text style={styles.resultsTitle}>Mechanics Near You</Text>
               {loading ? (
                 <View style={styles.loadingRow}>
-                  <ActivityIndicator size="large" color="#1dd1a1" />
+                  <ActivityIndicator size="large" color="#2E7D64" />
                 </View>
               ) : scanList.length === 0 ? (
                 renderEmpty()
@@ -1464,7 +1467,7 @@ export default function FindTechTab() {
                 <MaterialCommunityIcons
                   name="phone"
                   size={16}
-                  color="#1dd1a1"
+                  color="#2E7D64"
                 />
                 <Text style={styles.modalContactText}>{contactWhatsapp}</Text>
               </View>
@@ -1472,7 +1475,7 @@ export default function FindTechTab() {
                 <MaterialCommunityIcons
                   name="email-outline"
                   size={16}
-                  color="#1dd1a1"
+                  color="#2E7D64"
                 />
                 <Text style={styles.modalContactText}>{contactEmail}</Text>
               </View>
@@ -1480,7 +1483,7 @@ export default function FindTechTab() {
                 <MaterialCommunityIcons
                   name="instagram"
                   size={16}
-                  color="#1dd1a1"
+                  color="#2E7D64"
                 />
                 <Text style={styles.modalContactText}>{contactInstagram}</Text>
               </View>
@@ -1529,7 +1532,7 @@ export default function FindTechTab() {
             >
               <View style={styles.locationInputWrapper}>
                 {loadingSignalLocation ? (
-                  <ActivityIndicator size="small" color="#1dd1a1" />
+                  <ActivityIndicator size="small" color="#2E7D64" />
                 ) : (
                   <MaterialCommunityIcons
                     name="map-marker-outline"
@@ -1652,7 +1655,7 @@ const styles = StyleSheet.create({
     color: '#999999'
   },
   tabTextActive: {
-    color: '#1dd1a1'
+    color: '#2E7D64'
   },
   contentContainer: {
     flex: 1,
@@ -1843,7 +1846,7 @@ const styles = StyleSheet.create({
     fontWeight: '500'
   },
   scanButton: {
-    backgroundColor: '#1dd1a1',
+    backgroundColor: '#2E7D64',
     paddingVertical: 14,
     paddingHorizontal: 40,
     borderRadius: 12,
@@ -1860,7 +1863,7 @@ const styles = StyleSheet.create({
   },
   signalButton: {
     borderWidth: 2,
-    borderColor: '#1dd1a1',
+    borderColor: '#2E7D64',
     paddingVertical: 14,
     paddingHorizontal: 40,
     borderRadius: 12,
@@ -1874,7 +1877,7 @@ const styles = StyleSheet.create({
   signalButtonText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1dd1a1'
+    color: '#2E7D64'
   },
   scanResultsContainer: {
     flex: 1,
@@ -1947,7 +1950,7 @@ const styles = StyleSheet.create({
   tag: {
     fontSize: 10,
     fontWeight: '600',
-    color: '#1dd1a1',
+    color: '#2E7D64',
     backgroundColor: '#e8faf6',
     paddingHorizontal: 10,
     paddingVertical: 10,
@@ -1959,7 +1962,7 @@ const styles = StyleSheet.create({
   },
   followButton: {
     flex: 1,
-    backgroundColor: '#1dd1a1',
+    backgroundColor: '#2E7D64',
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center'
@@ -1973,7 +1976,7 @@ const styles = StyleSheet.create({
     color: '#ffffff'
   },
   followButtonTextActive: {
-    color: '#1dd1a1'
+    color: '#2E7D64'
   },
   cardActions: {
     flexDirection: 'row',
@@ -2002,7 +2005,7 @@ const styles = StyleSheet.create({
   backScanButtonText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#1dd1a1'
+    color: '#2E7D64'
   },
   loadingRow: {
     paddingVertical: 24,
@@ -2248,8 +2251,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC'
   },
   statusChipSelected: {
-    backgroundColor: '#1dd1a1',
-    borderColor: '#1dd1a1'
+    backgroundColor: '#2E7D64',
+    borderColor: '#2E7D64'
   },
   statusChipText: {
     fontSize: 12,
@@ -2282,7 +2285,7 @@ const styles = StyleSheet.create({
     color: '#1f2937'
   },
   modalPrimaryButton: {
-    backgroundColor: '#1dd1a1',
+    backgroundColor: '#2E7D64',
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: 'center'
@@ -2314,7 +2317,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#1dd1a1',
+    backgroundColor: '#2E7D64',
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 999
@@ -2404,7 +2407,7 @@ const styles = StyleSheet.create({
     fontWeight: '600'
   },
   discussionActionTextActive: {
-    color: '#1dd1a1'
+    color: '#2E7D64'
   },
   discussionDislikeTextActive: {
     color: '#f97316'
@@ -2418,7 +2421,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff'
   },
   discussionFollowButtonActive: {
-    borderColor: '#1dd1a1',
+    borderColor: '#2E7D64',
     backgroundColor: '#e8faf6'
   },
   discussionFollowButtonText: {
@@ -2427,7 +2430,7 @@ const styles = StyleSheet.create({
     color: '#64748b'
   },
   discussionFollowButtonTextActive: {
-    color: '#1dd1a1'
+    color: '#2E7D64'
   },
   discussionModalCard: {
     width: '100%',
@@ -2483,7 +2486,7 @@ const styles = StyleSheet.create({
     marginBottom: 16
   },
   discussionModalButton: {
-    backgroundColor: '#1dd1a1',
+    backgroundColor: '#2E7D64',
     paddingVertical: 12,
     borderRadius: 12,
     alignItems: 'center'
@@ -2591,7 +2594,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between'
   },
   respondButton: {
-    backgroundColor: '#1dd1a1',
+    backgroundColor: '#2E7D64',
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center'
