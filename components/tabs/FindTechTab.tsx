@@ -10,7 +10,9 @@ import {
   Animated,
   Easing,
   Image,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -19,8 +21,33 @@ import {
   View
 } from 'react-native';
 
+interface DiscussionPost {
+  id: string;
+  author: {
+    name: string;
+    handle: string;
+    avatarUrl: string | null;
+  };
+  body: string;
+  created_at: string;
+  likes_count: number;
+  comments_count: number;
+  shares_count: number;
+  liked: boolean;
+  disliked: boolean;
+  shared: boolean;
+}
+
+interface DiscussionComment {
+  id: string;
+  author: string;
+  body: string;
+  created_at: string;
+}
+
 export default function FindTechTab() {
   const [activeTab, setActiveTab] = useState('featured');
+  const [mechanicTab, setMechanicTab] = useState('requests');
   const [scanned, setScanned] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const scanTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -80,6 +107,60 @@ export default function FindTechTab() {
       ? contactInstagramRaw
       : `@${contactInstagramRaw}`
     : `@${contactHandle}`;
+  const [showDiscussionModal, setShowDiscussionModal] = useState(false);
+  const [discussionDraft, setDiscussionDraft] = useState('');
+  const [discussionPosts, setDiscussionPosts] = useState<DiscussionPost[]>([
+    {
+      id: 'discussion-1',
+      author: {
+        name: 'Ari Novak',
+        handle: '@wrenchwave',
+        avatarUrl: null
+      },
+      body: 'Anyone have a quick fix for a squealing serpentine belt after a long desert run? Heard about soap trick but unsure.',
+      created_at: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
+      likes_count: 12,
+      comments_count: 1,
+      shares_count: 1,
+      liked: false,
+      disliked: false,
+      shared: false
+    },
+    {
+      id: 'discussion-2',
+      author: {
+        name: 'Maya Patel',
+        handle: '@trailgarage',
+        avatarUrl: null
+      },
+      body: 'Pro tip: keep a spare crank sensor in your kit. Saved my weekend and cost $22.',
+      created_at: new Date(Date.now() - 1000 * 60 * 60 * 26).toISOString(),
+      likes_count: 31,
+      comments_count: 0,
+      shares_count: 3,
+      liked: true,
+      disliked: false,
+      shared: false
+    }
+  ]);
+  const [discussionComments, setDiscussionComments] = useState<
+    Record<string, DiscussionComment[]>
+  >({
+    'discussion-1': [
+      {
+        id: 'discussion-1-comment-1',
+        author: '@boxerfix',
+        body: 'Try a light mist of water to confirm belt slip first.',
+        created_at: new Date(Date.now() - 1000 * 60 * 40).toISOString()
+      }
+    ],
+    'discussion-2': []
+  });
+  const [commentPostId, setCommentPostId] = useState<string | null>(null);
+  const [commentDraft, setCommentDraft] = useState('');
+  const [discussionFollowing, setDiscussionFollowing] = useState<
+    Record<string, boolean>
+  >({});
 
   // ✅ Fix: select each piece individually (no object literal)
   const mechanics = useFindTechStore(state => state.mechanics);
@@ -138,7 +219,9 @@ export default function FindTechTab() {
           status: item.status,
           description: item.description ?? null,
           created_at: item.created_at ?? null,
-          profile: item.profiles ?? null
+          profile: Array.isArray(item.profiles)
+            ? item.profiles[0] ?? null
+            : item.profiles ?? null
         }));
 
         setHelpSignals(normalized);
@@ -151,7 +234,7 @@ export default function FindTechTab() {
     };
 
     fetchHelpSignals();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userProfile?.nomad_type]);
 
   const handleFollow = async (id: string) => {
@@ -323,6 +406,138 @@ export default function FindTechTab() {
     } finally {
       setSendingNotify(false);
     }
+  };
+
+  const formatRelativeTime = (isoDate: string) => {
+    const now = Date.now();
+    const then = new Date(isoDate).getTime();
+    const diff = Math.max(0, now - then);
+    const minutes = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    if (days > 0) return `${days}d`;
+    if (hours > 0) return `${hours}h`;
+    if (minutes > 0) return `${minutes}m`;
+    return 'Just now';
+  };
+
+  const handleCreateDiscussionPost = () => {
+    if (!discussionDraft.trim()) {
+      showToast('error', 'Add text', 'Please write something to post.');
+      return;
+    }
+
+    const displayName =
+      userProfile?.display_name || userProfile?.username || 'Nomad';
+    const handle = userProfile?.username
+      ? `@${userProfile.username}`
+      : `@${displayName.toLowerCase().replace(/\s+/g, '')}`;
+    const avatarUrl = userProfile?.profile_picture_url || null;
+
+    const newPost: DiscussionPost = {
+      id: `discussion-${Date.now()}`,
+      author: {
+        name: displayName,
+        handle,
+        avatarUrl
+      },
+      body: discussionDraft.trim(),
+      created_at: new Date().toISOString(),
+      likes_count: 0,
+      comments_count: 0,
+      shares_count: 0,
+      liked: false,
+      disliked: false,
+      shared: false
+    };
+
+    setDiscussionPosts(prev => [newPost, ...prev]);
+    setDiscussionDraft('');
+    setShowDiscussionModal(false);
+  };
+
+  const updateDiscussionPost = (
+    postId: string,
+    updater: (post: DiscussionPost) => DiscussionPost
+  ) => {
+    setDiscussionPosts(prev =>
+      prev.map(post => (post.id === postId ? updater(post) : post))
+    );
+  };
+
+  const handleDiscussionLike = (postId: string) => {
+    updateDiscussionPost(postId, post => {
+      const nextLiked = !post.liked;
+      const nextCount = nextLiked
+        ? post.likes_count + 1
+        : Math.max(0, post.likes_count - 1);
+      return {
+        ...post,
+        liked: nextLiked,
+        disliked: nextLiked ? false : post.disliked,
+        likes_count: nextCount
+      };
+    });
+  };
+
+  const handleDiscussionShare = (postId: string) => {
+    updateDiscussionPost(postId, post => {
+      const nextShared = !post.shared;
+      const nextCount = nextShared
+        ? post.shares_count + 1
+        : Math.max(0, post.shares_count - 1);
+      return {...post, shared: nextShared, shares_count: nextCount};
+    });
+  };
+
+  const handleDiscussionDislike = (postId: string) => {
+    updateDiscussionPost(postId, post => {
+      const nextDisliked = !post.disliked;
+      const nextCount = post.liked
+        ? Math.max(0, post.likes_count - 1)
+        : post.likes_count;
+      return {
+        ...post,
+        liked: false,
+        disliked: nextDisliked,
+        likes_count: nextCount
+      };
+    });
+  };
+
+  const handleAddComment = () => {
+    if (!commentPostId) return;
+    if (!commentDraft.trim()) {
+      showToast('error', 'Add a comment', 'Please write a comment to post.');
+      return;
+    }
+
+    const newComment: DiscussionComment = {
+      id: `comment-${Date.now()}`,
+      author:
+        userProfile?.username != null ? `@${userProfile.username}` : 'Nomad',
+      body: commentDraft.trim(),
+      created_at: new Date().toISOString()
+    };
+
+    setDiscussionComments(prev => ({
+      ...prev,
+      [commentPostId]: [...(prev[commentPostId] || []), newComment]
+    }));
+
+    updateDiscussionPost(commentPostId, post => ({
+      ...post,
+      comments_count: post.comments_count + 1
+    }));
+
+    setCommentDraft('');
+  };
+
+  const handleDiscussionFollow = (authorHandle: string) => {
+    setDiscussionFollowing(prev => ({
+      ...prev,
+      [authorHandle]: !prev[authorHandle]
+    }));
   };
 
   const renderEmpty = () => (
@@ -539,7 +754,7 @@ export default function FindTechTab() {
   if (!userProfile) {
     return (
       <View style={styles.loadingScreen}>
-        <ActivityIndicator size="large" color="#1dd1a1" />
+        <ActivityIndicator size="large" color="#2E7D64" />
         <Text style={styles.loadingText}>Loading your profile...</Text>
       </View>
     );
@@ -548,104 +763,454 @@ export default function FindTechTab() {
   if (isMechanic) {
     return (
       <View style={styles.container}>
-        <View style={styles.mechanicHeader}>
-          <Text style={styles.mechanicTitle}>Community Requests</Text>
-          <Text style={styles.mechanicSubtitle}>
-            Nearby travelers are looking for support
-          </Text>
+        <View style={styles.tabsContainer}>
+          {['Requests', 'Discussion'].map(tab => (
+            <TouchableOpacity
+              key={tab}
+              style={[
+                styles.tab,
+                mechanicTab === tab.toLowerCase() && styles.tabActive
+              ]}
+              onPress={() => setMechanicTab(tab.toLowerCase())}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  mechanicTab === tab.toLowerCase() && styles.tabTextActive
+                ]}
+              >
+                {tab}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
-        <ScrollView
-          style={styles.contentContainer}
-          showsVerticalScrollIndicator={false}
-        >
-          {loadingHelpSignals ? (
-            <View style={styles.loadingRow}>
-              <ActivityIndicator size="large" color="#1dd1a1" />
-            </View>
-          ) : helpSignals.length === 0 ? (
-            <View style={styles.emptyState}>
-              <MaterialCommunityIcons
-                name="alert-circle-outline"
-                size={44}
-                color="#CBD5F5"
-              />
-              <Text style={styles.emptyTitle}>No active signals yet</Text>
-              <Text style={styles.emptySubtitle}>
-                New requests will appear here as they come in.
+        {mechanicTab === 'requests' && (
+          <ScrollView
+            style={styles.contentContainer}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.mechanicHeader}>
+              <Text style={styles.mechanicTitle}>Community Requests</Text>
+              <Text style={styles.mechanicSubtitle}>
+                Nearby travelers are looking for support
               </Text>
             </View>
-          ) : (
-            helpSignals.map(request => {
-              const profile = request.profile;
-              const displayName =
-                profile?.display_name || profile?.username || 'Nomad';
-              const profileLocation =
-                profile?.current_location || request.location;
-              const description =
-                request.description || 'No description provided.';
+            {loadingHelpSignals ? (
+              <View style={styles.loadingRow}>
+                <ActivityIndicator size="large" color="#2E7D64" />
+              </View>
+            ) : helpSignals.length === 0 ? (
+              <View style={styles.emptyState}>
+                <MaterialCommunityIcons
+                  name="alert-circle-outline"
+                  size={44}
+                  color="#CBD5F5"
+                />
+                <Text style={styles.emptyTitle}>No active signals yet</Text>
+                <Text style={styles.emptySubtitle}>
+                  New requests will appear here as they come in.
+                </Text>
+              </View>
+            ) : (
+              helpSignals.map(request => {
+                const profile = request.profile;
+                const displayName =
+                  profile?.display_name || profile?.username || 'Nomad';
+                const profileLocation =
+                  profile?.current_location || request.location;
+                const description =
+                  request.description || 'No description provided.';
 
-              return (
-                <View key={request.id} style={styles.helpCard}>
-                  <View style={styles.helpHeader}>
-                    {profile?.profile_picture_url ? (
-                      <Image
-                        source={{uri: profile.profile_picture_url}}
-                        style={styles.helpAvatarImage}
-                      />
-                    ) : (
-                      <View style={styles.helpAvatar}>
-                        <MaterialCommunityIcons
-                          name="account"
-                          size={22}
-                          color="#94A3B8"
+                return (
+                  <View key={request.id} style={styles.helpCard}>
+                    <View style={styles.helpHeader}>
+                      {profile?.profile_picture_url ? (
+                        <Image
+                          source={{uri: profile.profile_picture_url}}
+                          style={styles.helpAvatarImage}
                         />
-                      </View>
-                    )}
-                    <View style={styles.helpInfo}>
-                      <View style={styles.helpTitleRow}>
-                        <Text style={styles.helpName}>{displayName}</Text>
-                        <View
-                          style={[
-                            styles.statusBadge,
-                            getStatusBadgeStyle(request.status)
-                          ]}
-                        >
-                          <Text
+                      ) : (
+                        <View style={styles.helpAvatar}>
+                          <MaterialCommunityIcons
+                            name="account"
+                            size={22}
+                            color="#94A3B8"
+                          />
+                        </View>
+                      )}
+                      <View style={styles.helpInfo}>
+                        <View style={styles.helpTitleRow}>
+                          <Text style={styles.helpName}>{displayName}</Text>
+                          <View
                             style={[
-                              styles.statusBadgeText,
-                              getStatusTextStyle(request.status)
+                              styles.statusBadge,
+                              getStatusBadgeStyle(request.status)
                             ]}
                           >
-                            {getStatusLabel(request.status)}
+                            <Text
+                              style={[
+                                styles.statusBadgeText,
+                                getStatusTextStyle(request.status)
+                              ]}
+                            >
+                              {getStatusLabel(request.status)}
+                            </Text>
+                          </View>
+                        </View>
+                        <Text style={styles.helpIssue}>{description}</Text>
+                        <View style={styles.locationRow}>
+                          <MaterialCommunityIcons
+                            name="map-marker"
+                            size={14}
+                            color="#6B7280"
+                          />
+                          <Text style={styles.locationText}>
+                            {profileLocation}
                           </Text>
                         </View>
                       </View>
-                      <Text style={styles.helpIssue}>{description}</Text>
-                      <View style={styles.locationRow}>
-                        <MaterialCommunityIcons
-                          name="map-marker"
-                          size={14}
-                          color="#6B7280"
+                    </View>
+
+                    <TouchableOpacity style={styles.respondButton}>
+                      <Text style={styles.respondButtonText}>Respond</Text>
+                    </TouchableOpacity>
+                  </View>
+                );
+              })
+            )}
+            {helpSignalsError && (
+              <Text style={styles.errorText}>{helpSignalsError}</Text>
+            )}
+          </ScrollView>
+        )}
+
+        {mechanicTab === 'discussion' && (
+          <View style={styles.contentContainer}>
+            <View style={styles.discussionHeader}>
+              <View>
+                <Text style={styles.discussionTitle}>Mechanic Discussion</Text>
+                <Text style={styles.discussionSubtitle}>
+                  Share fixes, questions, and gear tips with the crew.
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={styles.discussionNewButton}
+                onPress={() => setShowDiscussionModal(true)}
+              >
+                <MaterialCommunityIcons name="plus" size={18} color="#ffffff" />
+                <Text style={styles.discussionNewButtonText}>Post</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView
+              style={styles.discussionList}
+              showsVerticalScrollIndicator={false}
+            >
+              {discussionPosts.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <MaterialCommunityIcons
+                    name="forum-outline"
+                    size={44}
+                    color="#CBD5F5"
+                  />
+                  <Text style={styles.emptyTitle}>No discussions yet</Text>
+                  <Text style={styles.emptySubtitle}>
+                    Be the first to start a thread for the community.
+                  </Text>
+                </View>
+              ) : (
+                discussionPosts.map(post => (
+                  <View key={post.id} style={styles.discussionCard}>
+                    <View style={styles.discussionCardHeader}>
+                      {post.author.avatarUrl ? (
+                        <Image
+                          source={{uri: post.author.avatarUrl}}
+                          style={styles.discussionAvatar}
                         />
-                        <Text style={styles.locationText}>
-                          {profileLocation}
+                      ) : (
+                        <View
+                          style={[
+                            styles.discussionAvatar,
+                            styles.discussionAvatarPlaceholder
+                          ]}
+                        >
+                          <MaterialCommunityIcons
+                            name="account"
+                            size={18}
+                            color="#64748b"
+                          />
+                        </View>
+                      )}
+                      <View style={styles.discussionCardInfo}>
+                        <View style={styles.discussionNameRow}>
+                          <Text style={styles.discussionCardName}>
+                            {post.author.name}
+                          </Text>
+                          <TouchableOpacity
+                            style={[
+                              styles.discussionFollowButton,
+                              discussionFollowing[post.author.handle] &&
+                                styles.discussionFollowButtonActive
+                            ]}
+                            onPress={() =>
+                              handleDiscussionFollow(post.author.handle)
+                            }
+                          >
+                            <Text
+                              style={[
+                                styles.discussionFollowButtonText,
+                                discussionFollowing[post.author.handle] &&
+                                  styles.discussionFollowButtonTextActive
+                              ]}
+                            >
+                              {discussionFollowing[post.author.handle]
+                                ? 'Following'
+                                : 'Follow'}
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                        <Text style={styles.discussionCardHandle}>
+                          {post.author.handle}
+                        </Text>
+                      </View>
+                      <Text style={styles.discussionCardTime}>
+                        {formatRelativeTime(post.created_at)}
+                      </Text>
+                    </View>
+
+                    <Text style={styles.discussionCardBody}>{post.body}</Text>
+
+                    <View style={styles.discussionActionsRow}>
+                      <TouchableOpacity
+                        style={styles.discussionAction}
+                        onPress={() => handleDiscussionLike(post.id)}
+                      >
+                        <MaterialCommunityIcons
+                          name={post.liked ? 'heart' : 'heart-outline'}
+                          size={22}
+                          color={post.liked ? '#2E7D64' : '#64748b'}
+                        />
+                        <Text
+                          style={[
+                            styles.discussionActionText,
+                            post.liked && styles.discussionActionTextActive
+                          ]}
+                        >
+                          {post.likes_count}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.discussionAction}
+                        onPress={() => handleDiscussionDislike(post.id)}
+                      >
+                        <MaterialCommunityIcons
+                          name="thumb-down-outline"
+                          size={22}
+                          color={post.disliked ? '#f97316' : '#64748b'}
+                        />
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.discussionAction}
+                        onPress={() => setCommentPostId(post.id)}
+                      >
+                        <MaterialCommunityIcons
+                          name="comment-outline"
+                          size={22}
+                          color="#64748b"
+                        />
+                        <Text style={styles.discussionActionText}>
+                          {post.comments_count}
+                        </Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.discussionAction}
+                        onPress={() => handleDiscussionShare(post.id)}
+                      >
+                        <MaterialCommunityIcons
+                          name="share-variant-outline"
+                          size={22}
+                          color={post.shared ? '#2E7D64' : '#64748b'}
+                        />
+                        <Text
+                          style={[
+                            styles.discussionActionText,
+                            post.shared && styles.discussionActionTextActive
+                          ]}
+                        >
+                          {post.shares_count}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ))
+              )}
+            </ScrollView>
+          </View>
+        )}
+
+        <Modal
+          visible={showDiscussionModal}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowDiscussionModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.discussionModalCard}>
+              <View style={styles.discussionModalHeader}>
+                <Text style={styles.discussionModalTitle}>New Post</Text>
+                <TouchableOpacity onPress={() => setShowDiscussionModal(false)}>
+                  <MaterialCommunityIcons
+                    name="close"
+                    size={22}
+                    color="#64748b"
+                  />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.discussionModalUserRow}>
+                {userProfile?.profile_picture_url ? (
+                  <Image
+                    source={{uri: userProfile.profile_picture_url}}
+                    style={styles.discussionModalAvatar}
+                  />
+                ) : (
+                  <View
+                    style={[
+                      styles.discussionModalAvatar,
+                      styles.discussionAvatarPlaceholder
+                    ]}
+                  >
+                    <MaterialCommunityIcons
+                      name="account"
+                      size={20}
+                      color="#64748b"
+                    />
+                  </View>
+                )}
+                <View>
+                  <Text style={styles.discussionModalName}>
+                    {userProfile?.display_name ||
+                      userProfile?.username ||
+                      'Nomad'}
+                  </Text>
+                  <Text style={styles.discussionModalHandle}>
+                    {userProfile?.username
+                      ? `@${userProfile.username}`
+                      : 'Posting to Mechanics'}
+                  </Text>
+                </View>
+              </View>
+
+              <TextInput
+                style={styles.discussionModalInput}
+                placeholder="Ask a question or share a quick fix..."
+                placeholderTextColor="#94A3B8"
+                multiline
+                value={discussionDraft}
+                onChangeText={setDiscussionDraft}
+              />
+
+              <TouchableOpacity
+                style={styles.discussionModalButton}
+                onPress={handleCreateDiscussionPost}
+              >
+                <Text style={styles.discussionModalButtonText}>Post</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
+        <Modal
+          transparent
+          animationType="slide"
+          visible={!!commentPostId}
+          onRequestClose={() => setCommentPostId(null)}
+        >
+          <KeyboardAvoidingView
+            style={styles.commentModalBackdrop}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          >
+            <View style={styles.commentModalCard}>
+              <View style={styles.commentModalHeader}>
+                <Text style={styles.commentModalTitle}>Comments</Text>
+                <TouchableOpacity onPress={() => setCommentPostId(null)}>
+                  <MaterialCommunityIcons
+                    name="close"
+                    size={20}
+                    color="#64748b"
+                  />
+                </TouchableOpacity>
+              </View>
+              <ScrollView
+                contentContainerStyle={styles.commentModalList}
+                showsVerticalScrollIndicator={false}
+              >
+                {(commentPostId && (discussionComments[commentPostId] || []))
+                  ?.length ? (
+                  (discussionComments[commentPostId] || []).map(comment => (
+                    <View key={comment.id} style={styles.commentModalItem}>
+                      <View style={styles.commentModalAvatar}>
+                        <MaterialCommunityIcons
+                          name="account"
+                          size={16}
+                          color="#64748b"
+                        />
+                      </View>
+                      <View style={styles.commentModalBody}>
+                        <View style={styles.commentModalRow}>
+                          <Text style={styles.commentModalAuthor}>
+                            {comment.author}
+                          </Text>
+                          <Text style={styles.commentModalTime}>
+                            {formatRelativeTime(comment.created_at)}
+                          </Text>
+                        </View>
+                        <Text style={styles.commentModalText}>
+                          {comment.body}
                         </Text>
                       </View>
                     </View>
+                  ))
+                ) : (
+                  <View style={styles.commentModalEmpty}>
+                    <Text style={styles.commentModalEmptyText}>
+                      No comments yet. Start the conversation.
+                    </Text>
                   </View>
+                )}
+              </ScrollView>
 
-                  <TouchableOpacity style={styles.respondButton}>
-                    <Text style={styles.respondButtonText}>Respond</Text>
+              <View style={styles.commentComposer}>
+                <View style={styles.commentComposerAvatar}>
+                  <MaterialCommunityIcons
+                    name="account"
+                    size={18}
+                    color="#6B7280"
+                  />
+                </View>
+                <View style={styles.commentComposerField}>
+                  <TextInput
+                    placeholder="Add a comment..."
+                    placeholderTextColor="#9CA3AF"
+                    style={{flex: 1, marginRight: 8}}
+                    value={commentDraft}
+                    onChangeText={setCommentDraft}
+                  />
+                  <TouchableOpacity onPress={handleAddComment}>
+                    <MaterialCommunityIcons
+                      name="send"
+                      size={18}
+                      color="#2E7D64"
+                    />
                   </TouchableOpacity>
                 </View>
-              );
-            })
-          )}
-          {helpSignalsError && (
-            <Text style={styles.errorText}>{helpSignalsError}</Text>
-          )}
-        </ScrollView>
+              </View>
+            </View>
+          </KeyboardAvoidingView>
+        </Modal>
       </View>
     );
   }
@@ -684,7 +1249,7 @@ export default function FindTechTab() {
           <Text style={styles.resultsTitle}>Verified Mechanics</Text>
           {loading ? (
             <View style={styles.loadingRow}>
-              <ActivityIndicator size="large" color="#1dd1a1" />
+              <ActivityIndicator size="large" color="#2E7D64" />
             </View>
           ) : featuredList.length === 0 ? (
             renderEmpty()
@@ -826,7 +1391,7 @@ export default function FindTechTab() {
               <Text style={styles.resultsTitle}>Mechanics Near You</Text>
               {loading ? (
                 <View style={styles.loadingRow}>
-                  <ActivityIndicator size="large" color="#1dd1a1" />
+                  <ActivityIndicator size="large" color="#2E7D64" />
                 </View>
               ) : scanList.length === 0 ? (
                 renderEmpty()
@@ -902,7 +1467,7 @@ export default function FindTechTab() {
                 <MaterialCommunityIcons
                   name="phone"
                   size={16}
-                  color="#1dd1a1"
+                  color="#2E7D64"
                 />
                 <Text style={styles.modalContactText}>{contactWhatsapp}</Text>
               </View>
@@ -910,7 +1475,7 @@ export default function FindTechTab() {
                 <MaterialCommunityIcons
                   name="email-outline"
                   size={16}
-                  color="#1dd1a1"
+                  color="#2E7D64"
                 />
                 <Text style={styles.modalContactText}>{contactEmail}</Text>
               </View>
@@ -918,7 +1483,7 @@ export default function FindTechTab() {
                 <MaterialCommunityIcons
                   name="instagram"
                   size={16}
-                  color="#1dd1a1"
+                  color="#2E7D64"
                 />
                 <Text style={styles.modalContactText}>{contactInstagram}</Text>
               </View>
@@ -967,7 +1532,7 @@ export default function FindTechTab() {
             >
               <View style={styles.locationInputWrapper}>
                 {loadingSignalLocation ? (
-                  <ActivityIndicator size="small" color="#1dd1a1" />
+                  <ActivityIndicator size="small" color="#2E7D64" />
                 ) : (
                   <MaterialCommunityIcons
                     name="map-marker-outline"
@@ -1069,7 +1634,7 @@ const styles = StyleSheet.create({
     gap: 0,
     backgroundColor: '#f0f0f0',
     marginHorizontal: 20,
-    marginVertical: 12,
+    marginTop: 40,
     borderRadius: 24,
     padding: 4
   },
@@ -1090,7 +1655,7 @@ const styles = StyleSheet.create({
     color: '#999999'
   },
   tabTextActive: {
-    color: '#1dd1a1'
+    color: '#2E7D64'
   },
   contentContainer: {
     flex: 1,
@@ -1281,7 +1846,7 @@ const styles = StyleSheet.create({
     fontWeight: '500'
   },
   scanButton: {
-    backgroundColor: '#1dd1a1',
+    backgroundColor: '#2E7D64',
     paddingVertical: 14,
     paddingHorizontal: 40,
     borderRadius: 12,
@@ -1298,7 +1863,7 @@ const styles = StyleSheet.create({
   },
   signalButton: {
     borderWidth: 2,
-    borderColor: '#1dd1a1',
+    borderColor: '#2E7D64',
     paddingVertical: 14,
     paddingHorizontal: 40,
     borderRadius: 12,
@@ -1312,7 +1877,7 @@ const styles = StyleSheet.create({
   signalButtonText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1dd1a1'
+    color: '#2E7D64'
   },
   scanResultsContainer: {
     flex: 1,
@@ -1385,7 +1950,7 @@ const styles = StyleSheet.create({
   tag: {
     fontSize: 10,
     fontWeight: '600',
-    color: '#1dd1a1',
+    color: '#2E7D64',
     backgroundColor: '#e8faf6',
     paddingHorizontal: 10,
     paddingVertical: 10,
@@ -1397,7 +1962,7 @@ const styles = StyleSheet.create({
   },
   followButton: {
     flex: 1,
-    backgroundColor: '#1dd1a1',
+    backgroundColor: '#2E7D64',
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center'
@@ -1411,7 +1976,7 @@ const styles = StyleSheet.create({
     color: '#ffffff'
   },
   followButtonTextActive: {
-    color: '#1dd1a1'
+    color: '#2E7D64'
   },
   cardActions: {
     flexDirection: 'row',
@@ -1440,7 +2005,7 @@ const styles = StyleSheet.create({
   backScanButtonText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#1dd1a1'
+    color: '#2E7D64'
   },
   loadingRow: {
     paddingVertical: 24,
@@ -1468,8 +2033,8 @@ const styles = StyleSheet.create({
     textAlign: 'center'
   },
   mechanicHeader: {
-    paddingTop: 25,
-    paddingHorizontal: 20,
+    paddingTop: 5,
+    paddingHorizontal: 10,
     paddingBottom: 12
   },
   mechanicTitle: {
@@ -1686,8 +2251,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC'
   },
   statusChipSelected: {
-    backgroundColor: '#1dd1a1',
-    borderColor: '#1dd1a1'
+    backgroundColor: '#2E7D64',
+    borderColor: '#2E7D64'
   },
   statusChipText: {
     fontSize: 12,
@@ -1720,7 +2285,7 @@ const styles = StyleSheet.create({
     color: '#1f2937'
   },
   modalPrimaryButton: {
-    backgroundColor: '#1dd1a1',
+    backgroundColor: '#2E7D64',
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: 'center'
@@ -1730,8 +2295,306 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 14
   },
+  discussionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 8,
+    paddingBottom: 12
+  },
+  discussionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0f172a'
+  },
+  discussionSubtitle: {
+    fontSize: 12,
+    color: '#64748b',
+    marginTop: 4,
+    maxWidth: 220
+  },
+  discussionNewButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#2E7D64',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999
+  },
+  discussionNewButtonText: {
+    color: '#ffffff',
+    fontWeight: '700',
+    fontSize: 12
+  },
+  discussionList: {
+    flex: 1,
+    marginTop: 6
+  },
+  discussionCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#0f172a',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: {width: 0, height: 6},
+    elevation: 2
+  },
+  discussionCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10
+  },
+  discussionAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18
+  },
+  discussionAvatarPlaceholder: {
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  discussionCardInfo: {
+    flex: 1
+  },
+  discussionNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8
+  },
+  discussionCardName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0f172a'
+  },
+  discussionCardHandle: {
+    fontSize: 11,
+    color: '#64748b',
+    marginTop: 2
+  },
+  discussionCardTime: {
+    fontSize: 11,
+    color: '#94A3B8'
+  },
+  discussionCardBody: {
+    marginTop: 10,
+    fontSize: 13,
+    color: '#1f2937',
+    lineHeight: 18
+  },
+  discussionActionsRow: {
+    flexDirection: 'row',
+    gap: 14,
+    marginTop: 12,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0'
+  },
+  discussionAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6
+  },
+  discussionActionText: {
+    fontSize: 12,
+    color: '#64748b',
+    fontWeight: '600'
+  },
+  discussionActionTextActive: {
+    color: '#2E7D64'
+  },
+  discussionDislikeTextActive: {
+    color: '#f97316'
+  },
+  discussionFollowButton: {
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    backgroundColor: '#ffffff'
+  },
+  discussionFollowButtonActive: {
+    borderColor: '#2E7D64',
+    backgroundColor: '#e8faf6'
+  },
+  discussionFollowButtonText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#64748b'
+  },
+  discussionFollowButtonTextActive: {
+    color: '#2E7D64'
+  },
+  discussionModalCard: {
+    width: '100%',
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
+    padding: 18
+  },
+  discussionModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12
+  },
+  discussionModalTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0f172a'
+  },
+  discussionModalUserRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+    marginBottom: 12
+  },
+  discussionModalAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22
+  },
+  discussionModalName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0f172a'
+  },
+  discussionModalHandle: {
+    fontSize: 12,
+    color: '#64748b',
+    marginTop: 2
+  },
+  discussionModalInput: {
+    minHeight: 120,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    textAlignVertical: 'top',
+    color: '#0f172a',
+    backgroundColor: '#F8FAFC',
+    marginBottom: 16
+  },
+  discussionModalButton: {
+    backgroundColor: '#2E7D64',
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center'
+  },
+  discussionModalButtonText: {
+    color: '#ffffff',
+    fontWeight: '700',
+    fontSize: 14
+  },
+  commentModalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    justifyContent: 'flex-end'
+  },
+  commentModalCard: {
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 16,
+    height: '50%'
+  },
+  commentModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12
+  },
+  commentModalTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0f172a'
+  },
+  commentModalList: {
+    paddingBottom: 12
+  },
+  commentModalItem: {
+    flexDirection: 'row',
+    gap: 10,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0'
+  },
+  commentModalAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  commentModalBody: {
+    flex: 1
+  },
+  commentModalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between'
+  },
+  commentModalAuthor: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0f172a'
+  },
+  commentModalTime: {
+    fontSize: 10,
+    color: '#94A3B8'
+  },
+  commentModalText: {
+    fontSize: 12,
+    color: '#334155',
+    marginTop: 4,
+    lineHeight: 16
+  },
+  commentModalEmpty: {
+    alignItems: 'center',
+    paddingVertical: 24
+  },
+  commentModalEmptyText: {
+    fontSize: 12,
+    color: '#94A3B8'
+  },
+  commentComposer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#F8FAFC'
+  },
+  commentComposerAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  commentComposerField: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between'
+  },
   respondButton: {
-    backgroundColor: '#1dd1a1',
+    backgroundColor: '#2E7D64',
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center'

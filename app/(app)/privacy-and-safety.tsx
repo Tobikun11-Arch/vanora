@@ -150,7 +150,7 @@ export default function PrivacyAndSafetyScreen() {
             >
               {mapCoords ? (
                 <>
-                  <Marker coordinate={mapCoords} pinColor="#1dd1a1" />
+                  <Marker coordinate={mapCoords} pinColor="#2E7D64" />
                   {locationPrecision === "approximate" ? (
                     <Circle
                       center={mapCoords}

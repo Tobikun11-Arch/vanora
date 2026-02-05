@@ -600,7 +600,7 @@ const styles = StyleSheet.create({
     color: "#999999",
   },
   tabTextActive: {
-    color: "#1dd1a1",
+    color: "#2E7D64",
   },
   contentContainer: {
     flex: 1,
@@ -621,7 +621,7 @@ const styles = StyleSheet.create({
   viewAllText: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#1dd1a1",
+    color: "#2E7D64",
   },
   questGrid: {
     flexDirection: "row",
@@ -639,7 +639,7 @@ const styles = StyleSheet.create({
   },
   questTag: {
     alignSelf: "flex-start",
-    backgroundColor: "#1dd1a1",
+    backgroundColor: "#2E7D64",
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 999,
@@ -692,7 +692,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   questButtonSubmitted: {
-    backgroundColor: "#1dd1a1",
+    backgroundColor: "#2E7D64",
   },
   questButtonText: {
     fontSize: 11,
@@ -746,7 +746,7 @@ const styles = StyleSheet.create({
   },
   bingoProgressFill: {
     height: "100%",
-    backgroundColor: "#1dd1a1",
+    backgroundColor: "#2E7D64",
   },
   bingoProgressText: {
     fontSize: 10,
@@ -757,7 +757,7 @@ const styles = StyleSheet.create({
   bingoButton: {
     marginTop: 6,
     borderWidth: 1,
-    borderColor: "#1dd1a1",
+    borderColor: "#2E7D64",
     borderRadius: 12,
     paddingVertical: 8,
     alignItems: "center",
@@ -765,7 +765,7 @@ const styles = StyleSheet.create({
   bingoButtonText: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#1dd1a1",
+    color: "#2E7D64",
   },
   leaderboardCard: {
     backgroundColor: "#ffffff",
@@ -820,7 +820,7 @@ const styles = StyleSheet.create({
   leaderboardPoints: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#1dd1a1",
+    color: "#2E7D64",
   },
   featuredCard: {
     borderRadius: 18,
@@ -879,7 +879,7 @@ const styles = StyleSheet.create({
   newsCategory: {
     fontSize: 10,
     fontWeight: "700",
-    color: "#1dd1a1",
+    color: "#2E7D64",
   },
   newsTitle: {
     fontSize: 13,
@@ -969,7 +969,7 @@ const styles = StyleSheet.create({
   },
   spotlightButton: {
     borderWidth: 1,
-    borderColor: "#1dd1a1",
+    borderColor: "#2E7D64",
     paddingVertical: 6,
     borderRadius: 16,
     alignItems: "center",
@@ -977,7 +977,7 @@ const styles = StyleSheet.create({
   spotlightButtonText: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#1dd1a1",
+    color: "#2E7D64",
   },
   placeholderText: {
     fontSize: 16,
@@ -1036,7 +1036,7 @@ const styles = StyleSheet.create({
   },
   modalCloseButton: {
     marginTop: 14,
-    backgroundColor: "#1dd1a1",
+    backgroundColor: "#2E7D64",
     paddingVertical: 10,
     borderRadius: 16,
     alignItems: "center",
@@ -1107,7 +1107,7 @@ const styles = StyleSheet.create({
   cameraActionGhost: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#1dd1a1",
+    borderColor: "#2E7D64",
     borderRadius: 12,
     paddingVertical: 10,
     alignItems: "center",
@@ -1115,11 +1115,11 @@ const styles = StyleSheet.create({
   cameraActionGhostText: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#1dd1a1",
+    color: "#2E7D64",
   },
   cameraActionPrimary: {
     flex: 1,
-    backgroundColor: "#1dd1a1",
+    backgroundColor: "#2E7D64",
     borderRadius: 12,
     paddingVertical: 10,
     alignItems: "center",

@@ -232,7 +232,7 @@ export default function DashboardScreen() {
           <Feather
             name="tool"
             size={24}
-            color={activeTab === 'findtech' ? '#1dd1a1' : '#9CA3AF'}
+            color={activeTab === 'findtech' ? '#2E7D64' : '#9CA3AF'}
           />
           <Text
             style={[
@@ -254,7 +254,7 @@ export default function DashboardScreen() {
           <Feather
             name="compass"
             size={24}
-            color={activeTab === 'explore' ? '#1dd1a1' : '#9CA3AF'}
+            color={activeTab === 'explore' ? '#2E7D64' : '#9CA3AF'}
           />
           <Text
             style={[
@@ -273,7 +273,7 @@ export default function DashboardScreen() {
           <Feather
             name="home"
             size={24}
-            color={activeTab === 'home' ? '#1dd1a1' : '#9CA3AF'}
+            color={activeTab === 'home' ? '#2E7D64' : '#9CA3AF'}
           />
           <Text
             style={[
@@ -294,9 +294,9 @@ export default function DashboardScreen() {
         >
           <View style={styles.notificationWrapper}>
             <Feather
-              name="bell"
+              name="mail"
               size={24}
-              color={activeTab === 'notifications' ? '#1dd1a1' : '#9CA3AF'}
+              color={activeTab === 'notifications' ? '#2E7D64' : '#9CA3AF'}
             />
             <View style={styles.notificationBadge} />
           </View>
@@ -320,7 +320,7 @@ export default function DashboardScreen() {
           <Feather
             name="user"
             size={24}
-            color={activeTab === 'profile' ? '#1dd1a1' : '#9CA3AF'}
+            color={activeTab === 'profile' ? '#2E7D64' : '#9CA3AF'}
           />
           <Text
             style={[
@@ -397,7 +397,7 @@ const styles = StyleSheet.create({
     marginTop: 2
   },
   activeTabLabel: {
-    color: '#1dd1a1',
+    color: '#2E7D64',
     fontWeight: '600'
   },
   notificationWrapper: {
