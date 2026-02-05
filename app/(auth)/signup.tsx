@@ -1,6 +1,6 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useState } from "react";
+import {MaterialCommunityIcons} from '@expo/vector-icons';
+import {useRouter} from 'expo-router';
+import React, {useState} from 'react';
 import {
   Image,
   ImageBackground,
@@ -9,12 +9,12 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from "react-native";
-import { Button } from "../../components/Button";
-import { InputField } from "../../components/InputField";
-import { showToast } from "../../components/Toast";
-import { authService } from "../../services/auth.service";
-import React from "react";
+  Dimensions
+} from 'react-native';
+import {Button} from '../../components/Button';
+import {InputField} from '../../components/InputField';
+import {showToast} from '../../components/Toast';
+import {authService} from '../../services/auth.service';
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -100,14 +100,14 @@ export default function SignupScreen() {
       >
         <ImageBackground
           source={{
-            uri: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=1000&auto=format&fit=crop",
+            uri: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=1000&auto=format&fit=crop'
           }}
           style={styles.topBackground}
         >
           <View style={styles.topOverlay} />
           <View style={styles.headerRow}>
             <Image
-              source={require("../../assets/images/vanora-logo-only.png")}
+              source={require('../../assets/images/vanora-logo-only.png')}
               style={styles.logoImage}
               resizeMode="contain"
             />
@@ -195,7 +195,7 @@ export default function SignupScreen() {
     </View>
   );
 }
-
+const {width} = Dimensions.get('window');
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
@@ -205,35 +205,34 @@ const styles = StyleSheet.create({
     paddingBottom: 24
   },
   topBackground: {
-    paddingTop: 70,
-    paddingBottom: 180,
-    alignItems: "center",
+    paddingTop: 40,
+    paddingBottom: 70,
+    alignItems: 'center'
   },
   topOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.28)",
+    backgroundColor: 'rgba(0,0,0,0.28)'
   },
   headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10
   },
   logoImage: {
-    position: "absolute",
-    top: -35,
-    left: -115,
-    width: 150,
-    height: 150,
-    tintColor: "#fff",
+    width: width * 0.35, // scales to ~28% of screen width
+    height: width * 0.35, // keeps square ratio
+    tintColor: '#fff',
+    resizeMode: 'contain',
+    marginRight: -25 // tuck text closer
   },
   appName: {
-    position: "absolute",
-    bottom: -82,
-    right: -105,
-    fontSize: 42,
-    fontWeight: "800",
-    color: "#fff",
+    fontSize: width * 0.1, // scales with screen width
+    fontWeight: '900',
+    color: '#fff',
     letterSpacing: 1,
+    marginLeft: -8, // small overlap for “Vanora” look
+    marginTop: 15 // vertical alignment tweak
   },
   cardContainer: {
     backgroundColor: '#fff',
@@ -241,8 +240,8 @@ const styles = StyleSheet.create({
     paddingVertical: 30,
     paddingHorizontal: 24,
     marginTop: -46,
-    alignItems: "stretch",
-    paddingBottom: 40,
+    alignItems: 'stretch',
+    paddingBottom: 40
   },
   pullBar: {
     width: 48,
@@ -258,7 +257,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 2,
     marginBottom: 4,
-    color: "#2e7d64",
+    color: '#2e7d64'
   },
   cardSubtitle: {
     textAlign: 'center',
@@ -314,7 +313,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     marginTop: 10,
-    paddingBottom: 12,
+    paddingBottom: 12
   },
   haveText: {
     color: '#777'
