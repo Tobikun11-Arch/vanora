@@ -1,7 +1,8 @@
 import {useRevenueCatSubscription} from '@/hooks/use-revenuecat-subscription';
 import {MaterialCommunityIcons} from '@expo/vector-icons';
 import {useRouter} from 'expo-router';
-import {useRef, useState} from 'react';
+import {useFocusEffect} from '@react-navigation/native';
+import React, {useRef, useState, useCallback} from 'react';
 import {
   ActivityIndicator,
   Dimensions,
@@ -16,6 +17,7 @@ import {
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {authService} from '../../services/auth.service';
 import {showToast} from '../Toast';
+import Purchases from 'react-native-purchases';
 
 const {width} = Dimensions.get('window');
 const GALLERY_IMAGE_SIZE = (width - 60) / 3;
@@ -62,7 +64,7 @@ export default function ProfileTab({profile}: ProfileTabProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [showPremiumModal, setShowPremiumModal] = useState(false);
-  const {isSubscribed, isLoading} = useRevenueCatSubscription();
+  const {isSubscribed, isLoading, refresh} = useRevenueCatSubscription();
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(0);
   const [settingsAnchor, setSettingsAnchor] = useState<{
@@ -73,13 +75,26 @@ export default function ProfileTab({profile}: ProfileTabProps) {
   } | null>(null);
   const settingsButtonRef = useRef<View>(null);
 
-  const handleLogout = async () => {
-    const result = await authService.signOut();
-    if (result.success) {
-      showToast('success', 'Success', 'Logged out successfully');
-      router.replace('/(auth)/get-started');
-    }
-  };
+  useFocusEffect(
+    useCallback(() => {
+      // Refresh subscription whenever screen comes into focus
+      refresh();
+    }, [refresh])
+  );
+
+
+
+const handleLogout = async () => {
+  const result = await authService.signOut();
+  if (result.success) {
+    // Clear RevenueCat user context
+    await Purchases.logOut();
+
+    showToast('success', 'Success', 'Logged out successfully');
+    router.replace('/(auth)/get-started');
+  }
+};
+
 
   const handleSettings = () => {
     if (settingsButtonRef.current?.measureInWindow) {
@@ -131,7 +146,7 @@ export default function ProfileTab({profile}: ProfileTabProps) {
                 style={styles.premiumIcon}
               />
 
-              <Text style={styles.premiumModalTitle}>Vandora Premium</Text>
+              <Text style={styles.premiumModalTitle}>Vanora Premium</Text>
 
               <Text style={styles.premiumModalDescription}>
                 Unlock Challenge Match invites, boost visibility by 3x, and get
@@ -204,8 +219,8 @@ export default function ProfileTab({profile}: ProfileTabProps) {
                     settingsAnchor.height +
                     SETTINGS_MENU_OFFSET
                   : headerHeight > 0
-                  ? headerHeight
-                  : insets.top + FALLBACK_HEADER_HEIGHT,
+                    ? headerHeight
+                    : insets.top + FALLBACK_HEADER_HEIGHT,
               paddingLeft: settingsAnchor?.x != null ? settingsAnchor.x : 16
             }
           ]}
@@ -285,7 +300,7 @@ export default function ProfileTab({profile}: ProfileTabProps) {
             <View style={styles.premiumCardLeft}>
               <MaterialCommunityIcons name="crown" size={28} color="#10B981" />
               <View style={styles.premiumCardText}>
-                <Text style={styles.premiumCardTitle}>Vandora Premium</Text>
+                <Text style={styles.premiumCardTitle}>Vanora Premium</Text>
                 <Text style={styles.premiumCardSubtitle}>
                   Unlock Challenge Match invites and get your verified nomad
                   badge.
@@ -356,9 +371,19 @@ export default function ProfileTab({profile}: ProfileTabProps) {
 
         {/* Name, gender, location, pronouns & nomad type */}
         <View style={styles.profileInfoContainer}>
-          <Text style={styles.nameText}>
-            {profile.display_name}, {profile.age}
-          </Text>
+          <View style={{flexDirection: 'row', alignItems: 'center'}}>
+            <Text style={styles.nameText}>
+              {profile.display_name}, {profile.age}
+            </Text>
+            {isSubscribed && (
+              <MaterialCommunityIcons
+                name="check-decagram"
+                size={18}
+                color="#2e7d64"
+                style={{marginLeft: 6}}
+              />
+            )}
+          </View>
 
           <View style={styles.genderRow}>
             <MaterialCommunityIcons
@@ -386,7 +411,9 @@ export default function ProfileTab({profile}: ProfileTabProps) {
             )}
           </View>
 
-          {profile.bio ? <Text style={styles.bioText}>{profile.bio}</Text> : null}
+          {profile.bio ? (
+            <Text style={styles.bioText}>{profile.bio}</Text>
+          ) : null}
         </View>
       </View>
 

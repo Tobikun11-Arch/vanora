@@ -32,10 +32,8 @@ const resolvePackage = (
 };
 
 export const revenueCatService = {
-  initialize() {
-    if (Platform.OS === 'web') {
-      return;
-    }
+  initialize(userId?: string) {
+    if (Platform.OS === 'web') return;
 
     const apiKey =
       Platform.OS === 'android' ? REVENUECAT_ANDROID_KEY : REVENUECAT_IOS_KEY;
@@ -48,8 +46,12 @@ export const revenueCatService = {
       Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
     }
 
-    // TODO(revenuecat): Use Test Store key for local testing. Swap to store keys before release.
     Purchases.configure({apiKey});
+
+    if (userId) {
+      Purchases.logIn(userId);
+    }
+
     isConfigured = true;
   },
 

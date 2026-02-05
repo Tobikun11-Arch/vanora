@@ -70,9 +70,43 @@ export default function RootLayout() {
     }
   }, []);
 
-  useEffect(() => {
-    revenueCatService.initialize();
-  }, []);
+useEffect(() => {
+  const bootstrapAsync = async () => {
+    try {
+      const session = await authService.getSession();
+      if (session?.user) {
+        const profileResult = await profileService.getProfile(session.user.id);
+
+        // Initialize RevenueCat with user ID
+        revenueCatService.initialize(session.user.id);
+
+        dispatch(prev => ({
+          ...prev,
+          userToken: session.access_token,
+          user: session.user,
+          profileComplete: profileResult.success,
+          isLoading: false
+        }));
+      } else {
+        // Initialize RevenueCat without a user (anonymous)
+        revenueCatService.initialize();
+
+        dispatch(prev => ({
+          ...prev,
+          isLoading: false
+        }));
+      }
+    } catch {
+      dispatch(prev => ({
+        ...prev,
+        isLoading: false
+      }));
+    }
+  };
+
+  bootstrapAsync();
+}, []);
+
 
   return (
     <ReactQueryProvider>

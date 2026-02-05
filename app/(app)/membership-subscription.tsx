@@ -39,9 +39,6 @@ export default function MembershipSubscriptionScreen() {
   const effectivePlan = isMechanic ? selectedPlan : 'vanora';
   const {isSubscribed, refresh: refreshSubscription} =
     useRevenueCatSubscription();
-  const goBackToDashboard = () => {
-    router.replace('/(app)/dashboard');
-  };
 
   useEffect(() => {
     if (!isMechanic && selectedPlan === "mechanic") {
@@ -113,7 +110,6 @@ export default function MembershipSubscriptionScreen() {
         'Subscription Active',
         'Your premium access is now live.'
       );
-      goBackToDashboard();
     } catch (error) {
       console.warn('[RevenueCat] Purchase error:', error);
       showToast('error', 'Purchase Error', 'Something went wrong. Try again.');
@@ -218,7 +214,7 @@ export default function MembershipSubscriptionScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.topBar}>
         <TouchableOpacity
-          onPress={goBackToDashboard}
+          onPress={() => router.back()}
           style={styles.backButton}
           accessibilityRole="button"
           accessibilityLabel="Back"
