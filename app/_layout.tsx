@@ -12,6 +12,7 @@ import {authService} from '../services/auth.service';
 import {profileService} from '../services/profile.service';
 import {revenueCatService} from '../services/revenuecat.service';
 import {ReactQueryProvider} from '@/lib/provider/ReactQueryProvider';
+import {supabase} from '../services/supabase';
 
 export const unstable_settings = {
   anchor: '(tabs)'
@@ -106,6 +107,20 @@ useEffect(() => {
 
   bootstrapAsync();
 }, []);
+
+  useEffect(() => {
+    const {data: {subscription}} = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (session?.user) {
+          revenueCatService.initialize(session.user.id);
+        } else {
+          revenueCatService.initialize();
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
 
 
   return (
