@@ -13,6 +13,7 @@ import {useRouter} from 'expo-router';
 import {useEffect, useMemo, useState} from 'react';
 import {
   ActivityIndicator,
+  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -187,7 +188,10 @@ export default function DashboardScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#4a90e2" />
+        <Image
+          source={require('../../assets/gif/busGif.gif')}
+          style={styles.loadingGif}
+        />
       </View>
     );
   }
@@ -346,6 +350,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#fff'
+  },
+  loadingGif: {
+    width: 140,
+    height: 140,
+    marginBottom: 12
   },
   errorText: {
     fontSize: 18,
