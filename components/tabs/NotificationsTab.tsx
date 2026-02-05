@@ -9,6 +9,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View
 } from 'react-native';
@@ -308,9 +309,11 @@ export default function NotificationsTab() {
 
       <View style={styles.searchBar}>
         <MaterialCommunityIcons name="magnify" size={16} color="#94A3B8" />
-        <Text style={styles.searchPlaceholder}>
-          Search communities and chats
-        </Text>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search communities and chats"
+          placeholderTextColor="#94A3B8"
+        />
       </View>
 
       <View style={styles.sectionHeaderRow}>
@@ -511,10 +514,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#F1F5F9',
     marginBottom: 16
   },
-  searchPlaceholder: {
-    color: '#94A3B8',
+  searchInput: {
+    flex: 1,
+    color: '#0F172A',
     fontSize: 12,
-    fontWeight: '500'
+    fontWeight: '500',
+    padding: 0
   },
   sectionHeaderRow: {
     flexDirection: 'row',

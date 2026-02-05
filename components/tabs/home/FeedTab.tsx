@@ -797,7 +797,6 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
               </View>
               <View style={styles.commentComposerField}>
                 <TextInput
-                  style={styles.commentComposerInput}
                   placeholder="Add a comment for architectand..."
                   placeholderTextColor="#9CA3AF"
                 />
