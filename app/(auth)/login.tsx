@@ -14,6 +14,7 @@ import { Button } from "../../components/Button";
 import { InputField } from "../../components/InputField";
 import { showToast } from "../../components/Toast";
 import { authService } from "../../services/auth.service";
+import React from "react";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -225,15 +226,15 @@ const styles = StyleSheet.create({
   },
   logoImage: {
     position: "absolute",
-    top: -65,
-    left: -175,
-    width: 250,
-    height: 250,
+    top: -35,
+    left: -115,
+    width: 150,
+    height: 150,
     tintColor: "#fff",
   },
   appName: {
     position: "absolute",
-    bottom: -85,
+    bottom: -82,
     right: -105,
     fontSize: 42,
     fontWeight: "800",
