@@ -29,6 +29,7 @@ export default function ExploreTab() {
   const [questPhotos, setQuestPhotos] = useState<Record<string, string | null>>(
     {}
   );
+  const [cameraResetCounter, setCameraResetCounter] = useState(0);
   const cameraRef = useRef<CameraView | null>(null);
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const profile = useUserStore((state) => state.profile);
@@ -491,9 +492,18 @@ export default function ExploreTab() {
             </Text>
             <View style={styles.cameraPreview}>
               {hasQuestPhoto ? (
-                <Image source={{ uri: activeQuestPhoto ?? "" }} style={styles.cameraPreviewImage} />
+                <Image
+                  source={{ uri: activeQuestPhoto ?? "" }}
+                  style={styles.cameraPreviewImage}
+                  resizeMode="cover"
+                />
               ) : cameraPermission?.granted ? (
-                <CameraView ref={cameraRef} style={styles.cameraPreviewCamera} facing="back" />
+                <CameraView
+                  key={`camera-${cameraResetCounter}`}
+                  ref={cameraRef}
+                  style={styles.cameraPreviewCamera}
+                  facing="back"
+                />
               ) : (
                 <>
                   <MaterialCommunityIcons name="camera" size={32} color="#ffffff" />
@@ -506,6 +516,14 @@ export default function ExploreTab() {
                 style={styles.cameraActionGhost}
                 onPress={async () => {
                   if (!activeQuestId) {
+                    return;
+                  }
+                  if (hasQuestPhoto) {
+                    setQuestPhotos((prev) => ({
+                      ...prev,
+                      [activeQuestId]: null,
+                    }));
+                    setCameraResetCounter((prev) => prev + 1);
                     return;
                   }
                   if (!cameraPermission?.granted) {
@@ -1090,6 +1108,7 @@ const styles = StyleSheet.create({
   cameraPreviewImage: {
     width: "100%",
     height: "100%",
+    resizeMode: "cover",
   },
   cameraPreviewCamera: {
     width: "100%",
