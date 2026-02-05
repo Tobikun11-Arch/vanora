@@ -302,9 +302,9 @@ export default function ProfileTab({profile}: ProfileTabProps) {
         </TouchableOpacity>
       )}
 
-      {/* Profile Picture & Basic Info - Centered Layout */}
+      {/* Profile Header - Avatar, Stats & Basic Info */}
       <View style={styles.profileHeader}>
-        <View style={styles.profileCenterContainer}>
+        <View style={styles.profileTopRow}>
           {/* Profile Picture */}
           {profile.profile_picture_url ? (
             <Image
@@ -321,25 +321,54 @@ export default function ProfileTab({profile}: ProfileTabProps) {
             </View>
           )}
 
-          {/* Name */}
-          <View style={styles.nameRow}>
-            <Text style={styles.nameText}>
-              {profile.display_name}, {profile.age}
-            </Text>
-            {isSubscribed && (
-              <MaterialCommunityIcons
-                name="check-decagram"
-                size={18}
-                color="#10B981"
-                style={styles.premiumCheckIcon}
-              />
-            )}
+          {/* Header Stats beside avatar */}
+          <View style={styles.headerStatsColumn}>
+            <View style={styles.headerStatsRow}>
+              <View style={styles.headerStatItem}>
+                <Text style={styles.headerStatValue}>
+                  {profile.posts_count ?? 0}
+                </Text>
+                <Text style={styles.headerStatLabel}>Posts</Text>
+              </View>
+              <View style={styles.headerStatItem}>
+                <Text style={styles.headerStatValue}>
+                  {profile.followers_count ?? 0}
+                </Text>
+                <Text style={styles.headerStatLabel}>Followers</Text>
+              </View>
+              <View style={styles.headerStatItem}>
+                <Text style={styles.headerStatValue}>
+                  {profile.following_count ?? 0}
+                </Text>
+                <Text style={styles.headerStatLabel}>Following</Text>
+              </View>
+            </View>
+            <View style={styles.headerActionRow}>
+              <TouchableOpacity style={styles.headerActionButton}>
+                <Text style={styles.headerActionText}>Follow</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.headerActionButtonOutline}>
+                <Text style={styles.headerActionTextOutline}>Message</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
+        {/* Name, gender, location, pronouns & nomad type */}
+        <View style={styles.profileInfoContainer}>
+          <Text style={styles.nameText}>
+            {profile.display_name}, {profile.age}
+          </Text>
+
+          <View style={styles.genderRow}>
+            <MaterialCommunityIcons
+              name="gender-male-female"
+              size={14}
+              color="#6B7280"
+            />
+            <Text style={styles.genderText}>{profile.gender}</Text>
           </View>
 
-          {/* Gender */}
-          <Text style={styles.genderText}>{profile.gender}</Text>
-
-          {/* Location */}
           <View style={styles.locationRowCentered}>
             <MaterialCommunityIcons
               name="map-marker"
@@ -351,69 +380,21 @@ export default function ProfileTab({profile}: ProfileTabProps) {
             </Text>
           </View>
 
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>
-                {profile.followers_count ?? 0}
-              </Text>
-              <Text style={styles.statLabel}>Followers</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>
-                {profile.following_count ?? 0}
-              </Text>
-              <Text style={styles.statLabel}>Following</Text>
-            </View>
-            <View style={styles.nomadPill}>
-              <MaterialCommunityIcons
-                name="van-utility"
-                size={14}
-                color="#2e7d64"
-              />
-              <Text style={styles.nomadPillText}>{profile.nomad_type}</Text>
-            </View>
+          <View style={styles.profileMetaRow}>
+            {profile.pronouns && (
+              <Text style={styles.verifiedStatus}>{profile.pronouns}</Text>
+            )}
           </View>
 
-          {/* Verified Status if available */}
-          {profile.pronouns && (
-            <Text style={styles.verifiedStatus}>{profile.pronouns}</Text>
-          )}
+          {profile.bio ? <Text style={styles.bioText}>{profile.bio}</Text> : null}
         </View>
       </View>
 
-      {/* Nomad Life Section - 4 Cards in 1 Line */}
-      <View style={styles.nomadLifeSection}>
-        <View style={styles.nomadCardsContainer}>
-          <View style={styles.nomadCard}>
-            <MaterialCommunityIcons name="airplane" size={24} color="#2e7d64" />
-            <Text style={styles.nomadCardValue}>{profile.travel_style}</Text>
-          </View>
-          <View style={styles.nomadCard}>
-            <MaterialCommunityIcons
-              name="map-marker-path"
-              size={24}
-              color="#2e7d64"
-            />
-            <Text style={styles.nomadCardValue}>
-              {profile.movement_pattern}
-            </Text>
-          </View>
-          <View style={styles.nomadCard}>
-            <MaterialCommunityIcons
-              name="calendar-clock"
-              size={24}
-              color="#2e7d64"
-            />
-            <Text style={styles.nomadCardValue}>
-              {profile.years_in_van_life}
-            </Text>
-          </View>
-        </View>
-      </View>
+      <View style={styles.sectionDivider} />
 
-      {/* Photo Gallery */}
+      {/* Photo Gallery - directly beneath bio */}
       {profile.gallery_photos && profile.gallery_photos.length > 0 && (
-        <View style={styles.section}>
+        <View style={[styles.section, styles.photoGallerySection]}>
           <Text style={styles.sectionTitle}>Photo Gallery</Text>
           <View style={styles.galleryGrid}>
             {profile.gallery_photos.map(photo => (
@@ -434,10 +415,49 @@ export default function ProfileTab({profile}: ProfileTabProps) {
         </View>
       )}
 
-      {/* Bio Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>About Me</Text>
-        <Text style={styles.bioText}>{profile.bio}</Text>
+      {/* Nomad Life Section - 2 Column Grid */}
+      <View style={styles.nomadLifeSection}>
+        <Text style={styles.sectionTitle}>Nomad Life</Text>
+        <View style={styles.nomadCardsContainer}>
+          {profile.nomad_type ? (
+            <View style={styles.nomadCard}>
+              <MaterialCommunityIcons
+                name="van-utility"
+                size={24}
+                color="#6B7280"
+              />
+              <Text style={styles.nomadCardValue} numberOfLines={2}>
+                {profile.nomad_type}
+              </Text>
+            </View>
+          ) : null}
+          <View style={styles.nomadCard}>
+            <MaterialCommunityIcons name="airplane" size={24} color="#6B7280" />
+            <Text style={styles.nomadCardValue} numberOfLines={2}>
+              {profile.travel_style}
+            </Text>
+          </View>
+          <View style={styles.nomadCard}>
+            <MaterialCommunityIcons
+              name="map-marker-path"
+              size={24}
+              color="#6B7280"
+            />
+            <Text style={styles.nomadCardValue} numberOfLines={2}>
+              {profile.movement_pattern}
+            </Text>
+          </View>
+          <View style={styles.nomadCard}>
+            <MaterialCommunityIcons
+              name="calendar-clock"
+              size={24}
+              color="#6B7280"
+            />
+            <Text style={styles.nomadCardValue} numberOfLines={2}>
+              {profile.years_in_van_life} years in van life
+            </Text>
+          </View>
+        </View>
       </View>
       {/* Relationship Intent */}
       {profile.relationship_intent &&
@@ -470,6 +490,11 @@ export default function ProfileTab({profile}: ProfileTabProps) {
             {profile.lifestyle_tags &&
               profile.lifestyle_tags.map((tag, index) => (
                 <View key={`lifestyle-${index}`} style={styles.lifestyleTag}>
+                  <MaterialCommunityIcons
+                    name="leaf"
+                    size={14}
+                    color="#4338CA"
+                  />
                   <Text style={styles.lifestyleTagText}>{tag}</Text>
                 </View>
               ))}
@@ -478,6 +503,11 @@ export default function ProfileTab({profile}: ProfileTabProps) {
             {profile.hobbies &&
               profile.hobbies.map((hobby, index) => (
                 <View key={`hobby-${index}`} style={styles.hobbyTag}>
+                  <MaterialCommunityIcons
+                    name="tag"
+                    size={14}
+                    color="#0C4A6E"
+                  />
                   <Text style={styles.hobbyTagText}>{hobby}</Text>
                 </View>
               ))}
@@ -536,35 +566,35 @@ export default function ProfileTab({profile}: ProfileTabProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff'
+    backgroundColor: '#F7F9F8'
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F7F9F8',
     alignItems: 'center',
     justifyContent: 'center'
   },
   scrollContent: {
-    paddingBottom: 40
+    paddingBottom: 48
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 20
+    paddingHorizontal: 16,
+    paddingTop: 48,
+    paddingBottom: 12
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1F2937',
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#0F172A',
     flex: 1,
     textAlign: 'center'
   },
   headerIconButton: {
     padding: 8,
-    borderRadius: 8
+    borderRadius: 10
   },
   modalOverlay: {
     flex: 1,
@@ -580,14 +610,16 @@ const styles = StyleSheet.create({
   },
   settingsMenu: {
     backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: 14,
     minWidth: 240,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 4},
+    borderWidth: 1,
+    borderColor: '#E6ECE9',
+    shadowColor: '#0F172A',
+    shadowOffset: {width: 0, height: 8},
     shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 6
+    shadowRadius: 16,
+    elevation: 8
   },
   settingsMenuItem: {
     paddingVertical: 14,
@@ -650,7 +682,7 @@ const styles = StyleSheet.create({
   },
   goPremiumButton: {
     width: '100%',
-    backgroundColor: '#10B981',
+    backgroundColor: '#2e7d64',
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
@@ -667,19 +699,24 @@ const styles = StyleSheet.create({
     fontWeight: '500'
   },
   premiumCard: {
-    marginHorizontal: 20,
+    marginHorizontal: 16,
     marginTop: 12,
-    marginBottom: 24,
-    backgroundColor: '#F0F9FF',
+    marginBottom: 20,
+    backgroundColor: '#EAF7F0',
     borderRadius: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: '#10B981'
+    borderWidth: 1.5,
+    borderColor: '#2e7d64',
+    shadowColor: '#0F172A',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 2
   },
   premiumCardContent: {
     flexDirection: 'column',
     alignItems: 'stretch',
-    padding: 16,
-    rowGap: 12
+    padding: 14,
+    rowGap: 10
   },
   premiumCardLeft: {
     flexDirection: 'row',
@@ -694,21 +731,21 @@ const styles = StyleSheet.create({
     minWidth: 0
   },
   premiumCardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0F172A',
     flexShrink: 1
   },
   premiumCardSubtitle: {
     fontSize: 12,
-    color: '#6B7280',
+    color: '#5B6B61',
     flexShrink: 1
   },
   premiumCardButton: {
-    backgroundColor: '#10B981',
+    backgroundColor: '#2e7d64',
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 12,
     alignSelf: 'stretch',
     alignItems: 'center'
   },
@@ -718,21 +755,26 @@ const styles = StyleSheet.create({
     fontWeight: '600'
   },
   profileHeader: {
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 1,
-    marginTop: 12
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    marginTop: 8
   },
-  profileCenterContainer: {
+  profileTopRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: 16,
+    marginBottom: 10
+  },
+  profileInfoContainer: {
     width: '100%'
   },
   profilePicture: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    marginBottom: 18,
-    borderWidth: 3,
+    width: 112,
+    height: 112,
+    borderRadius: 56,
+    marginBottom: 5,
+    borderWidth: 2,
     borderColor: '#2e7d64'
   },
   placeholderPicture: {
@@ -741,40 +783,99 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   nameText: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '800',
-    color: '#2e7d64',
-    marginBottom: 3,
-    textAlign: 'center',
-    letterSpacing: 0.3
+    color: '#0F172A',
+    marginBottom: 4,
+    textAlign: 'left',
+    letterSpacing: 0.2
   },
-  nameRow: {
+  genderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6
-  },
-  premiumCheckIcon: {
-    marginTop: 2
+    gap: 6,
+    marginBottom: 4
   },
   genderText: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginBottom: 3,
-    textAlign: 'center',
+    fontSize: 13,
+    color: '#64748B',
+    textAlign: 'left',
     fontWeight: '500'
   },
   locationRowCentered: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     gap: 5,
     marginBottom: 8
   },
   locationCentered: {
     fontSize: 13,
-    color: '#6B7280',
-    textAlign: 'center',
+    color: '#64748B',
+    textAlign: 'left',
     fontWeight: '500'
+  },
+  headerStatsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flex: 1
+  },
+  headerStatsColumn: {
+    flex: 1,
+    gap: 0
+  },
+  headerStatItem: {
+    alignItems: 'center',
+    minWidth: 60
+  },
+  headerStatValue: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0F172A'
+  },
+  headerStatLabel: {
+    fontSize: 12,
+    color: '#64748B'
+  },
+  headerActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: -20,
+    marginBottom: 10
+  },
+  headerActionButton: {
+    flex: 1,
+    backgroundColor: '#2e7d64',
+    paddingVertical: 8,
+    borderRadius: 10,
+    alignItems: 'center'
+  },
+  headerActionText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FFFFFF'
+  },
+  headerActionButtonOutline: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 8,
+    borderRadius: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#2e7d64'
+  },
+  headerActionTextOutline: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#2e7d64'
+  },
+  profileMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 8
   },
   statsRow: {
     flexDirection: 'row',
@@ -812,56 +913,73 @@ const styles = StyleSheet.create({
   },
   verifiedStatus: {
     fontSize: 12,
-    color: '#10B981',
+    color: '#2e7d64',
     fontWeight: '600',
-    textAlign: 'center',
+    textAlign: 'left',
     marginTop: 4
   },
   section: {
-    paddingHorizontal: 20,
-    marginBottom: 30
+    paddingHorizontal: 16,
+    marginBottom: 24
+  },
+  sectionDivider: {
+    height: 2,
+    backgroundColor: '#E6ECE9',
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 4
+  },
+  photoGallerySection: {
+    marginTop: 12
   },
   nomadLifeSection: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     marginBottom: 20,
-    marginTop: 12
+    marginTop: 6
   },
   nomadLifeTitle: {
     fontSize: 15,
     fontWeight: '700',
     color: '#2e7d64',
     marginBottom: 10,
-    textAlign: 'center',
+    textAlign: 'left',
     letterSpacing: 0.3
   },
   nomadCardsContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'stretch',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: 5
+    gap: 12
   },
   nomadCard: {
-    flex: 1,
-    height: 110,
+    width: '48%',
+    minHeight: 64,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F0FDF4',
-    borderRadius: 12,
+    justifyContent: 'flex-start',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
     paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderWidth: 1.5,
-    borderColor: '#2e7d64'
+    paddingHorizontal: 12,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#E6ECE9',
+    shadowColor: '#0F172A',
+    shadowOffset: {width: 0, height: 6},
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 2
   },
   nomadCardValue: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#2e7d64',
-    marginTop: 10,
-    textAlign: 'center',
-    numberOfLines: 2
+    flexShrink: 1,
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#0F172A',
+    textAlign: 'left'
   },
   sectionTitle: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '700',
     color: '#2e7d64',
     marginBottom: 10,
@@ -869,8 +987,10 @@ const styles = StyleSheet.create({
   },
   bioText: {
     fontSize: 14,
-    color: '#4B5563',
-    fontWeight: '500'
+    color: '#475569',
+    fontWeight: '500',
+    marginTop: 4,
+    lineHeight: 20
   },
   tagsContainer: {
     flexDirection: 'row',
@@ -894,10 +1014,13 @@ const styles = StyleSheet.create({
     fontWeight: '600'
   },
   hobbyTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#DBEAFE',
     paddingHorizontal: 13,
     paddingVertical: 8,
     borderRadius: 22,
+    gap: 6,
     borderWidth: 1,
     borderColor: '#BAE6FD'
   },
@@ -923,10 +1046,13 @@ const styles = StyleSheet.create({
     fontWeight: '600'
   },
   lifestyleTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#E0E7FF',
     paddingHorizontal: 13,
     paddingVertical: 8,
     borderRadius: 22,
+    gap: 6,
     borderWidth: 1,
     borderColor: '#C7D2FE'
   },
@@ -962,7 +1088,7 @@ const styles = StyleSheet.create({
   galleryImage: {
     width: GALLERY_IMAGE_SIZE,
     height: GALLERY_IMAGE_SIZE,
-    borderRadius: 12
+    borderRadius: 14
   },
   photoTypeLabel: {
     position: 'absolute',
@@ -985,8 +1111,8 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-    marginHorizontal: 20
+    borderTopColor: '#E6ECE9',
+    marginHorizontal: 16
   },
   memberSince: {
     fontSize: 13,
