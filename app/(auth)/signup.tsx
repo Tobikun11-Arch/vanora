@@ -18,38 +18,38 @@ import React from "react";
 
 export default function SignupScreen() {
   const router = useRouter();
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({
-    fullName: "",
-    email: "",
-    password: "",
+    fullName: '',
+    email: '',
+    password: ''
   });
 
   const validateForm = () => {
     let isValid = true;
-    const newErrors = { fullName: "", email: "", password: "" };
+    const newErrors = {fullName: '', email: '', password: ''};
 
     if (!fullName.trim()) {
-      newErrors.fullName = "Full name is required";
+      newErrors.fullName = 'Full name is required';
       isValid = false;
     }
 
     if (!email) {
-      newErrors.email = "Email is required";
+      newErrors.email = 'Email is required';
       isValid = false;
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = "Please enter a valid email";
+      newErrors.email = 'Please enter a valid email';
       isValid = false;
     }
 
     if (!password) {
-      newErrors.password = "Password is required";
+      newErrors.password = 'Password is required';
       isValid = false;
     } else if (password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
+      newErrors.password = 'Password must be at least 6 characters';
       isValid = false;
     }
 
@@ -64,14 +64,14 @@ export default function SignupScreen() {
     const result = await authService.signUp(email, password, fullName);
 
     if (result.success) {
-      showToast("success", "Success", "Account created successfully");
-      router.replace("/(profile)/step-1");
+      showToast('success', 'Success', 'Account created successfully');
+      router.replace('/(profile)/step-1');
     } else {
-      if (result.error?.includes("already registered")) {
-        showToast("error", "Error", "Email already registered. Please login.");
-        router.push("/(auth)/login");
+      if (result.error?.includes('already registered')) {
+        showToast('error', 'Error', 'Email already registered. Please login.');
+        router.push('/(auth)/login');
       } else {
-        showToast("error", "Signup Failed", result.error);
+        showToast('error', 'Signup Failed', result.error);
       }
     }
 
@@ -81,14 +81,14 @@ export default function SignupScreen() {
   const handleGoogleSignup = async () => {
     setLoading(true);
     // TODO: Implement Google OAuth signup flow
-    showToast("info", "Coming Soon", "Google signup is being configured");
+    showToast('info', 'Coming Soon', 'Google signup is being configured');
     setLoading(false);
   };
 
   const handleAzureSignup = async () => {
     setLoading(true);
     // TODO: Implement Azure OAuth signup flow
-    showToast("info", "Coming Soon", "Azure signup is being configured");
+    showToast('info', 'Coming Soon', 'Azure signup is being configured');
     setLoading(false);
   };
 
@@ -186,7 +186,7 @@ export default function SignupScreen() {
 
           <View style={styles.loginRow}>
             <Text style={styles.haveText}>Already have an account? </Text>
-            <TouchableOpacity onPress={() => router.push("/(auth)/login")}>
+            <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
               <Text style={styles.loginLink}>Log In</Text>
             </TouchableOpacity>
           </View>
@@ -199,10 +199,10 @@ export default function SignupScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: '#fff'
   },
   scrollContent: {
-    paddingBottom: 24,
+    paddingBottom: 24
   },
   topBackground: {
     paddingTop: 70,
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   cardContainer: {
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
     borderRadius: 28,
     paddingVertical: 30,
     paddingHorizontal: 24,
@@ -248,80 +248,80 @@ const styles = StyleSheet.create({
     width: 48,
     height: 6,
     borderRadius: 4,
-    backgroundColor: "#ececec",
-    alignSelf: "center",
-    marginBottom: 18,
+    backgroundColor: '#ececec',
+    alignSelf: 'center',
+    marginBottom: 18
   },
   cardTitle: {
     fontSize: 22,
-    fontWeight: "700",
-    textAlign: "center",
+    fontWeight: '700',
+    textAlign: 'center',
     marginTop: 2,
     marginBottom: 4,
     color: "#2e7d64",
   },
   cardSubtitle: {
-    textAlign: "center",
-    color: "#777",
-    marginBottom: 18,
+    textAlign: 'center',
+    color: '#777',
+    marginBottom: 18
   },
   inputsWrap: {
     marginTop: 12,
-    width: "100%",
+    width: '100%'
   },
   dividerRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginTop: 16,
-    marginBottom: 8,
+    marginBottom: 8
   },
   line: {
     flex: 1,
     height: 1,
-    backgroundColor: "#eee",
+    backgroundColor: '#eee'
   },
   dividerText: {
     marginHorizontal: 12,
-    color: "#999",
-    fontSize: 12,
+    color: '#999',
+    fontSize: 12
   },
   socialRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginTop: 18,
-    gap: 12,
+    gap: 12
   },
   socialBtn: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#fff",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: "#eee",
+    borderColor: '#eee',
     paddingVertical: 12,
     borderRadius: 10,
-    gap: 8,
+    gap: 8
   },
   socialText: {
     marginLeft: 8,
-    fontWeight: "600",
+    fontWeight: '600'
   },
   signupButtonWrap: {
-    marginTop: 16,
+    marginTop: 16
   },
   loginRow: {
-    flexDirection: "row",
-    justifyContent: "center",
+    flexDirection: 'row',
+    justifyContent: 'center',
     marginTop: 10,
     paddingBottom: 12,
   },
   haveText: {
-    color: "#777",
+    color: '#777'
   },
   loginLink: {
-    color: "#2e7d64",
-    fontWeight: "700",
-    marginLeft: 6,
-  },
+    color: '#2e7d64',
+    fontWeight: '700',
+    marginLeft: 6
+  }
 });

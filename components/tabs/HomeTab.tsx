@@ -1,6 +1,6 @@
 import { homeTabStyles as styles } from "@/styles";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { NewPostModal } from "../newpost";
 import EventsTab from "./home/EventsTab";
@@ -45,16 +45,17 @@ export default function HomeTab({ profile }: HomeTabProps) {
     setFeedRefreshTrigger((prev) => prev + 1);
   }, []);
 
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case "findMatch":
-        return <FindMatchTab />;
-      case "feed":
-        return <FeedTab refreshTrigger={feedRefreshTrigger} />;
-      case "events":
-        return <EventsTab />;
-    }
-  };
+  const tabVisibilityStyle = (tab: TabType) => ({
+    display: activeTab === tab ? "flex" : "none",
+    flex: 1,
+  });
+
+  const findMatchTab = useMemo(() => <FindMatchTab />, []);
+  const feedTab = useMemo(
+    () => <FeedTab refreshTrigger={feedRefreshTrigger} />,
+    [feedRefreshTrigger]
+  );
+  const eventsTab = useMemo(() => <EventsTab />, []);
 
   const handleFabFeed = () => {
     if (activeTab === "feed") {
@@ -118,17 +119,17 @@ export default function HomeTab({ profile }: HomeTabProps) {
       </View>
 
       {/* Tab Content */}
-      {activeTab === "feed" ? (
+      <View style={styles.scrollContainer}>
+        <View style={tabVisibilityStyle("findMatch")}>{findMatchTab}</View>
         <ScrollView
-          style={styles.scrollContainer}
+          style={[styles.scrollContainer, tabVisibilityStyle("feed")]}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {renderTabContent()}
+          {feedTab}
         </ScrollView>
-      ) : (
-        <View style={styles.scrollContainer}>{renderTabContent()}</View>
-      )}
+        <View style={tabVisibilityStyle("events")}>{eventsTab}</View>
+      </View>
 
       {/* Floating Action Button */}
       {activeTab === "feed" && (

@@ -10,6 +10,8 @@ import {useColorScheme} from '@/hooks/use-color-scheme';
 import {ToastContainer} from '../components/Toast';
 import {authService} from '../services/auth.service';
 import {profileService} from '../services/profile.service';
+import {revenueCatService} from '../services/revenuecat.service';
+import {ReactQueryProvider} from '@/lib/provider/ReactQueryProvider';
 
 export const unstable_settings = {
   anchor: '(tabs)'
@@ -68,11 +70,17 @@ export default function RootLayout() {
     }
   }, []);
 
+  useEffect(() => {
+    revenueCatService.initialize();
+  }, []);
+
   return (
+    <ReactQueryProvider>
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack screenOptions={{headerShown: false}} />
       <ToastContainer />
       <StatusBar style="auto" />
     </ThemeProvider>
+    </ReactQueryProvider>
   );
 }

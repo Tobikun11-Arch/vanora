@@ -16,7 +16,8 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
+  ViewStyle
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
@@ -67,6 +68,22 @@ export default function DashboardScreen() {
   const contentPaddingBottom = useMemo(
     () => bottomBarHeight + bottomInset + 12,
     [bottomInset]
+  );
+  const tabVisibilityStyle = (tab: TabType): ViewStyle => ({
+    display: activeTab === tab ? 'flex' : 'none',
+    flex: 1
+  });
+
+  const findTechTab = useMemo(() => <FindTechTab />, []);
+  const exploreTab = useMemo(() => <ExploreTab />, []);
+  const notificationsTab = useMemo(() => <NotificationsTab />, []);
+  const homeTab = useMemo(
+    () => (profile ? <HomeTab profile={profile} /> : null),
+    [profile]
+  );
+  const profileTab = useMemo(
+    () => (profile ? <ProfileTab profile={profile} /> : null),
+    [profile]
   );
 
   useEffect(() => {
@@ -160,27 +177,11 @@ export default function DashboardScreen() {
     };
 
     fetchUserProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
   const handleTabPress = (tab: TabType) => {
     setActiveTab(tab);
-  };
-
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'findtech':
-        return <FindTechTab />;
-      case 'explore':
-        return <ExploreTab />;
-      case 'home':
-        return profile ? <HomeTab profile={profile} /> : null;
-      case 'notifications':
-        return <NotificationsTab />;
-      case 'profile':
-        return profile ? <ProfileTab profile={profile} /> : null;
-      default:
-        return profile ? <HomeTab profile={profile} /> : null;
-    }
   };
 
   if (loading) {
@@ -202,12 +203,25 @@ export default function DashboardScreen() {
   return (
     <View style={styles.mainContainer}>
       {/* Tab Content */}
-      <View style={[styles.contentContainer, {paddingBottom: contentPaddingBottom}]}>
-        {renderTabContent()}
+      <View
+        style={[styles.contentContainer, {paddingBottom: contentPaddingBottom}]}
+      >
+        <View style={tabVisibilityStyle('findtech')}>{findTechTab}</View>
+        <View style={tabVisibilityStyle('explore')}>{exploreTab}</View>
+        <View style={tabVisibilityStyle('home')}>{homeTab}</View>
+        <View style={tabVisibilityStyle('notifications')}>
+          {notificationsTab}
+        </View>
+        <View style={tabVisibilityStyle('profile')}>{profileTab}</View>
       </View>
 
       {/* Bottom Navigation Bar */}
-      <View style={[styles.bottomBar, {bottom: bottomInset, minHeight: bottomBarHeight}]}>
+      <View
+        style={[
+          styles.bottomBar,
+          {bottom: bottomInset, minHeight: bottomBarHeight}
+        ]}
+      >
         <TouchableOpacity
           style={[
             styles.tabItem,
@@ -218,7 +232,7 @@ export default function DashboardScreen() {
           <Feather
             name="tool"
             size={24}
-            color={activeTab === 'findtech' ? '#1dd1a1' : '#9CA3AF'}
+            color={activeTab === 'findtech' ? '#2E7D64' : '#9CA3AF'}
           />
           <Text
             style={[
@@ -240,7 +254,7 @@ export default function DashboardScreen() {
           <Feather
             name="compass"
             size={24}
-            color={activeTab === 'explore' ? '#1dd1a1' : '#9CA3AF'}
+            color={activeTab === 'explore' ? '#2E7D64' : '#9CA3AF'}
           />
           <Text
             style={[
@@ -259,7 +273,7 @@ export default function DashboardScreen() {
           <Feather
             name="home"
             size={24}
-            color={activeTab === 'home' ? '#1dd1a1' : '#9CA3AF'}
+            color={activeTab === 'home' ? '#2E7D64' : '#9CA3AF'}
           />
           <Text
             style={[
@@ -280,9 +294,9 @@ export default function DashboardScreen() {
         >
           <View style={styles.notificationWrapper}>
             <Feather
-              name="bell"
+              name="mail"
               size={24}
-              color={activeTab === 'notifications' ? '#1dd1a1' : '#9CA3AF'}
+              color={activeTab === 'notifications' ? '#2E7D64' : '#9CA3AF'}
             />
             <View style={styles.notificationBadge} />
           </View>
@@ -306,7 +320,7 @@ export default function DashboardScreen() {
           <Feather
             name="user"
             size={24}
-            color={activeTab === 'profile' ? '#1dd1a1' : '#9CA3AF'}
+            color={activeTab === 'profile' ? '#2E7D64' : '#9CA3AF'}
           />
           <Text
             style={[
@@ -383,7 +397,7 @@ const styles = StyleSheet.create({
     marginTop: 2
   },
   activeTabLabel: {
-    color: '#1dd1a1',
+    color: '#2E7D64',
     fontWeight: '600'
   },
   notificationWrapper: {

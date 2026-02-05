@@ -5,6 +5,7 @@ import {
   FlatList,
   Image,
   Modal,
+  Pressable,
   Share,
   ScrollView,
   StyleSheet,
@@ -16,14 +17,20 @@ import {
 import {useRouter} from 'expo-router';
 import JoinEventModal from '../../JoinEventModal';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 import {supabase} from '../../../services/supabase';
 import {useUserStore} from '../../../store/userStore';
 import LocationSearchModal from '../../newpost/LocationSearchModal';
 import {showToast} from '../../Toast';
+import {useRevenueCatSubscription} from '@/hooks/use-revenuecat-subscription';
+import {useAppMutation} from '@/hooks/useAppMutation';
+import {useQuery, useQueryClient} from '@tanstack/react-query';
 
 interface Event {
   id: string;
   title: string;
+  startAt?: Date | null;
+  endAt?: Date | null;
   startDay: number;
   startDate: string;
   startTime: string;
@@ -42,6 +49,28 @@ interface Event {
   coverImageUrl?: string | null;
 }
 
+type EventsQueryData = {
+  eventList: Event[];
+  joinedEvents: Event[];
+};
+
+type CreateEventPayload = {
+  title: string;
+  description: string | null;
+  location: string | null;
+  startAt: string;
+  endAt: string;
+  visibility: 'private' | 'public';
+  inviteeIds: string[];
+};
+
+type CreateEventResult = {
+  eventRow: any;
+  userId: string;
+};
+
+const CACHE_TTL_MS = 60 * 1000;
+
 export default function EventsTab() {
   const [eventSubtab, setEventSubtab] = useState('upcoming');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
@@ -51,6 +80,10 @@ export default function EventsTab() {
     'Private'
   );
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const [currentUserId, setCurrentUserId] = useState<string | null | undefined>(
+    undefined
+  );
   const profile = useUserStore(state => state.profile);
   const [eventImageUri, setEventImageUri] = useState<string | null>(null);
   const [eventTitle, setEventTitle] = useState('');
@@ -70,6 +103,7 @@ export default function EventsTab() {
   } | null>(null);
   const [eventLocation, setEventLocation] = useState('');
   const [eventDescription, setEventDescription] = useState('');
+  const descriptionInputRef = React.useRef<TextInput>(null);
   const [inviteSearch, setInviteSearch] = useState('');
   const [followers, setFollowers] = useState<
     {id: string; name: string; avatar: string | null}[]
@@ -79,12 +113,12 @@ export default function EventsTab() {
   const [selectedInvitees, setSelectedInvitees] = useState<Set<string>>(
     new Set()
   );
-  const [isPosting, setIsPosting] = useState(false);
   const [locationModalVisible, setLocationModalVisible] = useState(false);
   const [pickerVisible, setPickerVisible] = useState(false);
   const [pickerType, setPickerType] = useState<
     'startDate' | 'startTime' | 'endDate' | 'endTime' | null
   >(null);
+  const {isSubscribed} = useRevenueCatSubscription();
 
   const dateOptions = useMemo(() => {
     const options: {label: string; value: Date}[] = [];
@@ -121,6 +155,17 @@ export default function EventsTab() {
       }
     }
     return options;
+  }, []);
+
+  useEffect(() => {
+    const init = async () => {
+      const {
+        data: {user}
+      } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id ?? null);
+    };
+
+    init();
   }, []);
 
   const openPicker = (
@@ -220,6 +265,8 @@ export default function EventsTab() {
     return {
       id: row.id,
       title: row.title ?? 'Untitled Event',
+      startAt: start,
+      endAt: end,
       startDay,
       startDate,
       startTime,
@@ -246,61 +293,102 @@ export default function EventsTab() {
   };
 
 
-  const sampleEvents: Event[] = [
-    {
-      id: '1',
-      title: 'Sunset Campfire Social',
-      startDay: 24,
-      startDate: 'Jan',
-      startTime: '6:30 PM',
-      endDay: 24,
-      endDate: 'Jan',
-      endTime: '9:00 PM',
-      location: 'Bureau of Land Management, Moab',
-      image: require('../../../assets/images/vanora.png'),
-      attendees: '12+',
-      isJoined: false,
-      eventType: 'Public'
-    },
-    {
-      id: '2',
-      title: 'Desert Hiking Adventure',
-      startDay: 26,
-      startDate: 'Jan',
-      startTime: '8:00 AM',
-      endDay: 26,
-      endDate: 'Jan',
-      endTime: '12:00 PM',
-      location: 'Moab State Park, Moab',
-      image: require('../../../assets/images/vanora.png'),
-      attendees: '8+',
-      isJoined: false,
-      eventType: 'Public'
-    },
-    {
-      id: '3',
-      title: 'Nomad Meetup & Brunch',
-      startDay: 28,
-      startDate: 'Jan',
-      startTime: '10:00 AM',
-      endDay: 29,
-      endDate: 'Jan',
-      endTime: '2:00 PM',
-      location: 'The Spoke Alley, Moab',
-      image: require('../../../assets/images/vanora.png'),
-      attendees: '15+',
-      isJoined: false,
-      eventType: 'Private'
+  const fetchEvents = async (userId: string | null): Promise<EventsQueryData> => {
+    const {data: visibleEvents, error: visibleError} = await supabase
+      .from('events')
+      .select(
+        'id, title, description, location, start_at, end_at, cover_image_url, visibility, host_id, host_profile:profiles!events_host_id_fkey ( id, username, display_name, profile_picture_url ), event_participants(count)'
+      )
+      .order('start_at', {ascending: true});
+
+    if (visibleError) {
+      throw visibleError;
     }
-  ];
 
-  const [eventList, setEventList] = useState<Event[]>([]);
-  const [joinedEvents, setJoinedEvents] = useState<Event[]>([]);
-  const [eventsLoading, setEventsLoading] = useState(false);
-  const [eventsError, setEventsError] = useState<string | null>(null);
+    const joinedIds = new Set<string>();
+    const invitedIds = new Set<string>();
+    const joinedEventRows: Event[] = [];
 
-  const filteredEvents =
-    eventSubtab === 'upcoming' ? eventList : joinedEvents;
+    if (userId) {
+      const {data: joinedRows, error: joinedError} = await supabase
+        .from('event_participants')
+        .select(
+          'event_id, events ( id, title, description, location, start_at, end_at, cover_image_url, visibility, host_id, host_profile:profiles!events_host_id_fkey ( id, username, display_name, profile_picture_url ), event_participants(count) )'
+        )
+        .eq('user_id', userId);
+
+      if (joinedError) {
+        throw joinedError;
+      }
+
+      (joinedRows ?? []).forEach(row => {
+        if ((row as any).event_id) joinedIds.add((row as any).event_id);
+        const event = (row as any).events;
+        if (event) {
+          joinedEventRows.push(mapEventRow(event, true));
+        }
+      });
+
+      const {data: inviteRows, error: inviteError} = await supabase
+        .from('event_invites')
+        .select('event_id')
+        .eq('invitee_id', userId);
+
+      if (inviteError) {
+        throw inviteError;
+      }
+
+      (inviteRows ?? []).forEach(row => {
+        if ((row as any).event_id) invitedIds.add((row as any).event_id);
+      });
+    }
+
+    const mappedVisible = (visibleEvents ?? [])
+      .filter(row => {
+        if (row.visibility !== 'private') return true;
+        if (!userId) return false;
+        if (row.host_id === userId) return true;
+        if (joinedIds.has(row.id)) return true;
+        return invitedIds.has(row.id);
+      })
+      .map(row => mapEventRow(row, joinedIds.has(row.id)));
+
+    return {
+      eventList: mappedVisible,
+      joinedEvents: joinedEventRows
+    };
+  };
+
+  const {
+    data: eventsData,
+    isLoading: eventsLoading,
+    error: eventsError
+  } = useQuery({
+    queryKey: ['events', currentUserId],
+    queryFn: () => fetchEvents(currentUserId ?? null),
+    enabled: currentUserId !== undefined,
+    staleTime: CACHE_TTL_MS,
+    gcTime: CACHE_TTL_MS * 5
+  });
+
+  const eventList = eventsData?.eventList ?? [];
+  const joinedEvents = eventsData?.joinedEvents ?? [];
+  const eventsErrorMessage = eventsError
+    ? 'Unable to load events right now.'
+    : null;
+
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const isEventCurrentOrFuture = (event: Event) => {
+    const compareDate = event.endAt ?? event.startAt;
+    if (!compareDate) return true;
+    return compareDate >= todayStart;
+  };
+
+  const filteredEvents = (
+    eventSubtab === 'upcoming' ? eventList : joinedEvents
+  ).filter(isEventCurrentOrFuture);
 
   const handleViewEvent = (event: Event) => {
     setSelectedEvent(event);
@@ -364,7 +452,7 @@ export default function EventsTab() {
         }));
 
         setFollowers(mappedFollowers);
-      } catch (error) {
+      } catch {
         setFollowers([]);
         setFollowersError('Unable to load followers right now.');
       } finally {
@@ -374,90 +462,6 @@ export default function EventsTab() {
 
     loadFollowers();
   }, [eventTypeFilter, profile?.id, showCreateModal]);
-
-  useEffect(() => {
-    const loadEvents = async () => {
-      setEventsLoading(true);
-      setEventsError(null);
-
-      try {
-        const {
-          data: {user}
-        } = await supabase.auth.getUser();
-
-        const {data: visibleEvents, error: visibleError} = await supabase
-          .from('events')
-          .select(
-            'id, title, description, location, start_at, end_at, cover_image_url, visibility, host_id, host_profile:profiles!events_host_id_fkey ( id, username, display_name, profile_picture_url ), event_participants(count)'
-          )
-          .order('start_at', {ascending: true});
-
-        if (visibleError) {
-          throw visibleError;
-        }
-
-        const joinedIds = new Set<string>();
-        const invitedIds = new Set<string>();
-        const joinedEventRows: Event[] = [];
-
-        if (user?.id) {
-          const {data: joinedRows, error: joinedError} = await supabase
-            .from('event_participants')
-            .select(
-              'event_id, events ( id, title, description, location, start_at, end_at, cover_image_url, visibility, host_id, host_profile:profiles!events_host_id_fkey ( id, username, display_name, profile_picture_url ), event_participants(count) )'
-            )
-            .eq('user_id', user.id);
-
-          if (joinedError) {
-            throw joinedError;
-          }
-
-          (joinedRows ?? []).forEach(row => {
-            if ((row as any).event_id) joinedIds.add((row as any).event_id);
-            const event = (row as any).events;
-            if (event) {
-              joinedEventRows.push(mapEventRow(event, true));
-            }
-          });
-
-          const {data: inviteRows, error: inviteError} = await supabase
-            .from('event_invites')
-            .select('event_id')
-            .eq('invitee_id', user.id);
-
-          if (inviteError) {
-            throw inviteError;
-          }
-
-          (inviteRows ?? []).forEach(row => {
-            if ((row as any).event_id) invitedIds.add((row as any).event_id);
-          });
-        }
-
-        const mappedVisible = (visibleEvents ?? [])
-          .filter(row => {
-            if (row.visibility !== 'private') return true;
-            if (!user?.id) return false;
-            if (row.host_id === user.id) return true;
-            if (joinedIds.has(row.id)) return true;
-            return invitedIds.has(row.id);
-          })
-          .map(row => mapEventRow(row, joinedIds.has(row.id)));
-
-        setEventList(mappedVisible);
-        setJoinedEvents(joinedEventRows);
-      } catch (error) {
-        console.error('Error loading events:', error);
-        setEventsError('Unable to load events right now.');
-        setEventList(sampleEvents);
-        setJoinedEvents([]);
-      } finally {
-        setEventsLoading(false);
-      }
-    };
-
-    loadEvents();
-  }, []);
 
   const handleShareEvent = async (
     visibility: 'public' | 'private',
@@ -499,18 +503,28 @@ export default function EventsTab() {
         throw joinError;
       }
 
-      setEventList(prev =>
-        prev.map(item =>
-          item.id === event.id ? {...item, isJoined: true} : item
-        )
-      );
-
-      setJoinedEvents(prev => {
-        if (prev.find(item => item.id === event.id)) {
-          return prev;
-        }
-        return [...prev, {...event, isJoined: true}];
-      });
+      if (currentUserId !== undefined) {
+        queryClient.setQueryData<EventsQueryData>(
+          ['events', currentUserId],
+          previous => {
+            if (!previous) return previous;
+            const updatedEventList = previous.eventList.map(item =>
+              item.id === event.id ? {...item, isJoined: true} : item
+            );
+            const alreadyJoined = previous.joinedEvents.some(
+              item => item.id === event.id
+            );
+            const updatedJoinedEvents = alreadyJoined
+              ? previous.joinedEvents
+              : [...previous.joinedEvents, {...event, isJoined: true}];
+            return {
+              eventList: updatedEventList,
+              joinedEvents: updatedJoinedEvents
+            };
+          }
+        );
+        queryClient.invalidateQueries({queryKey: ['events', currentUserId]});
+      }
 
       setSelectedEvent(prev =>
         prev && prev.id === event.id ? {...prev, isJoined: true} : prev
@@ -537,7 +551,22 @@ export default function EventsTab() {
     });
 
     if (!result.canceled && result.assets?.length) {
-      setEventImageUri(result.assets[0].uri);
+      const asset = result.assets[0];
+      if (!asset?.uri) return;
+
+      let resolvedUri = asset.uri;
+      if (resolvedUri.startsWith('content://')) {
+        try {
+          const safeName = asset.fileName || `event-${Date.now()}.jpg`;
+          const cacheUri = `${FileSystem.cacheDirectory ?? ''}${safeName}`;
+          await FileSystem.copyAsync({from: resolvedUri, to: cacheUri});
+          resolvedUri = cacheUri;
+        } catch (error) {
+          console.warn('Failed to cache selected image:', error);
+        }
+      }
+
+      setEventImageUri(resolvedUri);
     }
   };
 
@@ -578,59 +607,44 @@ export default function EventsTab() {
     }
   };
 
-  const handlePostEvent = async () => {
-    if (!eventTitle.trim()) {
-      showToast('error', 'Required', 'Please enter an event title.');
-      return;
-    }
+  const resetCreateForm = () => {
+    setEventTitle('');
+    setStartDateLabel('');
+    setStartTimeLabel('');
+    setEndDateLabel('');
+    setEndTimeLabel('');
+    setStartDateValue(null);
+    setEndDateValue(null);
+    setStartTimeValue(null);
+    setEndTimeValue(null);
+    setEventLocation('');
+    setEventDescription('');
+    setEventImageUri(null);
+    setSelectedInvitees(new Set());
+    setShowCreateModal(false);
+  };
+  
 
-    if (
-      !startDateValue ||
-      !startTimeValue ||
-      !endDateValue ||
-      !endTimeValue
-    ) {
-      showToast('error', 'Required', 'Please select start and end date/time.');
-      return;
-    }
-
-    const startAt = new Date(startDateValue);
-    startAt.setHours(startTimeValue.hours, startTimeValue.minutes, 0, 0);
-
-    const endAt = new Date(endDateValue);
-    endAt.setHours(endTimeValue.hours, endTimeValue.minutes, 0, 0);
-
-    if (Number.isNaN(startAt.getTime()) || Number.isNaN(endAt.getTime())) {
-      showToast('error', 'Invalid date', 'Please choose valid dates and times.');
-      return;
-    }
-
-    if (endAt < startAt) {
-      showToast('error', 'Invalid time', 'End time must be after start time.');
-      return;
-    }
-
-    setIsPosting(true);
-    try {
+  const createEventMutation = useAppMutation<CreateEventPayload, CreateEventResult>({
+    mutationFn: async payload => {
       const {
         data: {user}
       } = await supabase.auth.getUser();
 
       if (!user) {
-        showToast('error', 'Error', 'You must be logged in to create an event.');
-        return;
+        throw new Error('You must be logged in to create an event.');
       }
 
       const {data: eventData, error: eventError} = await supabase
         .from('events')
         .insert({
           host_id: user.id,
-          title: eventTitle.trim(),
-          description: eventDescription.trim() || null,
-          location: eventLocation.trim() || null,
-          start_at: startAt.toISOString(),
-          end_at: endAt.toISOString(),
-          visibility: eventTypeFilter.toLowerCase()
+          title: payload.title,
+          description: payload.description,
+          location: payload.location,
+          start_at: payload.startAt,
+          end_at: payload.endAt,
+          visibility: payload.visibility
         })
         .select()
         .single();
@@ -641,20 +655,29 @@ export default function EventsTab() {
 
       const coverUrl = await uploadEventCover(eventData.id, user.id);
       if (coverUrl) {
-        await supabase
+        const {error: coverError} = await supabase
           .from('events')
           .update({cover_image_url: coverUrl})
           .eq('id', eventData.id);
+        if (coverError) {
+          throw coverError;
+        }
+        eventData.cover_image_url = coverUrl;
       }
 
-      await supabase.from('event_participants').insert({
-        event_id: eventData.id,
-        user_id: user.id,
-        role: 'host'
-      });
+      const {error: hostError} = await supabase
+        .from('event_participants')
+        .insert({
+          event_id: eventData.id,
+          user_id: user.id,
+          role: 'host'
+        });
+      if (hostError) {
+        throw hostError;
+      }
 
-      if (eventTypeFilter === 'Private' && selectedInvitees.size > 0) {
-        const inviteRows = Array.from(selectedInvitees).map(inviteeId => ({
+      if (payload.visibility === 'private' && payload.inviteeIds.length > 0) {
+        const inviteRows = payload.inviteeIds.map(inviteeId => ({
           event_id: eventData.id,
           inviter_id: user.id,
           invitee_id: inviteeId,
@@ -684,27 +707,92 @@ export default function EventsTab() {
         }
       }
 
-      setEventTitle('');
-      setStartDateLabel('');
-      setStartTimeLabel('');
-      setEndDateLabel('');
-      setEndTimeLabel('');
-      setStartDateValue(null);
-      setEndDateValue(null);
-      setStartTimeValue(null);
-      setEndTimeValue(null);
-      setEventLocation('');
-      setEventDescription('');
-      setEventImageUri(null);
-      setSelectedInvitees(new Set());
-      setShowCreateModal(false);
-      showToast('success', 'Success', 'Event posted successfully.');
-    } catch (error) {
-      console.error('Error creating event:', error);
-      showToast('error', 'Error', 'Failed to create event. Please try again.');
-    } finally {
-      setIsPosting(false);
+      return {
+        eventRow: {
+          ...eventData,
+          event_participants: [{count: 1}]
+        },
+        userId: user.id
+      };
+    },
+    successMessage: 'Event posted successfully.',
+    errorMessage: 'Failed to create event. Please try again.',
+    resetForm: resetCreateForm,
+    onSuccessExtra: result => {
+      if (!result) return;
+      const {eventRow, userId} = result;
+      setCurrentUserId(userId);
+      const mappedEvent = mapEventRow(eventRow, true);
+
+      queryClient.setQueryData<EventsQueryData>(
+        ['events', userId],
+        previous => {
+          const safePrevious = previous ?? {eventList: [], joinedEvents: []};
+          const alreadyUpcoming = safePrevious.eventList.some(
+            item => item.id === mappedEvent.id
+          );
+          const alreadyJoined = safePrevious.joinedEvents.some(
+            item => item.id === mappedEvent.id
+          );
+
+          return {
+            eventList: alreadyUpcoming
+              ? safePrevious.eventList
+              : [mappedEvent, ...safePrevious.eventList],
+            joinedEvents: alreadyJoined
+              ? safePrevious.joinedEvents
+              : [mappedEvent, ...safePrevious.joinedEvents]
+          };
+        }
+      );
+
+      queryClient.invalidateQueries({queryKey: ['events', userId]});
     }
+  });
+
+  const isPosting = createEventMutation.isPending;
+
+  const handlePostEvent = async () => {
+    if (!eventTitle.trim()) {
+      showToast('error', 'Required', 'Please enter an event title.');
+      return;
+    }
+
+    if (
+      !startDateValue ||
+      !startTimeValue ||
+      !endDateValue ||
+      !endTimeValue
+    ) {
+        showToast('error', 'Required', 'Please select start and end date/time.');
+      return;
+    }
+
+    const startAt = new Date(startDateValue);
+    startAt.setHours(startTimeValue.hours, startTimeValue.minutes, 0, 0);
+
+    const endAt = new Date(endDateValue);
+    endAt.setHours(endTimeValue.hours, endTimeValue.minutes, 0, 0);
+
+    if (Number.isNaN(startAt.getTime()) || Number.isNaN(endAt.getTime())) {
+      showToast('error', 'Invalid date', 'Please choose valid dates and times.');
+      return;
+    }
+
+    if (endAt < startAt) {
+      showToast('error', 'Invalid time', 'End time must be after start time.');
+      return;
+    }
+
+    createEventMutation.mutate({
+      title: eventTitle.trim(),
+      description: eventDescription.trim() || null,
+      location: eventLocation.trim() || null,
+      startAt: startAt.toISOString(),
+      endAt: endAt.toISOString(),
+      visibility: eventTypeFilter.toLowerCase() as 'private' | 'public',
+      inviteeIds: Array.from(selectedInvitees)
+    });
   };
 
   return (
@@ -751,8 +839,8 @@ export default function EventsTab() {
           </Text>
           {eventsLoading ? (
             <Text style={styles.placeholderText}>Loading events...</Text>
-          ) : eventsError ? (
-            <Text style={styles.placeholderText}>{eventsError}</Text>
+          ) : eventsErrorMessage ? (
+            <Text style={styles.placeholderText}>{eventsErrorMessage}</Text>
           ) : filteredEvents.length === 0 ? (
             <Text style={styles.placeholderText}>No events yet.</Text>
           ) : (
@@ -769,7 +857,7 @@ export default function EventsTab() {
                       <MaterialCommunityIcons
                         name="account-multiple"
                         size={12}
-                        color="#1dd1a1"
+                        color="#2E7D64"
                       />
                       <Text style={styles.eventAttendees}>{event.attendees}</Text>
                     </View>
@@ -827,7 +915,7 @@ export default function EventsTab() {
                     <MaterialCommunityIcons
                       name="share-outline"
                       size={18}
-                      color="#1dd1a1"
+                      color="#2E7D64"
                     />
                   </TouchableOpacity>
                 </View>
@@ -889,7 +977,7 @@ export default function EventsTab() {
                   <MaterialCommunityIcons
                     name="calendar"
                     size={16}
-                    color="#1dd1a1"
+                    color="#2E7D64"
                   />
                   <View style={styles.cardContent}>
                     <Text style={styles.cardLabel}>Start</Text>
@@ -905,7 +993,7 @@ export default function EventsTab() {
                   <MaterialCommunityIcons
                     name="calendar"
                     size={16}
-                    color="#1dd1a1"
+                    color="#2E7D64"
                   />
                   <View style={styles.cardContent}>
                     <Text style={styles.cardLabel}>End</Text>
@@ -923,7 +1011,7 @@ export default function EventsTab() {
                 <MaterialCommunityIcons
                   name="map-marker"
                   size={18}
-                  color="#1dd1a1"
+                  color="#2E7D64"
                 />
                 <View style={styles.locationContent}>
                   <Text style={styles.locationTitle}>Location</Text>
@@ -1079,7 +1167,7 @@ export default function EventsTab() {
                     <MaterialCommunityIcons
                       name="calendar"
                       size={18}
-                      color="#1dd1a1"
+                      color="#2E7D64"
                     />
                     <Text
                       style={[
@@ -1101,7 +1189,7 @@ export default function EventsTab() {
                     <MaterialCommunityIcons
                       name="clock"
                       size={18}
-                      color="#1dd1a1"
+                      color="#2E7D64"
                     />
                     <Text
                       style={[
@@ -1126,7 +1214,7 @@ export default function EventsTab() {
                     <MaterialCommunityIcons
                       name="calendar"
                       size={18}
-                      color="#1dd1a1"
+                      color="#2E7D64"
                     />
                     <Text
                       style={[
@@ -1148,7 +1236,7 @@ export default function EventsTab() {
                     <MaterialCommunityIcons
                       name="clock"
                       size={18}
-                      color="#1dd1a1"
+                      color="#2E7D64"
                     />
                     <Text
                       style={[
@@ -1172,7 +1260,7 @@ export default function EventsTab() {
                   <MaterialCommunityIcons
                     name="map-marker"
                     size={18}
-                    color="#1dd1a1"
+                    color="#2E7D64"
                   />
                   <Text
                     style={[
@@ -1199,7 +1287,10 @@ export default function EventsTab() {
 
               <View style={styles.formSection}>
                 <Text style={styles.formLabel}>Description</Text>
-                <View style={[styles.formInput, styles.textArea]}>
+                <Pressable
+                  style={[styles.formInput, styles.textArea]}
+                  onPress={() => descriptionInputRef.current?.focus()}
+                >
                   <TextInput
                     placeholder="What should guests know?"
                     placeholderTextColor="#cbd5e0"
@@ -1208,8 +1299,9 @@ export default function EventsTab() {
                     style={[styles.inputText, styles.textAreaInput]}
                     multiline
                     textAlignVertical="top"
+                    ref={descriptionInputRef}
                   />
-                </View>
+                </Pressable>
               </View>
 
               <View style={styles.formSection}>
@@ -1249,7 +1341,7 @@ export default function EventsTab() {
                     <MaterialCommunityIcons
                       name="lock"
                       size={20}
-                      color="#1dd1a1"
+                      color="#2E7D64"
                     />
                     <View style={styles.privateEventTextContainer}>
                       <Text style={styles.privateEventTitle}>
@@ -1353,7 +1445,7 @@ export default function EventsTab() {
                       <MaterialCommunityIcons
                         name="share-variant"
                         size={16}
-                        color="#1dd1a1"
+                        color="#2E7D64"
                       />
                       <Text style={styles.shareInviteText}>
                         Share invite link
@@ -1361,26 +1453,30 @@ export default function EventsTab() {
                     </TouchableOpacity>
                   </View>
 
-                  <View style={styles.premiumCard}>
-                    <MaterialCommunityIcons
-                      name="star"
-                      size={24}
-                      color="#1dd1a1"
-                    />
-                    <View style={styles.premiumContent}>
-                      <Text style={styles.premiumTitle}>Go Premium</Text>
-                      <Text style={styles.premiumDescription}>
-                        Go Premium to invite up to 20 participants. Free plan
-                        is limited to 3 invites.
-                      </Text>
+                  {!isSubscribed && (
+                    <View style={styles.premiumCard}>
+                      <MaterialCommunityIcons
+                        name="star"
+                        size={24}
+                        color="#2E7D64"
+                      />
+                      <View style={styles.premiumContent}>
+                        <Text style={styles.premiumTitle}>Go Premium</Text>
+                        <Text style={styles.premiumDescription}>
+                          Go Premium to invite up to 20 participants. Free plan
+                          is limited to 3 invites.
+                        </Text>
+                      </View>
+                      <TouchableOpacity
+                        style={styles.upgradeButton}
+                        onPress={() =>
+                          router.push('/(app)/membership-subscription')
+                        }
+                      >
+                        <Text style={styles.upgradeButtonText}>Upgrade</Text>
+                      </TouchableOpacity>
                     </View>
-                    <TouchableOpacity
-                      style={styles.upgradeButton}
-                      onPress={() => router.push('/(app)/membership-subscription')}
-                    >
-                      <Text style={styles.upgradeButtonText}>Upgrade</Text>
-                    </TouchableOpacity>
-                  </View>
+                  )}
                 </>
               )}
 
@@ -1408,35 +1504,37 @@ export default function EventsTab() {
                     <MaterialCommunityIcons
                       name="share-variant"
                       size={16}
-                      color="#1dd1a1"
+                      color="#2E7D64"
                     />
                     <Text style={styles.shareInviteText}>
                       Share event link
                     </Text>
                   </TouchableOpacity>
 
-                  <View style={styles.premiumCard}>
-                    <MaterialCommunityIcons
-                      name="star"
-                      size={24}
-                      color="#1dd1a1"
-                    />
-                    <View style={styles.premiumContent}>
-                      <Text style={styles.premiumTitle}>Go Premium</Text>
-                      <Text style={styles.premiumDescription}>
-                        Upgrade to host public events with up to 100
-                        participants.
-                      </Text>
+                  {!isSubscribed && (
+                    <View style={styles.premiumCard}>
+                      <MaterialCommunityIcons
+                        name="star"
+                        size={24}
+                        color="#2E7D64"
+                      />
+                      <View style={styles.premiumContent}>
+                        <Text style={styles.premiumTitle}>Go Premium</Text>
+                        <Text style={styles.premiumDescription}>
+                          Upgrade to host public events with up to 100
+                          participants.
+                        </Text>
+                      </View>
+                      <TouchableOpacity
+                        style={styles.upgradeButton}
+                        onPress={() =>
+                          router.push('/(app)/membership-subscription')
+                        }
+                      >
+                        <Text style={styles.upgradeButtonText}>Upgrade</Text>
+                      </TouchableOpacity>
                     </View>
-                    <TouchableOpacity
-                      style={styles.upgradeButton}
-                      onPress={() =>
-                        router.push('/(app)/membership-subscription')
-                      }
-                    >
-                      <Text style={styles.upgradeButtonText}>Upgrade</Text>
-                    </TouchableOpacity>
-                  </View>
+                  )}
                 </>
               )}
 
@@ -1552,7 +1650,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#1dd1a1',
+    backgroundColor: '#2E7D64',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -1575,7 +1673,7 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   eventSubtabActive: {
-    backgroundColor: '#1dd1a1'
+    backgroundColor: '#2E7D64'
   },
   eventSubtabText: {
     fontSize: 11,
@@ -1628,12 +1726,12 @@ const styles = StyleSheet.create({
   dateDay: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1dd1a1'
+    color: '#2E7D64'
   },
   dateSeparator: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#1dd1a1'
+    color: '#2E7D64'
   },
   eventInfo: {
     padding: 12
@@ -1675,7 +1773,7 @@ const styles = StyleSheet.create({
   eventAttendees: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#1dd1a1'
+    color: '#2E7D64'
   },
   dateTimeColumn: {
     marginVertical: 8,
@@ -1706,7 +1804,7 @@ const styles = StyleSheet.create({
   },
   viewButton: {
     flex: 1,
-    backgroundColor: '#1dd1a1',
+    backgroundColor: '#2E7D64',
     paddingVertical: 10,
     borderRadius: 8,
     alignItems: 'center'
@@ -1764,7 +1862,7 @@ const styles = StyleSheet.create({
   eventTag: {
     fontSize: 10,
     fontWeight: '600',
-    color: '#1dd1a1',
+    color: '#2E7D64',
     backgroundColor: '#e8faf6',
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -1874,7 +1972,7 @@ const styles = StyleSheet.create({
   openMapsLink: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#1dd1a1'
+    color: '#2E7D64'
   },
   aboutSection: {
     marginBottom: 16
@@ -1902,7 +2000,7 @@ const styles = StyleSheet.create({
   seeAllLink: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#1dd1a1'
+    color: '#2E7D64'
   },
   avatarContainer: {
     flexDirection: 'row',
@@ -1923,7 +2021,7 @@ const styles = StyleSheet.create({
     borderTopColor: '#f0f0f0'
   },
   modalJoinButton: {
-    backgroundColor: '#1dd1a1',
+    backgroundColor: '#2E7D64',
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center'
@@ -1937,7 +2035,7 @@ const styles = StyleSheet.create({
     color: '#ffffff'
   },
   modalJoinButtonTextActive: {
-    color: '#1dd1a1'
+    color: '#2E7D64'
   },
   createModalOverlay: {
     position: 'absolute',
@@ -2074,8 +2172,8 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   eventTypeButtonActive: {
-    backgroundColor: '#1dd1a1',
-    borderColor: '#1dd1a1'
+    backgroundColor: '#2E7D64',
+    borderColor: '#2E7D64'
   },
   eventTypeButtonText: {
     fontSize: 12,
@@ -2099,7 +2197,7 @@ const styles = StyleSheet.create({
   privateEventTitle: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#1dd1a1',
+    color: '#2E7D64',
     marginBottom: 2
   },
   privateEventSubtitle: {
@@ -2144,7 +2242,7 @@ const styles = StyleSheet.create({
   inviteCount: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#1dd1a1'
+    color: '#2E7D64'
   },
   searchInput: {
     flexDirection: 'row',
@@ -2192,8 +2290,8 @@ const styles = StyleSheet.create({
     borderColor: '#cbd5e0'
   },
   checkboxSelected: {
-    backgroundColor: '#1dd1a1',
-    borderColor: '#1dd1a1',
+    backgroundColor: '#2E7D64',
+    borderColor: '#2E7D64',
     alignItems: 'center',
     justifyContent: 'center'
   },
@@ -2213,7 +2311,7 @@ const styles = StyleSheet.create({
   shareInviteText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#1dd1a1'
+    color: '#2E7D64'
   },
   premiumCard: {
     flexDirection: 'row',
@@ -2240,7 +2338,7 @@ const styles = StyleSheet.create({
     lineHeight: 16
   },
   upgradeButton: {
-    backgroundColor: '#1dd1a1',
+    backgroundColor: '#2E7D64',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 6
@@ -2276,7 +2374,7 @@ const styles = StyleSheet.create({
     flex: 1.2,
     paddingVertical: 12,
     borderRadius: 8,
-    backgroundColor: '#1dd1a1',
+    backgroundColor: '#2E7D64',
     alignItems: 'center'
   },
   createButtonDisabled: {

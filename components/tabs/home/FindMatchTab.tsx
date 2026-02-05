@@ -1,6 +1,7 @@
 import {MaterialCommunityIcons} from '@expo/vector-icons';
 import {supabase} from '@/services/supabase';
 import {showToast} from '@/components/Toast';
+import {useRevenueCatSubscription} from '@/hooks/use-revenuecat-subscription';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useEffect, useMemo, useRef, useState} from 'react';
 import {
@@ -45,7 +46,8 @@ export default function FindMatchTab() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [containerHeight, setContainerHeight] = useState(0);
   const [showIntroHint, setShowIntroHint] = useState(false);
-  const isPremium = false;
+  const {isSubscribed} = useRevenueCatSubscription();
+  const isPremium = isSubscribed;
   const swipe = useRef(new Animated.ValueXY()).current;
   const matchesRef = useRef<MatchProfile[]>([]);
 
@@ -256,7 +258,9 @@ export default function FindMatchTab() {
       showToast('success', 'Challenge Sent', `Invited ${displayName}`);
       return;
     }
-    setShowUpgradeModal(true);
+    if (!isPremium) {
+      setShowUpgradeModal(true);
+    }
   };
 
   const resetSwipe = () => {
@@ -373,60 +377,62 @@ export default function FindMatchTab() {
         </View>
       )}
 
-      <Modal
-        visible={showUpgradeModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowUpgradeModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.premiumModalContent}>
-            <MaterialCommunityIcons name="crown" size={52} color="#F59E0B" />
-            <Text style={styles.premiumTitle}>Unlock Challenge Match</Text>
-            <Text style={styles.premiumDescription}>
-              Send unlimited challenges and stand out to new matches.
-            </Text>
-            <View style={styles.premiumFeatures}>
-              <View style={styles.premiumFeatureRow}>
-                <MaterialCommunityIcons
-                  name="check-circle"
-                  size={18}
-                  color="#10B981"
-                />
-                <Text style={styles.premiumFeatureText}>
-                  Unlimited challenge invites
-                </Text>
+      {!isPremium && (
+        <Modal
+          visible={showUpgradeModal}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowUpgradeModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.premiumModalContent}>
+              <MaterialCommunityIcons name="crown" size={52} color="#F59E0B" />
+              <Text style={styles.premiumTitle}>Unlock Challenge Match</Text>
+              <Text style={styles.premiumDescription}>
+                Send unlimited challenges and stand out to new matches.
+              </Text>
+              <View style={styles.premiumFeatures}>
+                <View style={styles.premiumFeatureRow}>
+                  <MaterialCommunityIcons
+                    name="check-circle"
+                    size={18}
+                    color="#10B981"
+                  />
+                  <Text style={styles.premiumFeatureText}>
+                    Unlimited challenge invites
+                  </Text>
+                </View>
+                <View style={styles.premiumFeatureRow}>
+                  <MaterialCommunityIcons
+                    name="check-circle"
+                    size={18}
+                    color="#10B981"
+                  />
+                  <Text style={styles.premiumFeatureText}>
+                    Boost visibility by 3x
+                  </Text>
+                </View>
+                <View style={styles.premiumFeatureRow}>
+                  <MaterialCommunityIcons
+                    name="check-circle"
+                    size={18}
+                    color="#10B981"
+                  />
+                  <Text style={styles.premiumFeatureText}>
+                    Verified nomad badge
+                  </Text>
+                </View>
               </View>
-              <View style={styles.premiumFeatureRow}>
-                <MaterialCommunityIcons
-                  name="check-circle"
-                  size={18}
-                  color="#10B981"
-                />
-                <Text style={styles.premiumFeatureText}>
-                  Boost visibility by 3x
-                </Text>
-              </View>
-              <View style={styles.premiumFeatureRow}>
-                <MaterialCommunityIcons
-                  name="check-circle"
-                  size={18}
-                  color="#10B981"
-                />
-                <Text style={styles.premiumFeatureText}>
-                  Verified nomad badge
-                </Text>
-              </View>
+              <TouchableOpacity style={styles.premiumButton}>
+                <Text style={styles.premiumButtonText}>Go Premium</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowUpgradeModal(false)}>
+                <Text style={styles.laterText}>Maybe later</Text>
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity style={styles.premiumButton}>
-              <Text style={styles.premiumButtonText}>Go Premium</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setShowUpgradeModal(false)}>
-              <Text style={styles.laterText}>Maybe later</Text>
-            </TouchableOpacity>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+      )}
 
       <View style={styles.cardWrap}>
         <Animated.View
