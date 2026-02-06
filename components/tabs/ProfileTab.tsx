@@ -87,9 +87,6 @@ export default function ProfileTab({profile}: ProfileTabProps) {
 const handleLogout = async () => {
   const result = await authService.signOut();
   if (result.success) {
-    // Clear RevenueCat user context
-    await Purchases.logOut();
-
     showToast('success', 'Success', 'Logged out successfully');
     router.replace('/(auth)/get-started');
   }
