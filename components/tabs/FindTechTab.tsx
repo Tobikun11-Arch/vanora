@@ -15,6 +15,7 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  StatusBar,
   Text,
   TextInput,
   TouchableOpacity,
@@ -760,29 +761,31 @@ export default function FindTechTab() {
     );
   }
 
-  if (isMechanic) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.tabsContainer}>
-          {['Requests', 'Discussion'].map(tab => (
-            <TouchableOpacity
-              key={tab}
-              style={[
-                styles.tab,
-                mechanicTab === tab.toLowerCase() && styles.tabActive
-              ]}
-              onPress={() => setMechanicTab(tab.toLowerCase())}
-            >
-              <Text
+    if (isMechanic) {
+      return (
+        <View style={styles.container}>
+        <View style={styles.topNavContainer}>
+          <View style={styles.topNav}>
+            {['Requests', 'Discussion'].map(tab => (
+              <TouchableOpacity
+                key={tab}
                 style={[
-                  styles.tabText,
-                  mechanicTab === tab.toLowerCase() && styles.tabTextActive
+                  styles.tabButton,
+                  mechanicTab === tab.toLowerCase() && styles.tabButtonActive
                 ]}
+                onPress={() => setMechanicTab(tab.toLowerCase())}
               >
-                {tab}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <Text
+                  style={[
+                    styles.tabText,
+                    mechanicTab === tab.toLowerCase() && styles.tabTextActive
+                  ]}
+                >
+                  {tab}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
         {mechanicTab === 'requests' && (
@@ -1217,28 +1220,28 @@ export default function FindTechTab() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header} />
-
-      <View style={styles.tabsContainer}>
-        {['Featured', 'Scan'].map(tab => (
-          <TouchableOpacity
-            key={tab}
-            style={[
-              styles.tab,
-              activeTab === tab.toLowerCase() && styles.tabActive
-            ]}
-            onPress={() => setActiveTab(tab.toLowerCase())}
-          >
-            <Text
+      <View style={styles.topNavContainer}>
+        <View style={styles.topNav}>
+          {['Featured', 'Scan'].map(tab => (
+            <TouchableOpacity
+              key={tab}
               style={[
-                styles.tabText,
-                activeTab === tab.toLowerCase() && styles.tabTextActive
+                styles.tabButton,
+                activeTab === tab.toLowerCase() && styles.tabButtonActive
               ]}
+              onPress={() => setActiveTab(tab.toLowerCase())}
             >
-              {tab}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === tab.toLowerCase() && styles.tabTextActive
+                ]}
+              >
+                {tab}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
 
       {activeTab === 'featured' && (
@@ -1627,35 +1630,50 @@ const styles = StyleSheet.create({
     color: '#1a1a1a',
     textAlign: 'center'
   },
-  tabsContainer: {
+  topNavContainer: {
+    backgroundColor: '#ffffff',
+    paddingTop:
+      Platform.OS === 'ios' ? 52 : (StatusBar.currentHeight ?? 0) + 12,
+    paddingBottom: 12
+  },
+  topNav: {
     flexDirection: 'row',
     paddingHorizontal: 20,
-    paddingVertical: 8,
-    gap: 0,
-    backgroundColor: '#f0f0f0',
     marginHorizontal: 20,
-    marginTop: 40,
-    borderRadius: 24,
-    padding: 4
+    backgroundColor: '#F1F5F9',
+    borderRadius: 18,
+    padding: 4,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#0f172a',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: {width: 0, height: 6},
+    elevation: 2
   },
-  tab: {
+  tabButton: {
     flex: 1,
-    paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: 'transparent',
-    alignItems: 'center'
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 14
   },
-  tabActive: {
-    backgroundColor: '#ffffff'
+  tabButtonActive: {
+    backgroundColor: '#ffffff',
+    shadowColor: '#0f172a',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: {width: 0, height: 4},
+    elevation: 2
   },
   tabText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
-    color: '#999999'
+    color: '#64748B',
+    letterSpacing: 0.2
   },
   tabTextActive: {
-    color: '#2E7D64'
+    color: '#0f172a'
   },
   contentContainer: {
     flex: 1,
