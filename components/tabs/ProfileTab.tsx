@@ -463,14 +463,7 @@ const handleLogout = async () => {
                 <Text style={styles.headerStatLabel}>Following</Text>
               </View>
             </View>
-            {isOwnProfile ? (
-              <View style={styles.headerBioRow}>
-                <Text style={styles.headerBioLabel}>Bio:</Text>
-                <Text style={styles.headerBioText} numberOfLines={2}>
-                  {profile.bio || 'No bio yet.'}
-                </Text>
-              </View>
-            ) : (
+            {!isOwnProfile && (
               <View style={styles.headerActionRow}>
                 <TouchableOpacity
                   style={[
@@ -539,9 +532,11 @@ const handleLogout = async () => {
             )}
           </View>
 
-          {!isOwnProfile && profile.bio ? (
-            <Text style={styles.bioText}>{profile.bio}</Text>
-          ) : null}
+          {(isOwnProfile || profile.bio) && (
+            <Text style={styles.bioText}>
+              {profile.bio || 'No bio yet.'}
+            </Text>
+          )}
         </View>
       </View>
 
