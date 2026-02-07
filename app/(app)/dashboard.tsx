@@ -244,7 +244,7 @@ export default function DashboardScreen() {
               activeTab === 'findtech' && styles.activeTabLabel
             ]}
           >
-            Tech
+            Builder
           </Text>
         </TouchableOpacity>
 

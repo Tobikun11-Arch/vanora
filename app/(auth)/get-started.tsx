@@ -62,7 +62,7 @@ const cardsData: CardData[] = [
     icon: 'airport-shuttle',
     title: 'Van Life Made Easy',
     description:
-      'Find tips, resources, and connect with mechanics and service providers trusted by van lifers.',
+      'Find tips, resources, and connect with builders/mechanic and service providers trusted by van lifers.',
     image: require('../../assets/images/van-bg-removed.png')
   }
 ];

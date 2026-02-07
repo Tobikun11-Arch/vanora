@@ -185,8 +185,8 @@ export default function MembershipSubscriptionScreen() {
       benefits: [
         {
           icon: "tools",
-          title: "Featured Mechanic Profile",
-          description: "Get highlighted in the Featured Mechanics section.",
+          title: "Featured Mechanic/Builder Profile",
+          description: "Get highlighted in the Featured Mechanic/Builder section.",
         },
         {
           icon: "map-marker-radius",
@@ -198,7 +198,7 @@ export default function MembershipSubscriptionScreen() {
           icon: "account-search",
           title: "Increased Client Opportunities",
           description:
-            "Be seen by users actively looking for trusted mechanics.",
+            "Be seen by users actively looking for trusted mechanic/builder.",
         },
         {
           icon: "trending-up",
