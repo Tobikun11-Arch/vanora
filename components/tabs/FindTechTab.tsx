@@ -11,6 +11,7 @@ import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   Animated,
+  Dimensions,
   Easing,
   Image,
   KeyboardAvoidingView,
@@ -50,9 +51,12 @@ interface DiscussionComment {
 }
 
 export default function FindTechTab() {
+  const {width: windowWidth, height: windowHeight} = Dimensions.get('window');
+  const H_PADDING = Math.max(16, Math.round(windowWidth * 0.05));
+  const V_SPACING = Math.max(10, Math.round(windowHeight * 0.015));
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('marketplace');
-  const [mechanicTab, setMechanicTab] = useState('marketplace');
+  const [activeTab, setActiveTab] = useState('mechanics');
+  const [mechanicTab, setMechanicTab] = useState('requests');
   const [scanned, setScanned] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const scanTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -616,9 +620,6 @@ export default function FindTechTab() {
                 />
               )}
             </View>
-            <Text style={styles.bioDescript}>
-              {tech.bio || 'No bio available yet.'}
-            </Text>
             <View style={styles.locationRow}>
               <MaterialCommunityIcons
                 name="map-marker"
@@ -627,6 +628,9 @@ export default function FindTechTab() {
               />
               <Text style={styles.locationText}>{location}</Text>
             </View>
+            <Text style={styles.bioDescript}>
+              {tech.bio || 'No bio available yet.'}
+            </Text>
           </View>
         </View>
 
@@ -674,33 +678,46 @@ export default function FindTechTab() {
   const featuredList = mechanics.slice(0, 3);
   const scanList = mechanics.slice(0, 2);
   const isMechanic = userProfile?.nomad_type?.toLowerCase() === 'mechanic';
-  const marketplaceCtaLabel = isMechanic
-    ? 'Verify as Builder'
-    : 'Unlock Premium';
   const builderHelpItems = [
     {
       title: 'Build Guides',
-      subtitle: 'Step-by-step plans for van projects.',
-      icon: 'hammer-wrench',
-      route: '/(app)/builder-help/build-guides'
+      subtitle:
+        'Step-by-step plans created by experienced builders to help nomads confidently design and complete van projects.',
+      icon: 'book-open-page-variant',
+      route: '/(app)/builder-help/build-guides',
+      accent: '#2E7D64',
+      tint: '#E7F5EF',
+      border: '#CFE9DD'
     },
     {
       title: 'Troubleshooting Q&A',
-      subtitle: 'Ask verified builders for fixes.',
-      icon: 'comment-question-outline',
-      route: '/(app)/builder-help/troubleshooting-qa'
+      subtitle:
+        'Ask questions and get reliable solutions from verified builders when you run into issues on the road or during a build.',
+      icon: 'chat-question',
+      route: '/(app)/builder-help/troubleshooting-qa',
+      accent: '#0F766E',
+      tint: '#E1F3F1',
+      border: '#CBE7E2'
     },
     {
       title: 'Supplier Resources',
-      subtitle: 'Curated vendors and part lists.',
-      icon: 'truck-cargo-container',
-      route: '/(app)/builder-help/supplier-resources'
+      subtitle:
+        'A curated directory of trusted vendors and parts lists, organized by builders and nomads to save time and avoid guesswork.',
+      icon: 'truck-delivery',
+      route: '/(app)/builder-help/supplier-resources',
+      accent: '#C2410C',
+      tint: '#FCEFE6',
+      border: '#F5D8C9'
     },
     {
       title: 'Community Support',
-      subtitle: 'Private threads with other builders.',
-      icon: 'account-group-outline',
-      route: '/(app)/builder-help/community-support'
+      subtitle:
+        'Private discussion threads that connect you with other builders for advice, feedback, and collaboration.',
+      icon: 'account-group',
+      route: '/(app)/builder-help/community-support',
+      accent: '#1D4ED8',
+      tint: '#E8F0FE',
+      border: '#D3E0FD'
     }
   ];
 
@@ -789,85 +806,68 @@ export default function FindTechTab() {
   const renderMarketplace = () => (
     <ScrollView
       style={styles.contentContainer}
+      contentContainerStyle={{paddingHorizontal: H_PADDING, paddingBottom: V_SPACING * 2}}
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.marketplaceHeader}>
-        <Text style={styles.marketplaceTitle}>Builder Help Marketplace</Text>
+        <Text style={styles.marketplaceTitle}>Welcome to the Marketplace</Text>
         <Text style={styles.marketplaceSubtitle}>
-          Paid builder help for van projects with invite-only or verified
-          access to keep it safe and intentional.
+          Your central hub for tools, knowledge, and community built for nomads
+          and builders alike.
         </Text>
       </View>
 
-      {isSubscriptionLoading ? (
-        <View style={styles.loadingRow}>
-          <ActivityIndicator size="large" color="#2E7D64" />
-        </View>
-      ) : isSubscribed ? (
-        <View style={styles.marketplaceGrid}>
-          {builderHelpItems.map(item => (
-            <TouchableOpacity
-              key={item.title}
-              style={styles.marketplaceCard}
-              onPress={() => handleOpenBuilderHelp(item.route)}
-              activeOpacity={0.9}
-            >
-              <View style={styles.marketplaceCardIcon}>
-                <MaterialCommunityIcons
-                  name={item.icon}
-                  size={22}
-                  color="#2E7D64"
-                />
-              </View>
-              <Text style={styles.marketplaceCardTitle}>{item.title}</Text>
-              <Text style={styles.marketplaceCardSubtitle}>
-                {item.subtitle}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      ) : (
-        <View style={styles.lockedSection}>
-          <Text style={styles.lockedTitle}>Invite-only builder help</Text>
-          <Text style={styles.lockedSubtitle}>
-            Unlock premium access to view full guides, private Q&A, and
-            resource lists.
-          </Text>
-          <View style={styles.marketplaceGrid}>
-            {builderHelpItems.map(item => (
-              <View key={item.title} style={styles.lockedCard}>
-                <View style={styles.lockedCardContent}>
-                  <MaterialCommunityIcons
-                    name={item.icon}
-                    size={20}
-                    color="#94A3B8"
-                  />
-                  <Text style={styles.lockedCardTitle}>{item.title}</Text>
-                  <Text style={styles.lockedCardSubtitle}>
-                    {item.subtitle}
-                  </Text>
-                </View>
-                <View style={styles.lockedOverlay}>
-                  <MaterialCommunityIcons
-                    name="lock"
-                    size={18}
-                    color="#ffffff"
-                  />
-                  <Text style={styles.lockedOverlayText}>Invite only</Text>
-                </View>
-              </View>
-            ))}
-          </View>
+      <View style={styles.marketplaceGrid}>
+        {builderHelpItems.map(item => {
+          const primaryAccent = builderHelpItems[0];
+          const accent = primaryAccent.accent;
+          const tint = primaryAccent.tint;
+          const border = primaryAccent.border;
+          return (
           <TouchableOpacity
-            style={styles.requestInviteButton}
-            onPress={handleRequestInvite}
+            key={item.title}
+            style={[styles.marketplaceCard, {borderColor: border}]}
+            onPress={() => handleOpenBuilderHelp(item.route)}
+            activeOpacity={0.9}
           >
-            <Text style={styles.requestInviteButtonText}>
-              {marketplaceCtaLabel}
+            <View
+              style={[
+                styles.marketplaceCardAccent,
+                {backgroundColor: accent}
+              ]}
+            />
+            <View
+              style={[
+                styles.marketplaceCardIcon,
+                {backgroundColor: tint}
+              ]}
+            >
+              <MaterialCommunityIcons
+                name={item.icon}
+                size={22}
+                color={accent}
+              />
+            </View>
+            <Text style={styles.marketplaceCardTitle}>{item.title}</Text>
+            <Text style={styles.marketplaceCardSubtitle}>
+              {item.subtitle}
             </Text>
           </TouchableOpacity>
+        );
+        })}
+      </View>
+
+      <TouchableOpacity
+        style={styles.requestInviteButton}
+        onPress={handleRequestInvite}
+      >
+        <View style={styles.requestInviteButtonContent}>
+          <MaterialCommunityIcons name="crown" size={18} color="#ffffff" />
+          <Text style={styles.requestInviteButtonText}>
+            Unlock Marketplace
+          </Text>
         </View>
-      )}
+      </TouchableOpacity>
     </ScrollView>
   );
 
@@ -900,22 +900,25 @@ export default function FindTechTab() {
       <View style={styles.container}>
         <View style={styles.topNavContainer}>
           <View style={styles.topNav}>
-            {['Marketplace', 'Requests'].map(tab => (
+            {[
+              {label: 'Help Requests', value: 'requests'},
+              {label: 'Marketplace', value: 'marketplace'}
+            ].map(tab => (
               <TouchableOpacity
-                key={tab}
+                key={tab.value}
                 style={[
                   styles.tabButton,
-                  mechanicTab === tab.toLowerCase() && styles.tabButtonActive
+                  mechanicTab === tab.value && styles.tabButtonActive
                 ]}
-                onPress={() => setMechanicTab(tab.toLowerCase())}
+                onPress={() => setMechanicTab(tab.value)}
               >
                 <Text
                   style={[
                     styles.tabText,
-                    mechanicTab === tab.toLowerCase() && styles.tabTextActive
+                    mechanicTab === tab.value && styles.tabTextActive
                   ]}
                 >
-                  {tab}
+                  {tab.label}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -927,6 +930,10 @@ export default function FindTechTab() {
         {mechanicTab === 'requests' && (
           <ScrollView
             style={styles.contentContainer}
+            contentContainerStyle={{
+              paddingHorizontal: H_PADDING,
+              paddingBottom: V_SPACING * 2
+            }}
             showsVerticalScrollIndicator={false}
           >
             <View style={styles.mechanicHeader}>
@@ -997,7 +1004,6 @@ export default function FindTechTab() {
                             </Text>
                           </View>
                         </View>
-                        <Text style={styles.helpIssue}>{description}</Text>
                         <View style={styles.locationRow}>
                           <MaterialCommunityIcons
                             name="map-marker"
@@ -1008,6 +1014,7 @@ export default function FindTechTab() {
                             {profileLocation}
                           </Text>
                         </View>
+                        <Text style={styles.helpIssue}>{description}</Text>
                       </View>
                     </View>
 
@@ -1192,119 +1199,43 @@ export default function FindTechTab() {
     <View style={styles.container}>
       <View style={styles.topNavContainer}>
         <View style={styles.topNav}>
-          {['Marketplace', 'Mechanics'].map(tab => (
+          {[
+            {label: 'Request Help', value: 'mechanics'},
+            {label: 'Marketplace', value: 'marketplace'}
+          ].map(tab => (
             <TouchableOpacity
-              key={tab}
+              key={tab.value}
               style={[
                 styles.tabButton,
-                activeTab === tab.toLowerCase() && styles.tabButtonActive
+                activeTab === tab.value && styles.tabButtonActive
               ]}
-              onPress={() => setActiveTab(tab.toLowerCase())}
+              onPress={() => setActiveTab(tab.value)}
             >
               <Text
                 style={[
                   styles.tabText,
-                  activeTab === tab.toLowerCase() && styles.tabTextActive
+                  activeTab === tab.value && styles.tabTextActive
                 ]}
               >
-                {tab}
+                {tab.label}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
       </View>
 
-      {activeTab === 'marketplace' && (
-        <ScrollView
-          style={styles.contentContainer}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.marketplaceHeader}>
-            <Text style={styles.marketplaceTitle}>Builder Help Marketplace</Text>
-            <Text style={styles.marketplaceSubtitle}>
-              Paid builder help for van projects with invite-only or verified
-              access to keep it safe and intentional.
-            </Text>
-          </View>
-
-          {isSubscriptionLoading ? (
-            <View style={styles.loadingRow}>
-              <ActivityIndicator size="large" color="#2E7D64" />
-            </View>
-          ) : isSubscribed ? (
-            <View style={styles.marketplaceGrid}>
-              {builderHelpItems.map(item => (
-                <TouchableOpacity
-                  key={item.title}
-                  style={styles.marketplaceCard}
-                  onPress={() => handleOpenBuilderHelp(item.route)}
-                  activeOpacity={0.9}
-                >
-                  <View style={styles.marketplaceCardIcon}>
-                    <MaterialCommunityIcons
-                      name={item.icon}
-                      size={22}
-                      color="#2E7D64"
-                    />
-                  </View>
-                  <Text style={styles.marketplaceCardTitle}>{item.title}</Text>
-                  <Text style={styles.marketplaceCardSubtitle}>
-                    {item.subtitle}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-      ) : (
-        <View style={styles.lockedSection}>
-          <Text style={styles.lockedTitle}>Invite-only builder help</Text>
-          <Text style={styles.lockedSubtitle}>
-            Unlock premium access to view full guides, private Q&A, and
-                resource lists.
-              </Text>
-              <View style={styles.marketplaceGrid}>
-                {builderHelpItems.map(item => (
-                  <View key={item.title} style={styles.lockedCard}>
-                    <View style={styles.lockedCardContent}>
-                      <MaterialCommunityIcons
-                        name={item.icon}
-                        size={20}
-                        color="#94A3B8"
-                      />
-                      <Text style={styles.lockedCardTitle}>{item.title}</Text>
-                      <Text style={styles.lockedCardSubtitle}>
-                        {item.subtitle}
-                      </Text>
-                    </View>
-                    <View style={styles.lockedOverlay}>
-                      <MaterialCommunityIcons
-                        name="lock"
-                        size={18}
-                        color="#ffffff"
-                      />
-                      <Text style={styles.lockedOverlayText}>Invite only</Text>
-                    </View>
-                  </View>
-                ))}
-              </View>
-              <TouchableOpacity
-            style={styles.requestInviteButton}
-            onPress={handleRequestInvite}
-          >
-            <Text style={styles.requestInviteButtonText}>
-              {marketplaceCtaLabel}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
-    </ScrollView>
-      )}
+      {activeTab === 'marketplace' && renderMarketplace()}
 
       {activeTab === 'mechanics' && (
         <ScrollView
           style={styles.contentContainer}
+          contentContainerStyle={{
+            paddingHorizontal: H_PADDING,
+            paddingBottom: V_SPACING * 2
+          }}
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.resultsTitle}>Featured Mechanics</Text>
+          <Text style={styles.resultsTitle}>Featured Builders</Text>
           {loading ? (
             <View style={styles.loadingRow}>
               <ActivityIndicator size="large" color="#2E7D64" />
@@ -1318,7 +1249,7 @@ export default function FindTechTab() {
 
           <View style={styles.sectionDivider} />
 
-          <Text style={styles.sectionTitle}>Request Help</Text>
+          <Text style={styles.sectionTitle}>Builders Near Me</Text>
           <View style={styles.scanSection}>
             {!scanned ? (
               <View style={styles.scanContent}>
@@ -1409,13 +1340,13 @@ export default function FindTechTab() {
                     </View>
                     {!isScanning && (
                       <Text style={styles.radarText}>
-                        Scan nearby mechanics
+                        Scan nearby builders
                       </Text>
                     )}
                     {isScanning && (
                       <View style={styles.scanIndicator}>
                         <Text style={styles.scanIndicatorText}>
-                          Scanning nearby mechanics...
+                          Scanning nearby builders...
                         </Text>
                       </View>
                     )}
@@ -1722,20 +1653,20 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-    paddingHorizontal: 20,
     paddingVertical: 6,
     marginBottom: 20
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1a1a1a',
-    marginBottom: 12
+    color: '#0f172a',
+    marginBottom: 10,
+    letterSpacing: 0.2
   },
   sectionDivider: {
     height: 1,
-    backgroundColor: '#E2E8F0',
-    marginVertical: 20
+    backgroundColor: '#E6ECE9',
+    marginVertical: 18
   },
   scanSection: {
     marginBottom: 16
@@ -1747,46 +1678,56 @@ const styles = StyleSheet.create({
     paddingBottom: 20
   },
   marketplaceHeader: {
-    marginTop: 8,
-    marginBottom: 16
+    marginTop: 10,
+    marginBottom: 18
   },
   marketplaceTitle: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '700',
-    color: '#0f172a'
+    color: '#0f172a',
+    letterSpacing: 0.2
   },
   marketplaceSubtitle: {
     marginTop: 8,
     fontSize: 13,
-    color: '#64748b',
-    lineHeight: 18
+    color: '#5B6B61',
+    lineHeight: 19
   },
   marketplaceGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12
+    gap: 14
   },
   marketplaceCard: {
     width: '48%',
-    backgroundColor: '#ffffff',
+    backgroundColor: '#F7FBF9',
     borderRadius: 16,
-    padding: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 150,
+    padding: 16,
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
+    minHeight: 170,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#DCEFE6',
     shadowColor: '#0f172a',
     shadowOpacity: 0.06,
-    shadowRadius: 10,
+    shadowRadius: 12,
     shadowOffset: {width: 0, height: 6},
-    elevation: 2
+    elevation: 3
+  },
+  marketplaceCardAccent: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
+    borderTopLeftRadius: 16,
+    borderBottomLeftRadius: 16
   },
   marketplaceCardIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#E7F5F0',
+    backgroundColor: '#E1F3EA',
     alignItems: 'center',
     justifyContent: 'center'
   },
@@ -1794,78 +1735,26 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#0f172a',
-    marginTop: 10,
-    textAlign: 'center'
+    marginTop: 12
   },
   marketplaceCardSubtitle: {
     marginTop: 6,
     fontSize: 12,
     color: '#64748b',
     lineHeight: 16,
-    textAlign: 'center'
-  },
-  lockedSection: {
-    gap: 12
-  },
-  lockedTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#0f172a'
-  },
-  lockedSubtitle: {
-    fontSize: 12,
-    color: '#64748b',
-    lineHeight: 16
-  },
-  lockedCard: {
-    width: '48%',
-    backgroundColor: '#F8FAFC',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    overflow: 'hidden'
-  },
-  lockedCardContent: {
-    alignItems: 'center',
-    gap: 10,
-    opacity: 0.45
-  },
-  lockedCardTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#0f172a',
-    textAlign: 'center'
-  },
-  lockedCardSubtitle: {
-    marginTop: 4,
-    fontSize: 11,
-    color: '#64748b',
-    lineHeight: 15,
-    textAlign: 'center'
-  },
-  lockedOverlay: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    backgroundColor: 'rgba(15, 23, 42, 0.45)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6
-  },
-  lockedOverlayText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#ffffff'
+    textAlign: 'left'
   },
   requestInviteButton: {
-    backgroundColor: '#111827',
-    borderRadius: 12,
+    backgroundColor: '#2E7D64',
+    borderRadius: 14,
     paddingVertical: 14,
     alignItems: 'center',
-    marginTop: 8
+    marginTop: 16
+  },
+  requestInviteButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8
   },
   requestInviteButtonText: {
     color: '#ffffff',
@@ -1874,20 +1763,20 @@ const styles = StyleSheet.create({
   },
   radarCard: {
     flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 16,
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
     padding: 20,
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#C4D8CC',
+    borderColor: '#E6ECE9',
     shadowColor: '#0f172a',
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.08,
     shadowRadius: 12,
     shadowOffset: {width: 0, height: 8},
-    elevation: 4
+    elevation: 3
   },
   radarContainer: {
     alignItems: 'center',
@@ -2039,16 +1928,21 @@ const styles = StyleSheet.create({
   },
   scanIndicatorText: {
     fontSize: 12,
-    color: '#6B7280',
-    fontWeight: '500'
+    color: '#64748B',
+    fontWeight: '600'
   },
   scanButton: {
     backgroundColor: '#2E7D64',
     paddingVertical: 14,
     paddingHorizontal: 40,
-    borderRadius: 12,
+    borderRadius: 14,
     width: '100%',
-    alignItems: 'center'
+    alignItems: 'center',
+    shadowColor: '#2E7D64',
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    shadowOffset: {width: 0, height: 6},
+    elevation: 3
   },
   scanButtonBusy: {
     opacity: 0.7
@@ -2059,14 +1953,15 @@ const styles = StyleSheet.create({
     color: '#ffffff'
   },
   signalButton: {
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: '#2E7D64',
     paddingVertical: 14,
     paddingHorizontal: 40,
-    borderRadius: 12,
+    borderRadius: 14,
     width: '100%',
     alignItems: 'center',
-    marginTop: 12
+    marginTop: 12,
+    backgroundColor: '#EAF7F0'
   },
   signalButtonBusy: {
     opacity: 0.7
@@ -2083,8 +1978,9 @@ const styles = StyleSheet.create({
   resultsTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1a1a1a',
-    marginBottom: 12
+    color: '#0f172a',
+    marginVertical: 12,
+    letterSpacing: 0.2
   },
   techCard: {
     backgroundColor: '#f9f9f9',
@@ -2131,8 +2027,8 @@ const styles = StyleSheet.create({
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginTop: 6
+    gap: 1,
+    marginTop: 2 
   },
   locationText: {
     fontSize: 12,
@@ -2148,14 +2044,14 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     color: '#2E7D64',
-    backgroundColor: '#e8faf6',
+    backgroundColor: '#EAF7F0',
     paddingHorizontal: 10,
-    paddingVertical: 10,
-    borderRadius: 16,
-    lineHeight: 5,
+    paddingVertical: 6,
+    borderRadius: 12,
+    lineHeight: 14,
     textAlign: 'center',
     borderWidth: 1,
-    borderColor: '#A7F3D0'
+    borderColor: '#CFE9DD'
   },
   followButton: {
     flex: 1,
@@ -2181,10 +2077,15 @@ const styles = StyleSheet.create({
   },
   hireButton: {
     flex: 1,
-    backgroundColor: '#111827',
+    backgroundColor: '#2E7D64',
     paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center'
+    borderRadius: 10,
+    alignItems: 'center',
+    shadowColor: '#2E7D64',
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    shadowOffset: {width: 0, height: 4},
+    elevation: 3
   },
   hireButtonText: {
     fontSize: 14,
