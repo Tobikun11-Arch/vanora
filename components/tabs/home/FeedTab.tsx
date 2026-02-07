@@ -2,7 +2,7 @@ import {supabase} from '@/services/supabase';
 import {feedTabStyles as styles} from '@/styles';
 import {MaterialCommunityIcons} from '@expo/vector-icons';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
-import {useEffect, useRef, useState} from 'react';
+import React,{useEffect, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -64,7 +64,32 @@ interface FeedTabProps {
 const CACHE_TTL_MS = 60 * 1000;
 const MENU_WIDTH = 140;
 const MENU_OFFSET = 8;
-
+const STORY_ITEMS = [
+  {
+    id: 'story-1',
+    title: 'Alex',
+    imageUrl:
+      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80'
+  },
+  {
+    id: 'story-2',
+    title: 'The Build',
+    imageUrl:
+      'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=400&q=80'
+  },
+  {
+    id: 'story-3',
+    title: 'Sierra',
+    imageUrl:
+      'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=400&q=80'
+  },
+  {
+    id: 'story-4',
+    title: 'Coast',
+    imageUrl:
+      'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=400&q=80'
+  }
+];
 export default function FeedTab({refreshTrigger}: FeedTabProps) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [votingPollIds, setVotingPollIds] = useState<Record<string, boolean>>(
@@ -590,7 +615,7 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
             onPress={() => handleShare(item.id, 0)}
           >
             <MaterialCommunityIcons
-              name="share-outline"
+              name="share-variant-outline"
               size={20}
               color={isShared ? '#2E7D64' : '#6B7280'}
             />
@@ -631,7 +656,61 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
   if (posts.length === 0) {
     return (
       <View style={styles.tabContent}>
-        <Text style={styles.tabContentTitle}>Story Area</Text>
+        <View style={styles.storySection}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.storyScrollContent}
+          >
+            <View style={styles.storyBus}>
+              <View style={styles.storyStripe} />
+              <View style={styles.storyFront}>
+                <View style={styles.storyHeadlight} />
+                <View style={styles.storyFrontBumper} />
+                <View style={styles.joinTripCard}>
+                  <View style={styles.joinTripIconCircle}>
+                    <MaterialCommunityIcons
+                      name="plus"
+                      size={20}
+                      color="#2E7D64"
+                    />
+                  </View>
+                  <Text style={styles.joinTripText}>JOIN TRIP</Text>
+                </View>
+              </View>
+              <View style={styles.storyBody}>
+              {STORY_ITEMS.map((item, index) => {
+                const isLast = index === STORY_ITEMS.length - 1;
+                return (
+                  <View
+                    key={item.id}
+                    style={[styles.storyCard, isLast && styles.storyCardLast]}
+                  >
+                    <Image
+                      source={{uri: item.imageUrl}}
+                      style={styles.storyImage}
+                      resizeMode="cover"
+                    />
+                    <View style={styles.storyLabel}>
+                      <Text style={styles.storyLabelText}>
+                        {item.title}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+            <View style={styles.storyRearCap} />
+            <View style={styles.storyWheelFront}>
+              <View style={styles.storyWheelInner} />
+            </View>
+            <View style={styles.storyWheelBack}>
+              <View style={styles.storyWheelInner} />
+            </View>
+          </View>
+        </ScrollView>
+      </View>
+      <View style={styles.roadSeparator} />
         <View style={{alignItems: 'center', marginTop: 24}}>
           <MaterialCommunityIcons
             name="post-outline"
@@ -646,7 +725,61 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
 
   return (
     <View style={styles.tabContent}>
-      <Text style={styles.tabContentTitle}>Story area</Text>
+      <View style={styles.storySection}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.storyScrollContent}
+        >
+          <View style={styles.storyBus}>
+            <View style={styles.storyStripe} />
+            <View style={styles.storyFrontCap} />
+            <View style={styles.storyFront}>
+              <View style={styles.storyFrontWindow} />
+              <View style={styles.storyHeadlight} />
+              <View style={styles.storyFrontBumper} />
+              <View style={styles.joinTripCard}>
+                <View style={styles.joinTripIconCircle}>
+                  <MaterialCommunityIcons
+                    name="plus"
+                    size={20}
+                    color="#2E7D64"
+                  />
+                </View>
+                <Text style={styles.joinTripText}>JOIN TRIP</Text>
+              </View>
+            </View>
+            <View style={styles.storyBody}>
+            {STORY_ITEMS.map((item, index) => {
+              const isLast = index === STORY_ITEMS.length - 1;
+              return (
+                <View
+                  key={item.id}
+                  style={[styles.storyCard, isLast && styles.storyCardLast]}
+                >
+                  <Image
+                    source={{uri: item.imageUrl}}
+                    style={styles.storyImage}
+                    resizeMode="cover"
+                  />
+                  <View style={styles.storyLabel}>
+                    <Text style={styles.storyLabelText}>{item.title}</Text>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+          <View style={styles.storyRearCap} />
+          <View style={styles.storyWheelFront}>
+            <View style={styles.storyWheelInner} />
+          </View>
+          <View style={styles.storyWheelBack}>
+            <View style={styles.storyWheelInner} />
+          </View>
+        </View>
+      </ScrollView>
+    </View>
+      <View style={styles.roadSeparator} />
       {posts.map(item => (
         <View key={item.id}>{renderItem({item})}</View>
       ))}

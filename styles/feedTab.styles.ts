@@ -2,31 +2,223 @@ import {StyleSheet} from 'react-native';
 
 export const feedTabStyles = StyleSheet.create({
   tabContent: {
-    padding: 20,
-    backgroundColor: '#F6F9F7'
+    padding: 18,
+    backgroundColor: '#F4F7F6'
   },
   tabContentTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1F2937',
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginBottom: 14,
+    letterSpacing: 0.2
+  },
+  storySection: {
+  },
+  roadSeparator: {
+    height: 4,
+    backgroundColor: '#a8a9a9',
+    borderRadius: 999,
     marginBottom: 16
   },
+  storyScrollContent: {
+    paddingRight: 24,
+    paddingBottom: 22
+  },
+  storyBus: {
+    position: 'relative',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E7EEF3',
+    borderTopLeftRadius: 90,
+    borderBottomLeftRadius: 8,
+    borderTopRightRadius: 18,
+    borderBottomRightRadius: 18,
+    borderWidth: 2,
+    borderColor: '#A7B4BF',
+    height: 150,
+    paddingVertical: 16,
+    marginLeft: 5
+  },
+  storyStripe: {
+    position: 'absolute',
+    left: 128,
+    right: 22,
+    height: 6,
+    borderRadius: 999,
+    backgroundColor: '#2E7D64',
+    top: 70
+  },
+  storyFront: {
+    width: 120,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRightWidth: 2,
+    borderColor: '#A7B4BF',
+    height: '100%',
+    marginRight: 2,
+  },
+  storyHeadlight: {
+    position: 'absolute',
+    left: 2,
+    bottom:10,
+    width: 40,
+    height: 20,
+    borderRadius: 999,
+    backgroundColor: '#FFF7C2',
+    borderWidth: 2,
+    borderColor: '#2E7D64',
+    shadowColor: '#FFF1A6',
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 0.6,
+    shadowRadius: 8,
+    elevation: 3,
+    zIndex: 2,
+  },
+  storyFrontBumper: {
+    position: 'absolute',
+    left: 1,
+    bottom: 10,
+    height: 20,
+    width: 118,
+    borderRadius: 10,
+    backgroundColor: '#1F2937'
+  },
+  joinTripCard: {
+    position: 'absolute',
+    top: 1,
+    width: 86,
+    height: 80,
+    borderRadius: 18,
+    borderTopLeftRadius: 80,
+    backgroundColor: '#EAF3EF',
+    borderWidth: 2,
+    borderColor: '#2E7D64',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    zIndex: 2
+  },
+  joinTripIconCircle: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#D1D5DB'
+  },
+  joinTripText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#2E7D64',
+    letterSpacing: 0.4
+  },
+  storyBody: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingRight: 58,
+    gap: 10
+  },
+  storyCard: {
+    width: 86,
+    height: 100,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: '#2E7D64',
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden'
+  },
+  storyCardLast: {
+    marginRight: 10
+  },
+  storyImage: {
+    width: '100%',
+    height: '100%'
+  },
+  storyLabel: {
+    position: 'absolute',
+    left: 6,
+    right: 6,
+    bottom: 6,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    borderRadius: 8
+  },
+  storyLabelText: {
+    fontSize: 11,
+    color: '#FFFFFF',
+    fontWeight: '600'
+  },
+  storyRearCap: {
+    position: 'absolute',
+    right: -20,
+    top: -2,
+    bottom: -2,
+    width: 34,
+    backgroundColor: '#E7EEF3',
+    borderWidth: 2,
+    borderLeftWidth: 0,
+    borderColor: '#A7B4BF',
+    borderTopRightRadius: 30,
+    borderBottomRightRadius: 30
+  },
+  storyWheelFront: {
+    position: 'absolute',
+    left: 60,
+    bottom: -18,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#1F2937',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 5,
+    borderColor: '#1F2937',
+    zIndex: 3
+  },
+  storyWheelBack: {
+    position: 'absolute',
+    right: 20,
+    bottom: -18,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#1F2937',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 5,
+    borderColor: '#1F2937',
+    zIndex: 3
+  },
+  storyWheelInner: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#E5E7EB',
+    borderWidth: 3,
+    borderColor: '#9CA3AF'
+  },
   feedPost: {
-    backgroundColor: '#fff',
-    padding: 18,
-    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+    borderRadius: 18,
     marginBottom: 14,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1
+    borderWidth: 1,
+    borderColor: '#E3EAE6',
+    shadowColor: '#0B1D18',
+    shadowOffset: {width: 0, height: 8},
+    shadowOpacity: 0.06,
+    shadowRadius: 14,
+    elevation: 3
   },
   feedHeader: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginBottom: 10
+    marginBottom: 12
   },
   feedHeaderLeft: {
     flexDirection: 'row',
@@ -35,10 +227,12 @@ export const feedTabStyles = StyleSheet.create({
     paddingRight: 8
   },
   feedHeaderAvatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    marginRight: 10
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: '#E1E7E3'
   },
   feedHeaderAvatarPlaceholder: {
     backgroundColor: '#E5E7EB',
@@ -51,25 +245,27 @@ export const feedTabStyles = StyleSheet.create({
   feedHeaderTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
     flexWrap: 'wrap'
   },
   feedHeaderName: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#1F2937'
+    color: '#0F172A'
   },
   followButton: {
     borderWidth: 1,
     borderColor: '#2E7D64',
+    backgroundColor: '#F2FAF6',
     paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingVertical: 5,
     borderRadius: 999
   },
   followButtonText: {
     color: '#2E7D64',
-    fontWeight: '600',
-    fontSize: 12
+    fontWeight: '700',
+    fontSize: 11,
+    letterSpacing: 0.2
   },
   followButtonActive: {
     backgroundColor: '#2E7D64',
@@ -113,31 +309,36 @@ export const feedTabStyles = StyleSheet.create({
     fontSize: 14,
     color: '#1F2937',
     lineHeight: 20,
-    marginBottom: 1
+    marginBottom: 6
   },
   feedPostActions: {
     flexDirection: 'row',
-    gap: 24,
+    gap: 16,
     paddingTop: 12,
     alignItems: 'center'
   },
   feedActionsSeparator: {
     height: 1,
-    backgroundColor: '#EEF2F3',
+    backgroundColor: '#ECF1EE',
     marginTop: 10
   },
   feedAction: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4
+    gap: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 999,
+    backgroundColor: '#F5F8F7'
   },
   feedActionText: {
-    fontSize: 15,
-    color: '#6B7280'
+    fontSize: 13,
+    color: '#5C6A63',
+    fontWeight: '600'
   },
   actionActiveText: {
     color: '#2E7D64',
-    fontWeight: '600'
+    fontWeight: '700'
   },
   actionTagsWrap: {
     marginLeft: 'auto',
