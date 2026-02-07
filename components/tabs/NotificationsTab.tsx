@@ -3,10 +3,14 @@ import {supabase} from '@/services/supabase';
 import {useUserStore} from '@/store/userStore';
 import {MaterialCommunityIcons} from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import {useEffect, useState} from 'react';
+import * as FileSystem from 'expo-file-system';
+import {useEffect, useMemo, useState} from 'react';
 import {
+  Dimensions,
   Image,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -30,7 +34,25 @@ interface Notification {
   } | null;
 }
 
+interface ChatMessage {
+  id: string;
+  sender: 'me' | 'them' | 'system';
+  text: string;
+  timestamp: string;
+  senderName?: string;
+  senderAvatar?: {uri: string} | number;
+}
+
+interface DirectConnection {
+  id: string;
+  username: string | null;
+  display_name: string | null;
+  profile_picture_url: string | null;
+}
+
 export default function NotificationsTab() {
+  const {width: windowWidth} = Dimensions.get('window');
+  const chatBubbleMaxWidth = Math.round(windowWidth * 0.72);
   const [showLegacyModal, setShowLegacyModal] = useState(false);
   const [showCreateCommunityModal, setShowCreateCommunityModal] =
     useState(false);
@@ -44,6 +66,26 @@ export default function NotificationsTab() {
   const [error, setError] = useState<string | null>(null);
   const userProfile = useUserStore(state => state.profile);
   const [activeTab, setActiveTab] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [directConnections, setDirectConnections] = useState<
+    DirectConnection[]
+  >([]);
+  const [chatModalVisible, setChatModalVisible] = useState(false);
+  const [chatDraft, setChatDraft] = useState('');
+  const [activeChat, setActiveChat] = useState<{
+    id: string;
+    title: string;
+    subtitle?: string;
+    topic?: string;
+    avatar?: {uri: string} | number;
+    type: 'community' | 'direct';
+  } | null>(null);
+  const [directChats, setDirectChats] = useState<
+    Record<string, ChatMessage[]>
+  >({});
+  const [communityChats, setCommunityChats] = useState<
+    Record<string, ChatMessage[]>
+  >({});
   const promoSeedDate = new Date();
   promoSeedDate.setDate(promoSeedDate.getDate() - 1);
   promoSeedDate.setHours(9, 0, 0, 0);
@@ -78,14 +120,99 @@ export default function NotificationsTab() {
     {
       name: 'Stealth Camping Elites',
       subtitle: '4 new posts today',
+      topic: 'stealth camping tactics',
       image: require('../../assets/images/duo_camper.jpg')
     },
     {
       name: 'Mountain Wanderer Hub',
       subtitle: 'Up to date',
+      topic: 'mountain routes and gear',
       image: require('../../assets/images/solar_van.jpg')
     }
   ]);
+
+  const suggestedCommunities = [
+    {
+      name: 'VanLifer Creator',
+      members: '12.4k',
+      creator: 'by Vanora Team',
+      image: require('../../assets/images/cozy_van.jpg'),
+      subtitle: 'Fresh ideas daily',
+      topic: 'van builds and layouts'
+    },
+    {
+      name: 'Nomadcom',
+      members: '8.9k',
+      creator: 'by Nomadcom',
+      image: require('../../assets/images/solo_camper.jpg'),
+      subtitle: 'Trending now',
+      topic: 'remote work on the road'
+    },
+    {
+      name: 'Campfire Stories',
+      members: '6.2k',
+      creator: 'by Jesse R.',
+      image: require('../../assets/images/stones.jpg'),
+      subtitle: 'Story time',
+      topic: 'travel stories and tips'
+    }
+  ];
+
+  const communityMemberSeeds: Record<
+    string,
+    {name: string; avatar: {uri: string} | number}[]
+  > = {
+    'Stealth Camping Elites': [
+      {
+        name: 'Noah',
+        avatar: require('../../assets/images/Noah.jpg')
+      },
+      {
+        name: 'Duo Camper',
+        avatar: require('../../assets/images/duo_camper.jpg')
+      }
+    ],
+    'Mountain Wanderer Hub': [
+      {
+        name: 'Liam Nomad',
+        avatar: require('../../assets/images/Noah.jpg')
+      },
+      {
+        name: 'Summit Guide',
+        avatar: require('../../assets/images/duo_camper.jpg')
+      }
+    ],
+    'VanLifer Creator': [
+      {
+        name: 'Noah',
+        avatar: require('../../assets/images/Noah.jpg')
+      },
+      {
+        name: 'Duo Camper',
+        avatar: require('../../assets/images/duo_camper.jpg')
+      }
+    ],
+    Nomadcom: [
+      {
+        name: 'Noah',
+        avatar: require('../../assets/images/Noah.jpg')
+      },
+      {
+        name: 'Duo Camper',
+        avatar: require('../../assets/images/duo_camper.jpg')
+      }
+    ],
+    'Campfire Stories': [
+      {
+        name: 'Noah',
+        avatar: require('../../assets/images/Noah.jpg')
+      },
+      {
+        name: 'Duo Camper',
+        avatar: require('../../assets/images/duo_camper.jpg')
+      }
+    ]
+  };
 
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
@@ -133,9 +260,21 @@ export default function NotificationsTab() {
 
     if (!result.canceled && result.assets?.length) {
       const asset = result.assets[0];
-      if (asset?.uri) {
-        setCommunityImageUri(asset.uri);
+      if (!asset?.uri) return;
+
+      let resolvedUri = asset.uri;
+      if (resolvedUri.startsWith('content://')) {
+        try {
+          const safeName = asset.fileName || `community-${Date.now()}.jpg`;
+          const cacheUri = `${FileSystem.cacheDirectory ?? ''}${safeName}`;
+          await FileSystem.copyAsync({from: resolvedUri, to: cacheUri});
+          resolvedUri = cacheUri;
+        } catch (error) {
+          console.warn('Failed to cache selected image:', error);
+        }
       }
+
+      setCommunityImageUri(resolvedUri);
     }
   };
 
@@ -158,12 +297,33 @@ export default function NotificationsTab() {
       {
         name: trimmedName,
         subtitle: 'New community',
+        topic: 'fresh community chat',
         image: {uri: communityImageUri}
       },
       ...prev
     ]);
     resetCreateCommunityForm();
     setShowCreateCommunityModal(false);
+  };
+
+  const handleJoinCommunity = (community: {
+    name: string;
+    subtitle: string;
+    topic: string;
+    image: {uri: string} | number;
+  }) => {
+    setJoinedCommunities(prev => {
+      if (prev.some(item => item.name === community.name)) return prev;
+      return [
+        {
+          name: community.name,
+          subtitle: 'New community',
+          topic: community.topic,
+          image: community.image
+        },
+        ...prev
+      ];
+    });
   };
 
   useEffect(() => {
@@ -225,6 +385,57 @@ export default function NotificationsTab() {
     fetchNotifications();
   }, [userProfile?.id]);
 
+  useEffect(() => {
+    if (!userProfile?.id) return;
+
+    const fetchDirectConnections = async () => {
+      try {
+        const {data: following, error: followingError} = await supabase
+          .from('user_follows')
+          .select('following_id')
+          .eq('follower_id', userProfile.id);
+
+        if (followingError) throw followingError;
+
+        const {data: followers, error: followersError} = await supabase
+          .from('user_follows')
+          .select('follower_id')
+          .eq('following_id', userProfile.id);
+
+        if (followersError) throw followersError;
+
+        const followingIds = (following || [])
+          .map(item => item.following_id)
+          .filter(Boolean);
+        const followerIds = (followers || [])
+          .map(item => item.follower_id)
+          .filter(Boolean);
+        const uniqueIds = Array.from(
+          new Set([...followingIds, ...followerIds])
+        );
+
+        if (uniqueIds.length === 0) {
+          setDirectConnections([]);
+          return;
+        }
+
+        const {data: profiles, error: profilesError} = await supabase
+          .from('profiles')
+          .select('id, username, display_name, profile_picture_url')
+          .in('id', uniqueIds);
+
+        if (profilesError) throw profilesError;
+
+        setDirectConnections(profiles || []);
+      } catch (err) {
+        console.error('Fetch direct connections error:', err);
+        setDirectConnections([]);
+      }
+    };
+
+    fetchDirectConnections();
+  }, [userProfile?.id]);
+
   const handleMarkAllAsRead = () => {
     if (!userProfile?.id) return;
     const now = new Date().toISOString();
@@ -256,6 +467,142 @@ export default function NotificationsTab() {
   };
 
   const unreadCount = notifications.filter(n => !n.read_at).length;
+
+  const filteredCommunities = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return joinedCommunities;
+    return joinedCommunities.filter(
+      item =>
+        item.name.toLowerCase().includes(query) ||
+        item.subtitle.toLowerCase().includes(query)
+    );
+  }, [joinedCommunities, searchQuery]);
+
+  const filteredDirectConnections = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return directConnections;
+    return directConnections.filter(connection => {
+      const name =
+        connection.display_name ||
+        connection.username ||
+        'Nomad';
+      return name.toLowerCase().includes(query);
+    });
+  }, [directConnections, searchQuery]);
+
+  const getCommunityMessages = (communityName: string, topic: string) => {
+    const members = communityMemberSeeds[communityName] || [
+      {
+        name: 'Noah',
+        avatar: require('../../assets/images/Noah.jpg')
+      }
+    ];
+    return (
+      communityChats[communityName] || [
+        {
+          id: `${communityName}-intro`,
+          sender: 'system',
+          text: `Welcome to ${communityName}. Share your latest tips on ${topic}.`,
+          timestamp: 'Just now'
+        },
+        {
+          id: `${communityName}-msg-1`,
+          sender: 'them',
+          text: `Anyone tried a new spot for ${topic}?`,
+          timestamp: '2m ago',
+          senderName: members[0]?.name,
+          senderAvatar: members[0]?.avatar
+        },
+        {
+          id: `${communityName}-msg-2`,
+          sender: 'them',
+          text: `Drop your favorite gear list for ${topic}.`,
+          timestamp: '8m ago',
+          senderName: members[1]?.name ?? members[0]?.name,
+          senderAvatar: members[1]?.avatar ?? members[0]?.avatar
+        }
+      ]
+    );
+  };
+
+  const getDirectMessages = (userId: string, name: string) => {
+    return (
+      directChats[userId] || [
+        {
+          id: `${userId}-intro`,
+          sender: 'system',
+          text: `Say hi to ${name} 👋`,
+          timestamp: 'Just now'
+        }
+      ]
+    );
+  };
+
+  const openCommunityChat = (community: {
+    name: string;
+    subtitle: string;
+    topic: string;
+    image: {uri: string} | number;
+  }) => {
+    setActiveChat({
+      id: community.name,
+      title: community.name,
+      subtitle: community.subtitle,
+      topic: community.topic,
+      avatar: community.image,
+      type: 'community'
+    });
+    setChatModalVisible(true);
+  };
+
+  const openDirectChat = (connection: DirectConnection) => {
+    const name =
+      connection.display_name ||
+      connection.username ||
+      'Nomad';
+    setActiveChat({
+      id: connection.id,
+      title: name,
+      subtitle: connection.username ? `@${connection.username}` : 'Nomad',
+      avatar: connection.profile_picture_url
+        ? {uri: connection.profile_picture_url}
+        : require('../../assets/images/vanora.png'),
+      type: 'direct'
+    });
+    setChatModalVisible(true);
+  };
+
+  const handleSendMessage = () => {
+    if (!activeChat || !chatDraft.trim()) return;
+    const message: ChatMessage = {
+      id: `${activeChat.id}-${Date.now()}`,
+      sender: 'me',
+      text: chatDraft.trim(),
+      timestamp: 'Now'
+    };
+    setChatDraft('');
+
+    if (activeChat.type === 'direct') {
+      setDirectChats(prev => ({
+        ...prev,
+        [activeChat.id]: [
+          ...getDirectMessages(activeChat.id, activeChat.title),
+          message
+        ]
+      }));
+    } else {
+      setCommunityChats(prev => ({
+        ...prev,
+        [activeChat.id]: [
+          ...getCommunityMessages(
+            activeChat.id,
+            activeChat.topic || 'community updates'
+          ),
+          message
+        ]
+      }));
+    }
+  };
 
   const renderLegacyNotifications = () => (
     <View style={styles.legacyContainer}>
@@ -392,7 +739,18 @@ export default function NotificationsTab() {
           style={styles.searchInput}
           placeholder="Search communities and chats"
           placeholderTextColor="#94A3B8"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
         />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchQuery('')}>
+            <MaterialCommunityIcons
+              name="close-circle"
+              size={16}
+              color="#94A3B8"
+            />
+          </TouchableOpacity>
+        )}
       </View>
 
       <View style={styles.sectionHeaderRow}>
@@ -412,26 +770,7 @@ export default function NotificationsTab() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.suggestedRow}
         >
-          {[
-            {
-              name: 'VanLifer Creator',
-              members: '12.4k',
-              creator: 'by Vanora Team',
-              image: require('../../assets/images/cozy_van.jpg')
-            },
-            {
-              name: 'Nomadcom',
-              members: '8.9k',
-              creator: 'by Nomadcom',
-              image: require('../../assets/images/solo_camper.jpg')
-            },
-            {
-              name: 'Campfire Stories',
-              members: '6.2k',
-              creator: 'by Jesse R.',
-              image: require('../../assets/images/stones.jpg')
-            }
-          ].map(item => (
+        {suggestedCommunities.map(item => (
             <View key={item.name} style={styles.communityCard}>
               <View style={styles.communityImage}>
                 <Image
@@ -442,17 +781,42 @@ export default function NotificationsTab() {
               <Text style={styles.communityName}>{item.name}</Text>
               <Text style={styles.communityCreator}>{item.creator}</Text>
               <Text style={styles.communityMembers}>{item.members}</Text>
-              <TouchableOpacity style={styles.joinButton}>
-                <Text style={styles.joinButtonText}>Join</Text>
-              </TouchableOpacity>
+              {joinedCommunities.some(
+                community => community.name === item.name
+              ) ? (
+                <TouchableOpacity
+                  style={styles.joinedButton}
+                  onPress={() =>
+                    openCommunityChat({
+                      name: item.name,
+                      subtitle: item.subtitle,
+                      topic: item.topic,
+                      image: item.image
+                    })
+                  }
+                >
+                  <Text style={styles.joinedButtonText}>Joined</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={styles.joinButton}
+                  onPress={() => handleJoinCommunity(item)}
+                >
+                  <Text style={styles.joinButtonText}>Join</Text>
+                </TouchableOpacity>
+              )}
             </View>
           ))}
         </ScrollView>
 
         <Text style={styles.sectionHeaderText}>JOINED COMMUNITIES</Text>
         <View style={styles.listCard}>
-          {joinedCommunities.map(item => (
-            <View key={item.name} style={styles.listItem}>
+          {filteredCommunities.map(item => (
+            <TouchableOpacity
+              key={item.name}
+              style={styles.listItem}
+              onPress={() => openCommunityChat(item)}
+            >
               <View style={styles.listAvatar}>
                 <Image
                   source={item.image}
@@ -468,60 +832,59 @@ export default function NotificationsTab() {
                 size={18}
                 color="#94A3B8"
               />
-            </View>
+            </TouchableOpacity>
           ))}
+          {filteredCommunities.length === 0 && (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyText}>No communities found.</Text>
+            </View>
+          )}
         </View>
 
         <Text style={styles.sectionHeaderText}>PRIVATE MESSAGES</Text>
         <View style={styles.listCard}>
-          {[
-            {
-              name: "Ben Jammin'",
-              subtitle:
-                'Hey! Did you find that water fill station near the... ',
-              time: '2m ago',
-              online: true,
-              image: require('../../assets/images/theo.jpg')
-            },
-            {
-              name: 'Chloe Brooks',
-              subtitle: 'Sent you a photo',
-              time: '1h ago',
-              online: true,
-              image: require('../../assets/images/aria.jpg')
-            },
-            {
-              name: 'Liam Nomad',
-              subtitle: 'That build looks incredible. How many watts is th...',
-              time: 'Yesterday',
-              online: false,
-              image: require('../../assets/images/Noah.jpg')
-            },
-            {
-              name: 'Sarah Wanderlust',
-              subtitle: 'The meet-up next Saturday is still on! See you...',
-              time: 'Tue',
-              online: false,
-              image: require('../../assets/images/featured_news.jpg')
-            }
-          ].map(item => (
-            <View key={item.name} style={styles.listItem}>
-              <View style={styles.listAvatar}>
-                <Image
-                  source={item.image}
-                  style={styles.listAvatarImage}
-                />
-                {item.online && <View style={styles.onlineDot} />}
-              </View>
-              <View style={styles.listTextWrap}>
-                <Text style={styles.listTitle}>{item.name}</Text>
-                <Text style={styles.listSubtitle} numberOfLines={1}>
-                  {item.subtitle}
-                </Text>
-              </View>
-              <Text style={styles.listMeta}>{item.time}</Text>
+          {filteredDirectConnections.map(connection => {
+            const name =
+              connection.display_name ||
+              connection.username ||
+              'Nomad';
+            return (
+              <TouchableOpacity
+                key={connection.id}
+                style={styles.listItem}
+                onPress={() => openDirectChat(connection)}
+              >
+                <View style={styles.listAvatar}>
+                  {connection.profile_picture_url ? (
+                    <Image
+                      source={{uri: connection.profile_picture_url}}
+                      style={styles.listAvatarImage}
+                    />
+                  ) : (
+                    <Image
+                      source={require('../../assets/images/vanora.png')}
+                      style={styles.listAvatarImage}
+                    />
+                  )}
+                  <View style={styles.onlineDot} />
+                </View>
+                <View style={styles.listTextWrap}>
+                  <Text style={styles.listTitle}>{name}</Text>
+                  <Text style={styles.listSubtitle} numberOfLines={1}>
+                    Say hi to {name} 👋
+                  </Text>
+                </View>
+                <Text style={styles.listMeta}>New</Text>
+              </TouchableOpacity>
+            );
+          })}
+          {filteredDirectConnections.length === 0 && (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyText}>
+                No followers or following yet.
+              </Text>
             </View>
-          ))}
+          )}
         </View>
       </ScrollView>
 
@@ -585,38 +948,49 @@ export default function NotificationsTab() {
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.createLabel}>Community name</Text>
-            <TextInput
-              style={styles.createInput}
-              placeholder="e.g. Weekend Van Builders"
-              placeholderTextColor="#94A3B8"
-              value={newCommunityName}
-              onChangeText={setNewCommunityName}
-              maxLength={40}
-            />
-
-            <Text style={styles.createLabel}>Pick a photo</Text>
-            <TouchableOpacity
-              style={styles.photoPickerButton}
-              onPress={handlePickCommunityImage}
+            <ScrollView
+              style={styles.createModalContent}
+              showsVerticalScrollIndicator={false}
             >
-              <MaterialCommunityIcons
-                name="image-plus"
-                size={18}
-                color="#2E7D64"
-              />
-              <Text style={styles.photoPickerText}>
-                {communityImageUri ? 'Change photo' : 'Choose photo'}
-              </Text>
-            </TouchableOpacity>
-            {communityImageUri && (
-              <View style={styles.photoPreview}>
-                <Image
-                  source={{uri: communityImageUri}}
-                  style={styles.photoPreviewImage}
-                />
+              <View style={styles.imageUploadSection}>
+                <Text style={styles.createLabel}>Community cover</Text>
+                <TouchableOpacity
+                  style={styles.imageUploadBox}
+                  onPress={handlePickCommunityImage}
+                  activeOpacity={0.8}
+                >
+                  {communityImageUri ? (
+                    <Image
+                      source={{uri: communityImageUri}}
+                      resizeMode="cover"
+                      key={communityImageUri}
+                      style={styles.imagePreview}
+                    />
+                  ) : (
+                    <>
+                      <MaterialCommunityIcons
+                        name="image-plus"
+                        size={36}
+                        color="#94A3B8"
+                      />
+                      <Text style={styles.imageUploadText}>
+                        Upload a square cover
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
               </View>
-            )}
+
+              <Text style={styles.createLabel}>Community name</Text>
+              <TextInput
+                style={styles.createInput}
+                placeholder="e.g. Weekend Van Builders"
+                placeholderTextColor="#94A3B8"
+                value={newCommunityName}
+                onChangeText={setNewCommunityName}
+                maxLength={40}
+              />
+            </ScrollView>
 
             <View style={styles.createModalActions}>
               <TouchableOpacity
@@ -636,6 +1010,126 @@ export default function NotificationsTab() {
               </TouchableOpacity>
             </View>
           </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={chatModalVisible}
+        animationType="slide"
+        onRequestClose={() => setChatModalVisible(false)}
+      >
+        <View style={styles.chatModal}>
+          <View style={styles.chatHeader}>
+            <TouchableOpacity
+              style={styles.chatBackButton}
+              onPress={() => setChatModalVisible(false)}
+            >
+              <MaterialCommunityIcons
+                name="chevron-left"
+                size={22}
+                color="#1a1a1a"
+              />
+            </TouchableOpacity>
+            <View style={styles.chatHeaderText}>
+              <Text style={styles.chatTitle}>{activeChat?.title}</Text>
+              {activeChat?.subtitle && (
+                <Text style={styles.chatSubtitle}>{activeChat.subtitle}</Text>
+              )}
+            </View>
+          </View>
+
+          <ScrollView
+            style={styles.chatMessages}
+            contentContainerStyle={styles.chatMessagesContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {(activeChat?.type === 'community'
+              ? getCommunityMessages(
+                  activeChat.id,
+                  activeChat.topic || 'community updates'
+                )
+              : activeChat
+                ? getDirectMessages(activeChat.id, activeChat.title)
+                : []
+            ).map(message => (
+              <View
+                key={message.id}
+                style={[
+                  styles.chatRow,
+                  message.sender === 'me' && styles.chatRowMe,
+                  message.sender === 'system' && styles.chatRowSystem
+                ]}
+              >
+                {message.sender === 'them' && (
+                  <View style={styles.chatAvatarWrap}>
+                    {message.senderAvatar ? (
+                      <Image
+                        source={message.senderAvatar}
+                        style={styles.chatAvatar}
+                      />
+                    ) : (
+                      <View style={styles.chatAvatarFallback}>
+                        <MaterialCommunityIcons
+                          name="account"
+                          size={14}
+                          color="#94A3B8"
+                        />
+                      </View>
+                    )}
+                  </View>
+                )}
+                <View
+                  style={[
+                    styles.chatBubble,
+                    message.sender === 'me' && styles.chatBubbleMe,
+                    message.sender === 'system' && styles.chatBubbleSystem,
+                    {maxWidth: chatBubbleMaxWidth}
+                  ]}
+                >
+                  {message.sender === 'them' && message.senderName && (
+                    <Text style={styles.chatSenderName}>
+                      {message.senderName}
+                    </Text>
+                  )}
+                  <Text
+                    style={[
+                      styles.chatBubbleText,
+                      message.sender === 'me' && styles.chatBubbleTextMe,
+                      message.sender === 'system' && styles.chatBubbleTextSystem
+                    ]}
+                  >
+                    {message.text}
+                  </Text>
+                  <Text style={styles.chatTimestamp}>{message.timestamp}</Text>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 24 : 0}
+          >
+            <View style={styles.chatComposer}>
+              <TextInput
+                style={styles.chatInput}
+                placeholder="Write a message..."
+                placeholderTextColor="#94A3B8"
+                value={chatDraft}
+                onChangeText={setChatDraft}
+              />
+              <TouchableOpacity
+                style={styles.chatSendButton}
+                onPress={handleSendMessage}
+              >
+                <MaterialCommunityIcons
+                  name="send"
+                  size={18}
+                  color="#ffffff"
+                />
+              </TouchableOpacity>
+            </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
     </View>
@@ -745,6 +1239,9 @@ const styles = StyleSheet.create({
     shadowOffset: {width: 0, height: 10},
     elevation: 4
   },
+  createModalContent: {
+    maxHeight: 420
+  },
   createModalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -780,32 +1277,29 @@ const styles = StyleSheet.create({
     color: '#0F172A',
     marginBottom: 14
   },
-  photoPickerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    borderWidth: 1,
-    borderColor: '#2E7D64',
-    borderRadius: 12,
-    paddingVertical: 10,
-    justifyContent: 'center',
-    marginBottom: 12
+  imageUploadSection: {
+    marginBottom: 16
   },
-  photoPickerText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#2E7D64'
-  },
-  photoPreview: {
-    height: 140,
+  imageUploadBox: {
+    width: '100%',
+    aspectRatio: 1,
     borderRadius: 16,
-    overflow: 'hidden',
-    backgroundColor: '#E2E8F0',
-    marginBottom: 18
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden'
   },
-  photoPreviewImage: {
+  imagePreview: {
     width: '100%',
     height: '100%'
+  },
+  imageUploadText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#94A3B8',
+    marginTop: 8
   },
   createModalActions: {
     flexDirection: 'row',
@@ -889,6 +1383,17 @@ const styles = StyleSheet.create({
   },
   joinButtonText: {
     color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600'
+  },
+  joinedButton: {
+    backgroundColor: '#E2E8F0',
+    paddingVertical: 8,
+    borderRadius: 16,
+    alignItems: 'center'
+  },
+  joinedButtonText: {
+    color: '#475569',
     fontSize: 12,
     fontWeight: '600'
   },
@@ -1141,5 +1646,141 @@ const styles = StyleSheet.create({
     backgroundColor: '#2E7D64',
     marginLeft: 12,
     alignSelf: 'center'
+  },
+  chatModal: {
+    flex: 1,
+    backgroundColor: '#ffffff'
+  },
+  chatHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0'
+  },
+  chatBackButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  chatHeaderText: {
+    flex: 1
+  },
+  chatTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0F172A'
+  },
+  chatSubtitle: {
+    fontSize: 12,
+    color: '#94A3B8',
+    marginTop: 2
+  },
+  chatMessages: {
+    flex: 1
+  },
+  chatMessagesContent: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    gap: 10
+  },
+  chatRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 8,
+    width: '100%'
+  },
+  chatRowMe: {
+    justifyContent: 'flex-end'
+  },
+  chatRowSystem: {
+    justifyContent: 'center'
+  },
+  chatAvatarWrap: {
+    width: 28,
+    alignItems: 'center'
+  },
+  chatAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14
+  },
+  chatAvatarFallback: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  chatBubble: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#F1F5F9',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    maxWidth: '80%'
+  },
+  chatBubbleMe: {
+    alignSelf: 'flex-end',
+    backgroundColor: '#2E7D64'
+  },
+  chatBubbleSystem: {
+    alignSelf: 'center',
+    backgroundColor: '#E2E8F0'
+  },
+  chatBubbleText: {
+    fontSize: 13,
+    color: '#0F172A'
+  },
+  chatSenderName: {
+    fontSize: 11,
+    color: '#64748B',
+    fontWeight: '600',
+    marginBottom: 2
+  },
+  chatBubbleTextMe: {
+    color: '#ffffff'
+  },
+  chatBubbleTextSystem: {
+    color: '#475569'
+  },
+  chatTimestamp: {
+    fontSize: 10,
+    color: '#94A3B8',
+    marginTop: 4
+  },
+  chatComposer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+    gap: 10
+  },
+  chatInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 13,
+    color: '#0F172A'
+  },
+  chatSendButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#2E7D64',
+    alignItems: 'center',
+    justifyContent: 'center'
   }
 });
