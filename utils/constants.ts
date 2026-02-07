@@ -1,11 +1,11 @@
 export const LIFESTYLE_TYPES = [
   'Van Lifer',
   'Digital Nomad',
-  'Mechanic',
+  'Mechanic/Builder',
   'Weekend Warrior'
 ];
 
-export const NOMAD_TYPE_MECHANIC = 'Mechanic';
+export const NOMAD_TYPE_MECHANIC = 'Mechanic/Builder';
 
 export const TRAVEL_STYLES = [
   'Slow & Steady (weeks per location)',
