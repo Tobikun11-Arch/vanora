@@ -6,12 +6,14 @@ import {MaterialCommunityIcons} from '@expo/vector-icons';
 import {useRouter} from 'expo-router';
 import {useEffect, useMemo, useState} from 'react';
 import {
+  Dimensions,
+  Platform,
   SafeAreaView,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
+  StatusBar
 } from 'react-native';
 import {PurchasesPackage} from 'react-native-purchases';
 
@@ -22,6 +24,16 @@ type Benefit = {
   title: string;
   description: string;
 };
+
+const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
+const H_PADDING = Math.round(Math.max(16, Math.min(28, SCREEN_WIDTH * 0.06)));
+const V_SPACING = Math.round(Math.max(10, Math.min(20, SCREEN_HEIGHT * 0.018)));
+const CARD_RADIUS = Math.round(Math.max(16, Math.min(22, SCREEN_WIDTH * 0.05)));
+const TITLE_SIZE = Math.round(Math.max(22, Math.min(30, SCREEN_WIDTH * 0.075)));
+const SUBTITLE_SIZE = Math.round(Math.max(14, Math.min(16, SCREEN_WIDTH * 0.04)));
+const STATUS_BAR_HEIGHT =
+  Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0;
+const SAFE_TOP_PADDING = Math.max(0, STATUS_BAR_HEIGHT);
 
 export default function MembershipSubscriptionScreen() {
   const router = useRouter();
@@ -230,11 +242,7 @@ export default function MembershipSubscriptionScreen() {
         <View style={styles.topBarSpacer} />
       </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+      <View style={styles.content}>
         <Text style={styles.title}>{planContent.heading}</Text>
         <Text style={styles.subtitle}>{planContent.subheading}</Text>
 
@@ -401,7 +409,7 @@ export default function MembershipSubscriptionScreen() {
         </View>
 
         <Text style={styles.footnote}>{planContent.footnote}</Text>
-      </ScrollView>
+      </View>
 
       <View style={styles.bottomArea}>
         {isSubscribed ? (
@@ -449,21 +457,21 @@ export default function MembershipSubscriptionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB'
+    backgroundColor: '#F9FAFB',
+    paddingTop: SAFE_TOP_PADDING
   },
   topBar: {
     height: 48,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    marginTop: 25,
+    paddingHorizontal: H_PADDING,
     backgroundColor: '#F9FAFB'
   },
   headerTitle: {
     flex: 1,
     textAlign: 'center',
-    fontSize: 20,
+    fontSize: 19,
     fontWeight: '700',
     color: '#1F2937',
     letterSpacing: 0.2
@@ -479,41 +487,39 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44
   },
-  scroll: {
-    flex: 1
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 20
+  content: {
+    flex: 1,
+    paddingHorizontal: H_PADDING,
+    paddingTop: V_SPACING,
+    paddingBottom: V_SPACING
   },
   title: {
-    fontSize: 32,
+    fontSize: TITLE_SIZE,
     fontWeight: '700',
     color: '#2e7d64',
     textAlign: 'center',
-    marginTop: 8,
+    marginTop: V_SPACING * 0.4,
     letterSpacing: 0.3
   },
   subtitle: {
-    marginTop: 8,
-    fontSize: 16,
+    marginTop: V_SPACING * 0.4,
+    fontSize: SUBTITLE_SIZE,
     color: '#6B7280',
     lineHeight: 24,
     textAlign: 'center',
     paddingHorizontal: 10
   },
   benefitsList: {
-    marginTop: 20,
-    gap: 14
+    marginTop: V_SPACING,
+    gap: Math.max(10, V_SPACING - 4)
   },
   benefitRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
     backgroundColor: '#ffffff',
     padding: 12,
-    borderRadius: 16,
+    borderRadius: CARD_RADIUS,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 1},
     shadowOpacity: 0.05,
@@ -521,9 +527,9 @@ const styles = StyleSheet.create({
     elevation: 2
   },
   benefitIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     backgroundColor: '#f0fdf9',
     borderWidth: 1.5,
     borderColor: '#9ed6c3',
@@ -541,20 +547,20 @@ const styles = StyleSheet.create({
   },
   benefitDesc: {
     marginTop: 4,
-    fontSize: 14,
+    fontSize: 13,
     color: '#6B7280',
     lineHeight: 20
   },
   cardsRow: {
-    marginTop: 24,
+    marginTop: V_SPACING,
     flexDirection: 'row',
-    gap: 16
+    gap: 12
   },
   planCard: {
     flex: 1,
-    borderRadius: 20,
-    padding: 18,
-    minHeight: 140,
+    borderRadius: CARD_RADIUS,
+    padding: 16,
+    minHeight: 130,
     justifyContent: 'space-between',
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
@@ -579,7 +585,7 @@ const styles = StyleSheet.create({
     top: -12,
     alignSelf: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 7,
+    paddingVertical: 6,
     borderRadius: 999,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
@@ -613,7 +619,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between'
   },
   planName: {
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: '700',
     letterSpacing: 0.2
   },
@@ -644,8 +650,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#2e7d64'
   },
   planCadence: {
-    marginTop: 6,
-    fontSize: 14,
+    marginTop: 4,
+    fontSize: 13,
     fontWeight: '700',
     color: '#9CA3AF'
   },
@@ -653,10 +659,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: 6,
-    marginTop: 12
+    marginTop: 8
   },
   price: {
-    fontSize: 30,
+    fontSize: 26,
     fontWeight: '700',
     letterSpacing: -0.5
   },
@@ -673,16 +679,16 @@ const styles = StyleSheet.create({
     paddingBottom: 4
   },
   footnote: {
-    marginTop: 20,
+    marginTop: V_SPACING,
     fontSize: 13,
     color: '#9CA3AF',
     textAlign: 'center',
     lineHeight: 18
   },
   bottomArea: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 20,
+    paddingHorizontal: H_PADDING,
+    paddingTop: V_SPACING * 0.6,
+    paddingBottom: Math.max(12, V_SPACING),
     backgroundColor: '#F9FAFB'
   },
   subscribedBadge: {
