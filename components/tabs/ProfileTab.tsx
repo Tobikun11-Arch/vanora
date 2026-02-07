@@ -508,7 +508,13 @@ const handleLogout = async () => {
 
           <View style={styles.genderRow}>
             <MaterialCommunityIcons
-              name="gender-male-female"
+              name={
+                profile.gender?.toLowerCase() === 'male'
+                  ? 'gender-male'
+                  : profile.gender?.toLowerCase() === 'female'
+                    ? 'gender-female'
+                    : 'gender-male-female'
+              }
               size={14}
               color="#6B7280"
             />
