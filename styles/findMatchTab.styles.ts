@@ -1,12 +1,16 @@
 import {Dimensions, StyleSheet} from 'react-native';
 
-const {width} = Dimensions.get('window');
-const CARD_WIDTH = width - 40;
+const {width, height} = Dimensions.get('window');
+const H_PADDING = Math.max(16, Math.round(width * 0.05));
+const V_SPACING = Math.max(10, Math.round(height * 0.015));
+const CARD_WIDTH = width - H_PADDING * 2;
 
 export const findMatchTabStyles = StyleSheet.create({
   tabContent: {
     flex: 1,
-    padding: 20,
+    paddingHorizontal: H_PADDING,
+    paddingTop: V_SPACING,
+    paddingBottom: V_SPACING * 1.5,
     backgroundColor: '#fff'
   },
   tabContentTitle: {
@@ -17,6 +21,10 @@ export const findMatchTabStyles = StyleSheet.create({
   },
   cardWrap: {
     alignItems: 'center'
+  },
+  cardStacked: {
+    position: 'absolute',
+    top: 0
   },
   card: {
     width: CARD_WIDTH,
@@ -44,7 +52,7 @@ export const findMatchTabStyles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    padding: 16,
+    padding: Math.max(14, Math.round(width * 0.04)),
     backgroundColor: 'rgba(0,0,0,0.45)'
   },
   nameRow: {
@@ -78,13 +86,13 @@ export const findMatchTabStyles = StyleSheet.create({
   overlayDivider: {
     height: 1,
     backgroundColor: 'rgba(255,255,255,0.25)',
-    marginVertical: 12
+    marginVertical: V_SPACING
   },
   pillRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    marginBottom: 8
+    marginBottom: Math.max(6, Math.round(V_SPACING * 0.7))
   },
   pill: {
     flexDirection: 'row',
@@ -115,20 +123,20 @@ export const findMatchTabStyles = StyleSheet.create({
     color: '#E5E7EB'
   },
   actionRow: {
-    marginTop: 10,
+    marginTop: V_SPACING,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 12
+    paddingHorizontal: Math.max(8, Math.round(H_PADDING * 0.6))
   },
   introHint: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#111827',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: Math.max(10, Math.round(H_PADDING * 0.6)),
+    paddingVertical: Math.max(8, Math.round(V_SPACING * 0.8)),
     borderRadius: 12,
     gap: 8,
-    marginBottom: 12
+    marginBottom: V_SPACING
   },
   introHintText: {
     color: '#F9FAFB',
@@ -160,6 +168,22 @@ export const findMatchTabStyles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#93C5FD'
   },
+  challengeInfoIcon: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    width: 25,
+    height: 25,
+    borderRadius: 11,
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowOffset: {width: 0, height: 2},
+    shadowRadius: 4,
+    elevation: 2
+  },
   lockBadge: {
     position: 'absolute',
     top: 6,
@@ -169,7 +193,7 @@ export const findMatchTabStyles = StyleSheet.create({
     padding: 2
   },
   freeHint: {
-    marginTop: 12,
+    marginTop: V_SPACING,
     textAlign: 'center',
     fontSize: 12,
     color: '#6B7280'
@@ -180,10 +204,59 @@ export const findMatchTabStyles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center'
   },
+  challengeInfoCard: {
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    padding: 20,
+    width: '85%',
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowOffset: {width: 0, height: 6},
+    shadowRadius: 12,
+    elevation: 4
+  },
+  challengeInfoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10
+  },
+  challengeInfoTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1F2937',
+    flex: 1,
+    paddingRight: 8
+  },
+  challengeInfoClose: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  challengeInfoText: {
+    fontSize: 13,
+    color: '#4B5563',
+    lineHeight: 18,
+    marginBottom: 16
+  },
+  challengeInfoButton: {
+    backgroundColor: '#2e7d64',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center'
+  },
+  challengeInfoButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700'
+  },
   premiumModalContent: {
     backgroundColor: '#fff',
     borderRadius: 20,
-    padding: 24,
+    padding: Math.max(18, Math.round(H_PADDING * 1.2)),
     width: '85%',
     alignItems: 'center'
   },
@@ -235,7 +308,7 @@ export const findMatchTabStyles = StyleSheet.create({
   },
   emptyState: {
     backgroundColor: '#fff',
-    padding: 32,
+    padding: Math.max(20, Math.round(H_PADDING * 1.5)),
     borderRadius: 16,
     alignItems: 'center'
   },

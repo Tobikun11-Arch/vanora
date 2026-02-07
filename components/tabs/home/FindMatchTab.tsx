@@ -46,6 +46,7 @@ export default function FindMatchTab() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [containerHeight, setContainerHeight] = useState(0);
   const [showIntroHint, setShowIntroHint] = useState(false);
+  const [showChallengeInfo, setShowChallengeInfo] = useState(false);
   const {isSubscribed} = useRevenueCatSubscription();
   const isPremium = isSubscribed;
   const swipe = useRef(new Animated.ValueXY()).current;
@@ -319,6 +320,15 @@ export default function FindMatchTab() {
     outputRange: ['-8deg', '0deg', '8deg']
   });
 
+  const nextCardScale = swipe.x.interpolate({
+    inputRange: [-150, 0, 150],
+    outputRange: [1, 0.96, 1]
+  });
+  const nextCardTranslate = swipe.x.interpolate({
+    inputRange: [-150, 0, 150],
+    outputRange: [0, 12, 0]
+  });
+
   const handleDismissIntro = async () => {
     setShowIntroHint(false);
     try {
@@ -333,6 +343,9 @@ export default function FindMatchTab() {
     const available = containerHeight - 120; // title + actions + padding
     return Math.max(440, Math.min(available, maxByWidth));
   }, [containerHeight]);
+
+  const nextMatch =
+    matches.length > 1 ? matches[(currentIndex + 1) % matches.length] : null;
 
   if (loading) {
     return (
@@ -376,6 +389,41 @@ export default function FindMatchTab() {
           </TouchableOpacity>
         </View>
       )}
+
+      <Modal
+        visible={showChallengeInfo}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowChallengeInfo(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.challengeInfoCard}>
+            <View style={styles.challengeInfoHeader}>
+              <Text style={styles.challengeInfoTitle}>
+                What is Challenge all about?
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowChallengeInfo(false)}
+                style={styles.challengeInfoClose}
+              >
+                <MaterialCommunityIcons name="close" size={18} color="#1F2937" />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.challengeInfoText}>
+              Sending a Challenge is a formal invite to meet and connect. The
+              person you challenge will receive a notification that you’re
+              proposing a meet‑up. Use it when you’re ready to move the
+              conversation forward in a respectful, intentional way.
+            </Text>
+            <TouchableOpacity
+              style={styles.challengeInfoButton}
+              onPress={() => setShowChallengeInfo(false)}
+            >
+              <Text style={styles.challengeInfoButtonText}>Got it</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {!isPremium && (
         <Modal
@@ -435,6 +483,49 @@ export default function FindMatchTab() {
       )}
 
       <View style={styles.cardWrap}>
+        {nextMatch && (
+          <Animated.View
+            style={[
+              styles.card,
+              styles.cardStacked,
+              {height: cardHeight},
+              {transform: [{scale: nextCardScale}, {translateY: nextCardTranslate}]}
+            ]}
+            pointerEvents="none"
+          >
+            <View style={styles.cardTouchable}>
+              <View style={styles.cardFill}>
+                {nextMatch.match_photo_url || nextMatch.profile_picture_url ? (
+                  <Image
+                    source={{
+                      uri:
+                        nextMatch.match_photo_url ||
+                        nextMatch.profile_picture_url ||
+                        ''
+                    }}
+                    style={styles.cardImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View
+                    style={[
+                      styles.cardImage,
+                      {alignItems: 'center', justifyContent: 'center'}
+                    ]}
+                  >
+                    <MaterialCommunityIcons
+                      name="account"
+                      size={64}
+                      color="#9CA3AF"
+                    />
+                  </View>
+                )}
+                <View style={styles.cardOverlay} />
+              </View>
+            </View>
+          </Animated.View>
+        )}
+
         <Animated.View
           key={activeMatch.id}
           style={[
@@ -529,6 +620,12 @@ export default function FindMatchTab() {
           onPress={handleChallenge}
         >
           <MaterialCommunityIcons name="flash" size={28} color="#2563EB" />
+          <TouchableOpacity
+            style={styles.challengeInfoIcon}
+            onPress={() => setShowChallengeInfo(true)}
+          >
+            <MaterialCommunityIcons name="information" size={14} color="#1F2937" />
+          </TouchableOpacity>
           {!canUseChallenge && (
             <View style={styles.lockBadge}>
               <MaterialCommunityIcons name="lock" size={12} color="#fff" />
