@@ -2,7 +2,7 @@ import {useRevenueCatSubscription} from '@/hooks/use-revenuecat-subscription';
 import {MaterialCommunityIcons} from '@expo/vector-icons';
 import {useRouter} from 'expo-router';
 import {useFocusEffect} from '@react-navigation/native';
-import React, {useRef, useState, useCallback} from 'react';
+import React, {useEffect, useRef, useState, useCallback} from 'react';
 import {
   ActivityIndicator,
   Dimensions,
@@ -18,6 +18,8 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {authService} from '../../services/auth.service';
 import {showToast} from '../Toast';
 import Purchases from 'react-native-purchases';
+import {supabase} from '@/services/supabase';
+import {useUserStore} from '@/store/userStore';
 
 const {width} = Dimensions.get('window');
 const GALLERY_IMAGE_SIZE = (width - 60) / 3;
@@ -42,7 +44,7 @@ interface UserProfile {
   age: number;
   gender: string;
   pronouns: string | null;
-  bio: string;
+  bio: string | null;
   profile_picture_url: string | null;
   years_in_van_life: number;
   hobbies: string[];
@@ -54,15 +56,30 @@ interface UserProfile {
   gallery_photos?: GalleryPhoto[];
   followers_count?: number;
   following_count?: number;
+  posts_count?: number;
 }
 
 interface ProfileTabProps {
   profile: UserProfile;
+  showHeader?: boolean;
 }
 
-export default function ProfileTab({profile}: ProfileTabProps) {
+export default function ProfileTab({
+  profile,
+  showHeader = true
+}: ProfileTabProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const currentUserProfile = useUserStore(state => state.profile);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(
+    currentUserProfile?.id ?? null
+  );
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isCheckingFollow, setIsCheckingFollow] = useState(false);
+  const [followBusy, setFollowBusy] = useState(false);
+  const [followerCount, setFollowerCount] = useState(
+    profile.followers_count ?? 0
+  );
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const {isSubscribed, isLoading, refresh} = useRevenueCatSubscription();
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
@@ -82,8 +99,88 @@ export default function ProfileTab({profile}: ProfileTabProps) {
     }, [refresh])
   );
 
+  useEffect(() => {
+    if (currentUserProfile?.id && currentUserProfile.id !== currentUserId) {
+      setCurrentUserId(currentUserProfile.id);
+    }
+  }, [currentUserProfile?.id, currentUserId]);
 
+  useEffect(() => {
+    if (currentUserId) return;
+    const loadCurrentUser = async () => {
+      const {
+        data: {user}
+      } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id ?? null);
+    };
+    loadCurrentUser();
+  }, [currentUserId]);
 
+  const isOwnProfile = !!currentUserId && currentUserId === profile.id;
+
+  useEffect(() => {
+    setFollowerCount(profile.followers_count ?? 0);
+  }, [profile.followers_count, profile.id]);
+
+  useEffect(() => {
+    if (!currentUserId || isOwnProfile) {
+      setIsFollowing(false);
+      return;
+    }
+
+    const checkFollowStatus = async () => {
+      setIsCheckingFollow(true);
+      try {
+        const {data, error} = await supabase
+          .from('user_follows')
+          .select('follower_id')
+          .eq('follower_id', currentUserId)
+          .eq('following_id', profile.id)
+          .limit(1);
+
+        if (error) throw error;
+        setIsFollowing((data ?? []).length > 0);
+      } catch (error) {
+        console.error('Error checking follow status:', error);
+      } finally {
+        setIsCheckingFollow(false);
+      }
+    };
+
+    checkFollowStatus();
+  }, [currentUserId, isOwnProfile, profile.id]);
+
+  const handleFollowToggle = async () => {
+    if (!currentUserId || isOwnProfile || followBusy) return;
+    const nextFollowing = !isFollowing;
+    setFollowBusy(true);
+
+    try {
+      if (nextFollowing) {
+        const {error} = await supabase.from('user_follows').insert({
+          follower_id: currentUserId,
+          following_id: profile.id
+        });
+        if (error) throw error;
+        setIsFollowing(true);
+        setFollowerCount(prev => prev + 1);
+      } else {
+        const {error} = await supabase
+          .from('user_follows')
+          .delete()
+          .eq('follower_id', currentUserId)
+          .eq('following_id', profile.id);
+        if (error) throw error;
+        setIsFollowing(false);
+        setFollowerCount(prev => Math.max(0, prev - 1));
+      }
+    } catch (error) {
+      console.error('Follow toggle error:', error);
+      showToast('error', 'Error', 'Unable to update follow status.');
+    } finally {
+      setFollowBusy(false);
+    }
+  };
 const handleLogout = async () => {
   const result = await authService.signOut();
   if (result.success) {
@@ -91,7 +188,6 @@ const handleLogout = async () => {
     router.replace('/(auth)/get-started');
   }
 };
-
 
   const handleSettings = () => {
     if (settingsButtonRef.current?.measureInWindow) {
@@ -127,7 +223,7 @@ const handleLogout = async () => {
       showsVerticalScrollIndicator={false}
     >
       {/* Premium Modal */}
-      {!isSubscribed && (
+      {isOwnProfile && !isSubscribed && (
         <Modal
           visible={showPremiumModal}
           transparent
@@ -198,97 +294,109 @@ const handleLogout = async () => {
       )}
 
       {/* Settings Menu */}
-      <Modal
-        visible={showSettingsMenu}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowSettingsMenu(false)}
-      >
-        <TouchableOpacity
-          activeOpacity={1}
-          onPress={() => setShowSettingsMenu(false)}
-          style={[
-            styles.settingsOverlay,
-            {
-              paddingTop:
-                settingsAnchor?.y != null
-                  ? settingsAnchor.y +
-                    settingsAnchor.height +
-                    SETTINGS_MENU_OFFSET
-                  : headerHeight > 0
-                    ? headerHeight
-                    : insets.top + FALLBACK_HEADER_HEIGHT,
-              paddingLeft: settingsAnchor?.x != null ? settingsAnchor.x : 16
-            }
-          ]}
+      {showHeader && isOwnProfile && (
+        <Modal
+          visible={showSettingsMenu}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowSettingsMenu(false)}
         >
           <TouchableOpacity
             activeOpacity={1}
-            onPress={() => {
-              // Prevent backdrop close when tapping menu itself
-            }}
-            style={styles.settingsMenu}
+            onPress={() => setShowSettingsMenu(false)}
+            style={[
+              styles.settingsOverlay,
+              {
+                paddingTop:
+                  settingsAnchor?.y != null
+                    ? settingsAnchor.y +
+                      settingsAnchor.height +
+                      SETTINGS_MENU_OFFSET
+                    : headerHeight > 0
+                      ? headerHeight
+                      : insets.top + FALLBACK_HEADER_HEIGHT,
+                paddingLeft: settingsAnchor?.x != null ? settingsAnchor.x : 16
+              }
+            ]}
           >
             <TouchableOpacity
-              style={styles.settingsMenuItem}
+              activeOpacity={1}
               onPress={() => {
-                setShowSettingsMenu(false);
-                router.push('/(app)/membership-subscription');
+                // Prevent backdrop close when tapping menu itself
               }}
+              style={styles.settingsMenu}
             >
-              <Text style={styles.settingsMenuItemText}>
-                Membership & Subscription
-              </Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.settingsMenuItem}
+                onPress={() => {
+                  setShowSettingsMenu(false);
+                  router.push('/(app)/membership-subscription');
+                }}
+              >
+                <Text style={styles.settingsMenuItemText}>
+                  Membership & Subscription
+                </Text>
+              </TouchableOpacity>
 
-            <View style={styles.settingsMenuDivider} />
+              <View style={styles.settingsMenuDivider} />
 
-            <TouchableOpacity
-              style={styles.settingsMenuItem}
-              onPress={() => {
-                setShowSettingsMenu(false);
-                router.push('/(app)/privacy-and-safety');
-              }}
-            >
-              <Text style={styles.settingsMenuItemText}>
-                Privacy and Safety
-              </Text>
+              <TouchableOpacity
+                style={styles.settingsMenuItem}
+                onPress={() => {
+                  setShowSettingsMenu(false);
+                  router.push('/(app)/privacy-and-safety');
+                }}
+              >
+                <Text style={styles.settingsMenuItemText}>
+                  Privacy and Safety
+                </Text>
+              </TouchableOpacity>
             </TouchableOpacity>
           </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
+        </Modal>
+      )}
 
       {/* Header */}
-      <View
-        style={styles.header}
-        onLayout={event => {
-          const {height} = event.nativeEvent.layout;
-          if (height !== headerHeight) {
-            setHeaderHeight(height);
-          }
-        }}
-      >
-        <View ref={settingsButtonRef} collapsable={false}>
-          <TouchableOpacity
-            onPress={handleSettings}
-            style={styles.headerIconButton}
-          >
-            <MaterialCommunityIcons name="cog" size={24} color="#1F2937" />
-          </TouchableOpacity>
-        </View>
-
-        <Text style={styles.headerTitle}>Profile</Text>
-
-        <TouchableOpacity
-          onPress={handleLogout}
-          style={styles.headerIconButton}
+      {showHeader && (
+        <View
+          style={styles.header}
+          onLayout={event => {
+            const {height} = event.nativeEvent.layout;
+            if (height !== headerHeight) {
+              setHeaderHeight(height);
+            }
+          }}
         >
-          <MaterialCommunityIcons name="logout" size={24} color="#EF4444" />
-        </TouchableOpacity>
-      </View>
+          {isOwnProfile ? (
+            <View ref={settingsButtonRef} collapsable={false}>
+              <TouchableOpacity
+                onPress={handleSettings}
+                style={styles.headerIconButton}
+              >
+                <MaterialCommunityIcons name="cog" size={24} color="#1F2937" />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.headerIconSpacer} />
+          )}
+
+          <Text style={styles.headerTitle}>Profile</Text>
+
+          {isOwnProfile ? (
+            <TouchableOpacity
+              onPress={handleLogout}
+              style={styles.headerIconButton}
+            >
+              <MaterialCommunityIcons name="logout" size={24} color="#EF4444" />
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.headerIconSpacer} />
+          )}
+        </View>
+      )}
 
       {/* Go Premium Card */}
-      {!isSubscribed && (
+      {isOwnProfile && !isSubscribed && (
         <TouchableOpacity
           style={styles.premiumCard}
           onPress={() => setShowPremiumModal(true)}
@@ -344,7 +452,7 @@ const handleLogout = async () => {
               </View>
               <View style={styles.headerStatItem}>
                 <Text style={styles.headerStatValue}>
-                  {profile.followers_count ?? 0}
+                  {followerCount}
                 </Text>
                 <Text style={styles.headerStatLabel}>Followers</Text>
               </View>
@@ -355,14 +463,37 @@ const handleLogout = async () => {
                 <Text style={styles.headerStatLabel}>Following</Text>
               </View>
             </View>
-            <View style={styles.headerActionRow}>
-              <TouchableOpacity style={styles.headerActionButton}>
-                <Text style={styles.headerActionText}>Follow</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.headerActionButtonOutline}>
-                <Text style={styles.headerActionTextOutline}>Message</Text>
-              </TouchableOpacity>
-            </View>
+            {isOwnProfile ? (
+              <View style={styles.headerBioRow}>
+                <Text style={styles.headerBioLabel}>Bio:</Text>
+                <Text style={styles.headerBioText} numberOfLines={2}>
+                  {profile.bio || 'No bio yet.'}
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.headerActionRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.headerActionButton,
+                    isFollowing && styles.headerActionButtonActive
+                  ]}
+                  onPress={handleFollowToggle}
+                  disabled={followBusy || isCheckingFollow}
+                >
+                  <Text
+                    style={[
+                      styles.headerActionText,
+                      isFollowing && styles.headerActionTextActive
+                    ]}
+                  >
+                    {isFollowing ? 'Following' : 'Follow'}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.headerActionButtonOutline}>
+                  <Text style={styles.headerActionTextOutline}>Message</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         </View>
 
@@ -408,7 +539,7 @@ const handleLogout = async () => {
             )}
           </View>
 
-          {profile.bio ? (
+          {!isOwnProfile && profile.bio ? (
             <Text style={styles.bioText}>{profile.bio}</Text>
           ) : null}
         </View>
@@ -619,6 +750,9 @@ const styles = StyleSheet.create({
   headerIconButton: {
     padding: 8,
     borderRadius: 10
+  },
+  headerIconSpacer: {
+    width: 40
   },
   modalOverlay: {
     flex: 1,
@@ -869,6 +1003,25 @@ const styles = StyleSheet.create({
     marginTop: -20,
     marginBottom: 10
   },
+  headerBioRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: -16,
+    marginBottom: 10
+  },
+  headerBioLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0F172A'
+  },
+  headerBioText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#475569',
+    flexShrink: 1
+  },
   headerActionButton: {
     flex: 1,
     backgroundColor: '#2e7d64',
@@ -876,10 +1029,16 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center'
   },
+  headerActionButtonActive: {
+    backgroundColor: '#F3F4F6'
+  },
   headerActionText: {
     fontSize: 12,
     fontWeight: '600',
     color: '#FFFFFF'
+  },
+  headerActionTextActive: {
+    color: '#2e7d64'
   },
   headerActionButtonOutline: {
     flex: 1,

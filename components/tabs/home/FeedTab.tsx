@@ -2,6 +2,7 @@ import {supabase} from '@/services/supabase';
 import {feedTabStyles as styles} from '@/styles';
 import {MaterialCommunityIcons} from '@expo/vector-icons';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+import {useRouter} from 'expo-router';
 import React,{useEffect, useRef, useState} from 'react';
 import {
   ActivityIndicator,
@@ -91,6 +92,7 @@ const STORY_ITEMS = [
   }
 ];
 export default function FeedTab({refreshTrigger}: FeedTabProps) {
+  const router = useRouter();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [votingPollIds, setVotingPollIds] = useState<Record<string, boolean>>(
     {}
@@ -436,28 +438,55 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
       <View style={styles.feedPost}>
         <View style={styles.feedHeader}>
           <View style={styles.feedHeaderLeft}>
-            {author?.profile_picture_url ? (
-              <Image
-                source={{uri: author.profile_picture_url}}
-                style={styles.feedHeaderAvatar}
-              />
-            ) : (
-              <View
-                style={[
-                  styles.feedHeaderAvatar,
-                  styles.feedHeaderAvatarPlaceholder
-                ]}
-              >
-                <MaterialCommunityIcons
-                  name="account"
-                  size={20}
-                  color="#6B7280"
+            <TouchableOpacity
+              onPress={() => {
+                if (!authorId) return;
+                router.push({
+                  pathname: '/(app)/profile/[id]',
+                  params: {id: authorId}
+                });
+              }}
+            >
+              {author?.profile_picture_url ? (
+                <Image
+                  source={{uri: author.profile_picture_url}}
+                  style={styles.feedHeaderAvatar}
                 />
-              </View>
-            )}
+              ) : (
+                <View
+                  style={[
+                    styles.feedHeaderAvatar,
+                    styles.feedHeaderAvatarPlaceholder
+                  ]}
+                >
+                  <MaterialCommunityIcons
+                    name="account"
+                    size={20}
+                    color="#6B7280"
+                  />
+                </View>
+              )}
+            </TouchableOpacity>
             <View style={styles.feedHeaderInfo}>
               <View style={styles.feedHeaderTopRow}>
-                <Text style={styles.feedHeaderName}>{displayName}</Text>
+                <TouchableOpacity
+                  style={styles.feedHeaderNameWrap}
+                  onPress={() => {
+                    if (!authorId) return;
+                    router.push({
+                      pathname: '/(app)/profile/[id]',
+                      params: {id: authorId}
+                    });
+                  }}
+                >
+                  <Text
+                    style={styles.feedHeaderName}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {displayName}
+                  </Text>
+                </TouchableOpacity>
                 <TouchableOpacity
                   style={[
                     styles.followButton,
@@ -495,26 +524,7 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
             }}
             collapsable={false}
           >
-            <TouchableOpacity
-              style={styles.feedHeaderMenu}
-              onPress={() => {
-                const ref = menuButtonRefs.current[item.id];
-                if (ref?.measureInWindow) {
-                  ref.measureInWindow((x, y, width, height) => {
-                    setMenuAnchor({x, y, width, height});
-                    setShowMenu(prev => !prev);
-                  });
-                  return;
-                }
-                setShowMenu(prev => !prev);
-              }}
-            >
-              <MaterialCommunityIcons
-                name="dots-horizontal"
-                size={20}
-                color="#9CA3AF"
-              />
-            </TouchableOpacity>
+        
           </View>
         </View>
 
