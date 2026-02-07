@@ -30,7 +30,7 @@ const H_PADDING = Math.round(Math.max(16, Math.min(28, SCREEN_WIDTH * 0.06)));
 const V_SPACING = Math.round(Math.max(10, Math.min(20, SCREEN_HEIGHT * 0.018)));
 const CARD_RADIUS = Math.round(Math.max(16, Math.min(22, SCREEN_WIDTH * 0.05)));
 const TITLE_SIZE = Math.round(Math.max(22, Math.min(30, SCREEN_WIDTH * 0.075)));
-const SUBTITLE_SIZE = Math.round(Math.max(14, Math.min(16, SCREEN_WIDTH * 0.04)));
+const SUBTITLE_SIZE = Math.round(Math.max(15, Math.min(17, SCREEN_WIDTH * 0.042)));
 const STATUS_BAR_HEIGHT =
   Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0;
 const SAFE_TOP_PADDING = Math.max(0, STATUS_BAR_HEIGHT);
@@ -188,7 +188,7 @@ export default function MembershipSubscriptionScreen() {
 
     return {
       ...common,
-      heading: 'Mechanic/Builder Subscription',
+      heading: 'Builder Subscription',
       subheading: 'Turn visibility into real opportunities and future clients.',
       price: mechanicPrice,
       cadenceLabel: 'Quarterly',
@@ -197,9 +197,9 @@ export default function MembershipSubscriptionScreen() {
       benefits: [
         {
           icon: 'tools',
-          title: 'Featured Mechanic/Builder Profile',
+          title: 'Featured Builder Profile',
           description:
-            'Get highlighted in the Featured Mechanic/Builder section.'
+            'Get highlighted in the Builder section and stand out to the community.'
         },
         {
           icon: 'map-marker-radius',
@@ -211,7 +211,7 @@ export default function MembershipSubscriptionScreen() {
           icon: 'account-search',
           title: 'Increased Client Opportunities',
           description:
-            'Be seen by users actively looking for trusted mechanic/builder.'
+            'Be seen by users actively looking for trusted builders.'
         },
         {
           icon: 'trending-up',
@@ -257,8 +257,12 @@ export default function MembershipSubscriptionScreen() {
                 />
               </View>
               <View style={styles.benefitTextWrap}>
-                <Text style={styles.benefitTitle}>{b.title}</Text>
-                <Text style={styles.benefitDesc}>{b.description}</Text>
+                <Text style={styles.benefitTitle} numberOfLines={1}>
+                  {b.title}
+                </Text>
+                <Text style={styles.benefitDesc} numberOfLines={2}>
+                  {b.description}
+                </Text>
               </View>
             </View>
           ))}
@@ -362,7 +366,7 @@ export default function MembershipSubscriptionScreen() {
                       : styles.planPillTextUnselected
                   ]}
                 >
-                  CRAFT PRO
+                  BUILDER
                 </Text>
               </View>
 
@@ -375,7 +379,7 @@ export default function MembershipSubscriptionScreen() {
                       : styles.planNameUnselected
                   ]}
                 >
-                  Craft
+                  Builder
                 </Text>
                 <View
                   style={[
@@ -469,11 +473,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB'
   },
   headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 19,
+    fontSize: 20,
     fontWeight: '700',
     color: '#1F2937',
+    textAlign: 'center',
+    flex: 1,
     letterSpacing: 0.2
   },
   backButton: {
@@ -511,12 +515,12 @@ const styles = StyleSheet.create({
   },
   benefitsList: {
     marginTop: V_SPACING,
-    gap: Math.max(10, V_SPACING - 4)
+    gap: Math.max(8, V_SPACING - 6)
   },
   benefitRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
     backgroundColor: '#ffffff',
     padding: 12,
     borderRadius: CARD_RADIUS,
@@ -527,8 +531,8 @@ const styles = StyleSheet.create({
     elevation: 2
   },
   benefitIconWrap: {
-    width: 44,
-    height: 44,
+    width: 42,
+    height: 42,
     borderRadius: 14,
     backgroundColor: '#f0fdf9',
     borderWidth: 1.5,
@@ -540,21 +544,21 @@ const styles = StyleSheet.create({
     flex: 1
   },
   benefitTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     color: '#1F2937',
     letterSpacing: 0.2
   },
   benefitDesc: {
-    marginTop: 4,
+    marginTop: 2,
     fontSize: 13,
     color: '#6B7280',
-    lineHeight: 20
+    lineHeight: 18
   },
   cardsRow: {
     marginTop: V_SPACING,
     flexDirection: 'row',
-    gap: 12
+    gap: 10
   },
   planCard: {
     flex: 1,

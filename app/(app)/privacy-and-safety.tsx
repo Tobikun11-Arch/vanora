@@ -4,9 +4,11 @@ import * as Location from 'expo-location';
 import {useRouter} from 'expo-router';
 import React, {useEffect, useMemo, useState} from 'react';
 import {
+  Platform,
   SafeAreaView,
   ScrollView,
   StyleSheet,
+  StatusBar,
   Switch,
   Text,
   TouchableOpacity,
@@ -15,6 +17,9 @@ import {
 import MapView, {Circle, Marker} from 'react-native-maps';
 
 type LocationPrecision = 'approximate' | 'exact';
+const STATUS_BAR_HEIGHT =
+  Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0;
+const SAFE_TOP_PADDING = Math.max(0, STATUS_BAR_HEIGHT);
 
 export default function PrivacyAndSafetyScreen() {
   const router = useRouter();
@@ -395,7 +400,8 @@ useEffect(() => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB'
+    backgroundColor: '#F9FAFB',
+    paddingTop: SAFE_TOP_PADDING
   },
   header: {
     flexDirection: 'row',
@@ -582,7 +588,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    marginTop: 25
+    marginTop: 4
   },
   backButton: {
     width: 44,
