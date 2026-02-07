@@ -4,7 +4,7 @@ import {useUserStore} from '@/store/userStore';
 import {MaterialCommunityIcons} from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
-import {useEffect, useMemo, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 import {
   Dimensions,
   Image,
@@ -12,12 +12,20 @@ import {
   Modal,
   Platform,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View
 } from 'react-native';
+
+const {width: WINDOW_WIDTH, height: WINDOW_HEIGHT} = Dimensions.get('window');
+const TOP_BAR_PADDING =
+  Platform.OS === 'ios' ? 52 : (StatusBar.currentHeight ?? 0) + 12;
+const H_PADDING = Math.max(16, Math.round(WINDOW_WIDTH * 0.045));
+const V_SPACING = Math.max(10, Math.round(WINDOW_HEIGHT * 0.012));
+const SECTION_SPACING = Math.max(12, Math.round(WINDOW_HEIGHT * 0.016));
 
 interface Notification {
   id: string;
@@ -48,6 +56,7 @@ interface DirectConnection {
   username: string | null;
   display_name: string | null;
   profile_picture_url: string | null;
+  nomad_type?: string | null;
 }
 
 export default function NotificationsTab() {
@@ -86,6 +95,7 @@ export default function NotificationsTab() {
   const [communityChats, setCommunityChats] = useState<
     Record<string, ChatMessage[]>
   >({});
+  const chatScrollRef = useRef<ScrollView>(null);
   const promoSeedDate = new Date();
   promoSeedDate.setDate(promoSeedDate.getDate() - 1);
   promoSeedDate.setHours(9, 0, 0, 0);
@@ -170,6 +180,10 @@ export default function NotificationsTab() {
       {
         name: 'Duo Camper',
         avatar: require('../../assets/images/duo_camper.jpg')
+      },
+      {
+        name: 'Maya Trail',
+        avatar: require('../../assets/images/solo_camper.jpg')
       }
     ],
     'Mountain Wanderer Hub': [
@@ -180,6 +194,10 @@ export default function NotificationsTab() {
       {
         name: 'Summit Guide',
         avatar: require('../../assets/images/duo_camper.jpg')
+      },
+      {
+        name: 'Raya Peak',
+        avatar: require('../../assets/images/aria.jpg')
       }
     ],
     'VanLifer Creator': [
@@ -421,7 +439,7 @@ export default function NotificationsTab() {
 
         const {data: profiles, error: profilesError} = await supabase
           .from('profiles')
-          .select('id, username, display_name, profile_picture_url')
+          .select('id, username, display_name, profile_picture_url, nomad_type')
           .in('id', uniqueIds);
 
         if (profilesError) throw profilesError;
@@ -503,13 +521,54 @@ export default function NotificationsTab() {
           id: `${communityName}-intro`,
           sender: 'system',
           text: `Welcome to ${communityName}. Share your latest tips on ${topic}.`,
-          timestamp: 'Just now'
+          timestamp: '1h ago'
         },
         {
-          id: `${communityName}-msg-1`,
+          id: `${communityName}-msg-8`,
           sender: 'them',
-          text: `Anyone tried a new spot for ${topic}?`,
-          timestamp: '2m ago',
+          text: `Testing a new route for ${topic} this weekend — will report back.`,
+          timestamp: '1h ago',
+          senderName: members[2]?.name ?? members[0]?.name,
+          senderAvatar: members[2]?.avatar ?? members[0]?.avatar
+        },
+        {
+          id: `${communityName}-msg-7`,
+          sender: 'them',
+          text: `Anyone have a printable guide for ${topic}? I can make a PDF.`,
+          timestamp: '1h ago',
+          senderName: members[1]?.name ?? members[0]?.name,
+          senderAvatar: members[1]?.avatar ?? members[0]?.avatar
+        },
+        {
+          id: `${communityName}-msg-6`,
+          sender: 'them',
+          text: `For ${topic}, I’ve been rotating sites every 2 nights to stay low-key.`,
+          timestamp: '48m ago',
+          senderName: members[2]?.name ?? members[1]?.name ?? members[0]?.name,
+          senderAvatar:
+            members[2]?.avatar ?? members[1]?.avatar ?? members[0]?.avatar
+        },
+        {
+          id: `${communityName}-msg-5`,
+          sender: 'them',
+          text: `Shared a quick map pin list for ${topic} in the files tab.`,
+          timestamp: '35m ago',
+          senderName: members[2]?.name ?? members[0]?.name,
+          senderAvatar: members[2]?.avatar ?? members[0]?.avatar
+        },
+        {
+          id: `${communityName}-msg-4`,
+          sender: 'them',
+          text: `What’s everyone’s must-have item before a ${topic} weekend?`,
+          timestamp: '22m ago',
+          senderName: members[1]?.name ?? members[0]?.name,
+          senderAvatar: members[1]?.avatar ?? members[0]?.avatar
+        },
+        {
+          id: `${communityName}-msg-3`,
+          sender: 'them',
+          text: `I keep a one-page checklist for ${topic} — happy to share.`,
+          timestamp: '14m ago',
           senderName: members[0]?.name,
           senderAvatar: members[0]?.avatar
         },
@@ -520,6 +579,14 @@ export default function NotificationsTab() {
           timestamp: '8m ago',
           senderName: members[1]?.name ?? members[0]?.name,
           senderAvatar: members[1]?.avatar ?? members[0]?.avatar
+        },
+        {
+          id: `${communityName}-msg-1`,
+          sender: 'them',
+          text: `Anyone tried a new spot for ${topic}?`,
+          timestamp: '2m ago',
+          senderName: members[0]?.name,
+          senderAvatar: members[0]?.avatar
         }
       ]
     );
@@ -563,7 +630,8 @@ export default function NotificationsTab() {
     setActiveChat({
       id: connection.id,
       title: name,
-      subtitle: connection.username ? `@${connection.username}` : 'Nomad',
+      subtitle:
+        connection.nomad_type || (connection.username ? `@${connection.username}` : 'Nomad'),
       avatar: connection.profile_picture_url
         ? {uri: connection.profile_picture_url}
         : require('../../assets/images/vanora.png'),
@@ -580,6 +648,11 @@ export default function NotificationsTab() {
       text: chatDraft.trim(),
       timestamp: 'Now'
     };
+    const replyId = `${activeChat.id}-${Date.now()}-reply`;
+    const replyText =
+      activeChat.type === 'community'
+        ? `Welcome! Glad you’re here — feel free to jump in.`
+        : `What’s good?`;
     setChatDraft('');
 
     if (activeChat.type === 'direct') {
@@ -590,7 +663,26 @@ export default function NotificationsTab() {
           message
         ]
       }));
+      setTimeout(() => {
+        setDirectChats(prev => ({
+          ...prev,
+          [activeChat.id]: [
+            ...(prev[activeChat.id] || []),
+            {
+              id: replyId,
+              sender: 'them',
+              text: replyText,
+              timestamp: 'Now',
+              senderName: activeChat.title,
+              senderAvatar: activeChat.avatar
+            }
+          ]
+        }));
+      }, 700);
     } else {
+      const members = communityMemberSeeds[activeChat.id] || [];
+      const greeter =
+        members[Math.floor(Math.random() * members.length)] || null;
       setCommunityChats(prev => ({
         ...prev,
         [activeChat.id]: [
@@ -601,6 +693,22 @@ export default function NotificationsTab() {
           message
         ]
       }));
+      setTimeout(() => {
+        setCommunityChats(prev => ({
+          ...prev,
+          [activeChat.id]: [
+            ...(prev[activeChat.id] || []),
+            {
+              id: replyId,
+              sender: 'them',
+              text: replyText,
+              timestamp: 'Now',
+              senderName: greeter?.name || 'Community member',
+              senderAvatar: greeter?.avatar
+            }
+          ]
+        }));
+      }, 700);
     }
   };
 
@@ -1030,6 +1138,9 @@ export default function NotificationsTab() {
                 color="#1a1a1a"
               />
             </TouchableOpacity>
+            {activeChat?.avatar && (
+              <Image source={activeChat.avatar} style={styles.chatHeaderAvatar} />
+            )}
             <View style={styles.chatHeaderText}>
               <Text style={styles.chatTitle}>{activeChat?.title}</Text>
               {activeChat?.subtitle && (
@@ -1039,9 +1150,11 @@ export default function NotificationsTab() {
           </View>
 
           <ScrollView
+            ref={chatScrollRef}
             style={styles.chatMessages}
             contentContainerStyle={styles.chatMessagesContent}
             showsVerticalScrollIndicator={false}
+            onContentSizeChange={() => chatScrollRef.current?.scrollToEnd({animated: true})}
           >
             {(activeChat?.type === 'community'
               ? getCommunityMessages(
@@ -1051,34 +1164,39 @@ export default function NotificationsTab() {
               : activeChat
                 ? getDirectMessages(activeChat.id, activeChat.title)
                 : []
-            ).map(message => (
-              <View
-                key={message.id}
-                style={[
-                  styles.chatRow,
-                  message.sender === 'me' && styles.chatRowMe,
-                  message.sender === 'system' && styles.chatRowSystem
-                ]}
-              >
-                {message.sender === 'them' && (
-                  <View style={styles.chatAvatarWrap}>
-                    {message.senderAvatar ? (
-                      <Image
-                        source={message.senderAvatar}
-                        style={styles.chatAvatar}
-                      />
-                    ) : (
-                      <View style={styles.chatAvatarFallback}>
-                        <MaterialCommunityIcons
-                          name="account"
-                          size={14}
-                          color="#94A3B8"
-                        />
-                      </View>
-                    )}
-                  </View>
-                )}
+            ).map(message => {
+              const themAvatar =
+                message.senderAvatar ||
+                (activeChat?.type === 'direct' ? activeChat.avatar : undefined);
+
+              return (
                 <View
+                  key={message.id}
+                  style={[
+                    styles.chatRow,
+                    message.sender === 'me' && styles.chatRowMe,
+                    message.sender === 'system' && styles.chatRowSystem
+                  ]}
+                >
+                  {message.sender === 'them' && (
+                    <View style={styles.chatAvatarWrap}>
+                      {themAvatar ? (
+                        <Image
+                          source={themAvatar}
+                          style={styles.chatAvatar}
+                        />
+                      ) : (
+                        <View style={styles.chatAvatarFallback}>
+                          <MaterialCommunityIcons
+                            name="account"
+                            size={14}
+                            color="#94A3B8"
+                          />
+                        </View>
+                      )}
+                    </View>
+                  )}
+                  <View
                   style={[
                     styles.chatBubble,
                     message.sender === 'me' && styles.chatBubbleMe,
@@ -1102,13 +1220,32 @@ export default function NotificationsTab() {
                   </Text>
                   <Text style={styles.chatTimestamp}>{message.timestamp}</Text>
                 </View>
-              </View>
-            ))}
+                  {message.sender === 'me' && (
+                    <View style={styles.chatAvatarWrapMe}>
+                      {userProfile?.profile_picture_url ? (
+                        <Image
+                          source={{uri: userProfile.profile_picture_url}}
+                          style={styles.chatAvatar}
+                        />
+                      ) : (
+                        <View style={styles.chatAvatarFallback}>
+                          <MaterialCommunityIcons
+                            name="account"
+                            size={14}
+                            color="#94A3B8"
+                          />
+                        </View>
+                      )}
+                    </View>
+                  )}
+                </View>
+              );
+            })}
           </ScrollView>
 
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 24 : 0}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
           >
             <View style={styles.chatComposer}>
               <TextInput
@@ -1140,14 +1277,14 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: '#ffffff',
-    paddingHorizontal: 18,
-    paddingTop: 48
+    paddingHorizontal: H_PADDING,
+    paddingTop: TOP_BAR_PADDING
   },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12
+    marginBottom: V_SPACING
   },
   pageTitle: {
     fontSize: 22,
@@ -1179,7 +1316,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 16,
     backgroundColor: '#F1F5F9',
-    marginBottom: 16
+    marginBottom: SECTION_SPACING
   },
   searchInput: {
     flex: 1,
@@ -1192,14 +1329,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8
+    marginBottom: V_SPACING
   },
   sectionHeaderText: {
     fontSize: 11,
     fontWeight: '700',
     color: '#94A3B8',
     letterSpacing: 0.6,
-    marginBottom: 8
+    marginBottom: V_SPACING
   },
   createButton: {
     flexDirection: 'row',
@@ -1227,7 +1364,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(15, 23, 42, 0.45)',
     justifyContent: 'center',
-    paddingHorizontal: 20
+    paddingHorizontal: H_PADDING
   },
   createModalCard: {
     backgroundColor: '#FFFFFF',
@@ -1334,9 +1471,9 @@ const styles = StyleSheet.create({
   },
   suggestedRow: {
     flexDirection: 'row',
-    paddingRight: 18,
+    paddingRight: H_PADDING,
     gap: 12,
-    marginBottom: 16
+    marginBottom: SECTION_SPACING
   },
   communityCard: {
     width: 180,
@@ -1402,7 +1539,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    marginBottom: 16,
+    marginBottom: SECTION_SPACING,
     shadowColor: '#0F172A',
     shadowOpacity: 0.04,
     shadowRadius: 8,
@@ -1469,8 +1606,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingHorizontal: H_PADDING,
+    paddingTop: TOP_BAR_PADDING,
     paddingBottom: 8
   },
   tabsTopDivider: {
@@ -1503,8 +1640,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 50,
+    paddingHorizontal: H_PADDING,
+    paddingTop: TOP_BAR_PADDING,
     paddingBottom: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0'
@@ -1524,7 +1661,7 @@ const styles = StyleSheet.create({
   },
   tabsContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
+    paddingHorizontal: H_PADDING,
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
@@ -1549,8 +1686,8 @@ const styles = StyleSheet.create({
   },
   notificationsList: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 16
+    paddingHorizontal: H_PADDING,
+    paddingTop: SECTION_SPACING
   },
   sectionTitle: {
     fontSize: 14,
@@ -1655,11 +1792,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingHorizontal: H_PADDING,
+    paddingTop: TOP_BAR_PADDING,
     paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#E2E8F0'
+  },
+  chatHeaderAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18
   },
   chatBackButton: {
     width: 32,
@@ -1686,8 +1828,9 @@ const styles = StyleSheet.create({
     flex: 1
   },
   chatMessagesContent: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: H_PADDING,
+    paddingTop: SECTION_SPACING,
+    paddingBottom: Math.max(24, SECTION_SPACING + 8),
     gap: 10
   },
   chatRow: {
@@ -1759,8 +1902,9 @@ const styles = StyleSheet.create({
   chatComposer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: H_PADDING,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === 'ios' ? 16 : 12,
     borderTopWidth: 1,
     borderTopColor: '#E2E8F0',
     gap: 10
@@ -1769,10 +1913,10 @@ const styles = StyleSheet.create({
     flex: 1,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    borderRadius: 16,
+    borderRadius: 18,
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 13,
+    paddingVertical: 12,
+    fontSize: 15,
     color: '#0F172A'
   },
   chatSendButton: {
