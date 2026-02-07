@@ -18,6 +18,7 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  StatusBar,
   Text,
   TextInput,
   TouchableOpacity,
@@ -897,26 +898,28 @@ export default function FindTechTab() {
   if (isMechanic) {
     return (
       <View style={styles.container}>
-        <View style={styles.tabsContainer}>
-          {['Marketplace', 'Requests'].map(tab => (
-            <TouchableOpacity
-              key={tab}
-              style={[
-                styles.tab,
-                mechanicTab === tab.toLowerCase() && styles.tabActive
-              ]}
-              onPress={() => setMechanicTab(tab.toLowerCase())}
-            >
-              <Text
+        <View style={styles.topNavContainer}>
+          <View style={styles.topNav}>
+            {['Marketplace', 'Requests'].map(tab => (
+              <TouchableOpacity
+                key={tab}
                 style={[
-                  styles.tabText,
-                  mechanicTab === tab.toLowerCase() && styles.tabTextActive
+                  styles.tabButton,
+                  mechanicTab === tab.toLowerCase() && styles.tabButtonActive
                 ]}
+                onPress={() => setMechanicTab(tab.toLowerCase())}
               >
-                {tab}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <Text
+                  style={[
+                    styles.tabText,
+                    mechanicTab === tab.toLowerCase() && styles.tabTextActive
+                  ]}
+                >
+                  {tab}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
         {mechanicTab === 'marketplace' && renderMarketplace()}
@@ -1187,28 +1190,28 @@ export default function FindTechTab() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header} />
-
-      <View style={styles.tabsContainer}>
-        {['Marketplace', 'Mechanics'].map(tab => (
-          <TouchableOpacity
-            key={tab}
-            style={[
-              styles.tab,
-              activeTab === tab.toLowerCase() && styles.tabActive
-            ]}
-            onPress={() => setActiveTab(tab.toLowerCase())}
-          >
-            <Text
+      <View style={styles.topNavContainer}>
+        <View style={styles.topNav}>
+          {['Marketplace', 'Mechanics'].map(tab => (
+            <TouchableOpacity
+              key={tab}
               style={[
-                styles.tabText,
-                activeTab === tab.toLowerCase() && styles.tabTextActive
+                styles.tabButton,
+                activeTab === tab.toLowerCase() && styles.tabButtonActive
               ]}
+              onPress={() => setActiveTab(tab.toLowerCase())}
             >
-              {tab}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === tab.toLowerCase() && styles.tabTextActive
+                ]}
+              >
+                {tab}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
 
       {activeTab === 'marketplace' && (
@@ -1685,32 +1688,34 @@ const styles = StyleSheet.create({
     color: '#1a1a1a',
     textAlign: 'center'
   },
-  tabsContainer: {
+  topNavContainer: {
+    backgroundColor: '#ffffff',
+    paddingTop:
+      Platform.OS === 'ios' ? 52 : (StatusBar.currentHeight ?? 0) + 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB'
+  },
+  topNav: {
     flexDirection: 'row',
     paddingHorizontal: 20,
-    paddingVertical: 8,
-    gap: 0,
-    backgroundColor: '#f0f0f0',
-    marginHorizontal: 20,
-    marginTop: 20,
-    borderRadius: 24,
-    padding: 4
+    gap: 18
   },
-  tab: {
+  tabButton: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: 'transparent',
-    alignItems: 'center'
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent'
   },
-  tabActive: {
-    backgroundColor: '#ffffff'
+  tabButtonActive: {
+    borderBottomColor: '#2E7D64'
   },
   tabText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
-    color: '#999999'
+    color: '#94A3B8',
+    letterSpacing: 0.2
   },
   tabTextActive: {
     color: '#2E7D64'
