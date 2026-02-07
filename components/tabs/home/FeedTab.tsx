@@ -1,11 +1,14 @@
 import {supabase} from '@/services/supabase';
 import {feedTabStyles as styles} from '@/styles';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {MaterialCommunityIcons} from '@expo/vector-icons';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useRouter} from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import React,{useEffect, useRef, useState} from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Image,
   Modal,
   Pressable,
@@ -65,6 +68,7 @@ interface FeedTabProps {
 const CACHE_TTL_MS = 60 * 1000;
 const MENU_WIDTH = 140;
 const MENU_OFFSET = 8;
+const STORY_STORAGE_KEY = 'feedStoriesV1';
 const STORY_ITEMS = [
   {
     id: 'story-1',
@@ -91,6 +95,13 @@ const STORY_ITEMS = [
       'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=400&q=80'
   }
 ];
+
+interface StoryItem {
+  id: string;
+  title: string;
+  imageUrl: string;
+}
+
 export default function FeedTab({refreshTrigger}: FeedTabProps) {
   const router = useRouter();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -114,8 +125,84 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
     height: number;
   } | null>(null);
   const [commentPostId, setCommentPostId] = useState<string | null>(null);
+  const [localStories, setLocalStories] = useState<StoryItem[]>([]);
+  const [isAddingStory, setIsAddingStory] = useState(false);
+  const [activeStory, setActiveStory] = useState<StoryItem | null>(null);
   const queryClient = useQueryClient();
   const menuButtonRefs = useRef<Record<string, View | null>>({});
+
+  const storyItems = [...localStories, ...STORY_ITEMS];
+
+  useEffect(() => {
+    const loadLocalStories = async () => {
+      try {
+        const raw = await AsyncStorage.getItem(STORY_STORAGE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return;
+        const sanitized = parsed.filter(item =>
+          item &&
+          typeof item.id === 'string' &&
+          typeof item.title === 'string' &&
+          typeof item.imageUrl === 'string'
+        ) as StoryItem[];
+        setLocalStories(sanitized);
+      } catch (error) {
+        console.warn('Failed to load local stories', error);
+      }
+    };
+
+    loadLocalStories();
+  }, []);
+
+  const persistLocalStories = async (nextStories: StoryItem[]) => {
+    setLocalStories(nextStories);
+    try {
+      await AsyncStorage.setItem(
+        STORY_STORAGE_KEY,
+        JSON.stringify(nextStories)
+      );
+    } catch (error) {
+      console.warn('Failed to save local stories', error);
+    }
+  };
+
+  const handleAddStory = async () => {
+    if (isAddingStory) return;
+    setIsAddingStory(true);
+    try {
+      const permission =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert(
+          'Permission required',
+          'Allow photo access to add a story.'
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 5],
+        quality: 0.85
+      });
+
+      if (!result.canceled && result.assets?.length) {
+        const asset = result.assets[0];
+        if (asset?.uri) {
+          const newStory: StoryItem = {
+            id: `local-${Date.now()}`,
+            title: 'Your trip',
+            imageUrl: asset.uri
+          };
+          await persistLocalStories([newStory, ...localStories]);
+        }
+      }
+    } finally {
+      setIsAddingStory(false);
+    }
+  };
 
   const fetchPosts = async (userId: string | null) => {
     try {
@@ -407,6 +494,14 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
     });
   };
 
+  const handleOpenStory = (story: StoryItem) => {
+    setActiveStory(story);
+  };
+
+  const handleCloseStory = () => {
+    setActiveStory(null);
+  };
+
   const renderItem = ({item}: {item: FeedPost}) => {
     const author = item.profiles;
     const authorId = author?.id || item.user_id;
@@ -662,7 +757,7 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
     );
   }
 
-  // If no posts, show empty state
+  // Story area
   if (posts.length === 0) {
     return (
       <View style={styles.tabContent}>
@@ -677,7 +772,11 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
               <View style={styles.storyFront}>
                 <View style={styles.storyHeadlight} />
                 <View style={styles.storyFrontBumper} />
-                <View style={styles.joinTripCard}>
+                <TouchableOpacity
+                  style={styles.joinTripCard}
+                  onPress={handleAddStory}
+                  activeOpacity={0.85}
+                >
                   <View style={styles.joinTripIconCircle}>
                     <MaterialCommunityIcons
                       name="plus"
@@ -686,29 +785,31 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
                     />
                   </View>
                   <Text style={styles.joinTripText}>JOIN TRIP</Text>
-                </View>
+                </TouchableOpacity>
               </View>
               <View style={styles.storyBody}>
-              {STORY_ITEMS.map((item, index) => {
-                const isLast = index === STORY_ITEMS.length - 1;
-                return (
-                  <View
-                    key={item.id}
-                    style={[styles.storyCard, isLast && styles.storyCardLast]}
-                  >
-                    <Image
-                      source={{uri: item.imageUrl}}
-                      style={styles.storyImage}
-                      resizeMode="cover"
-                    />
-                    <View style={styles.storyLabel}>
-                      <Text style={styles.storyLabelText}>
-                        {item.title}
-                      </Text>
-                    </View>
-                  </View>
-                );
-              })}
+                {storyItems.map((item, index) => {
+                  const isLast = index === storyItems.length - 1;
+                  return (
+                    <TouchableOpacity
+                      key={item.id}
+                      style={[styles.storyCard, isLast && styles.storyCardLast]}
+                      activeOpacity={0.85}
+                      onPress={() => handleOpenStory(item)}
+                    >
+                      <Image
+                        source={{uri: item.imageUrl}}
+                        style={styles.storyImage}
+                        resizeMode="cover"
+                      />
+                      <View style={styles.storyLabel}>
+                        <Text style={styles.storyLabelText}>
+                          {item.title}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
             </View>
             <View style={styles.storyRearCap} />
             <View style={styles.storyWheelFront}>
@@ -748,7 +849,11 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
               <View style={styles.storyFrontWindow} />
               <View style={styles.storyHeadlight} />
               <View style={styles.storyFrontBumper} />
-              <View style={styles.joinTripCard}>
+              <TouchableOpacity
+                style={styles.joinTripCard}
+                onPress={handleAddStory}
+                activeOpacity={0.85}
+              >
                 <View style={styles.joinTripIconCircle}>
                   <MaterialCommunityIcons
                     name="plus"
@@ -757,27 +862,29 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
                   />
                 </View>
                 <Text style={styles.joinTripText}>JOIN TRIP</Text>
-              </View>
+              </TouchableOpacity>
             </View>
             <View style={styles.storyBody}>
-            {STORY_ITEMS.map((item, index) => {
-              const isLast = index === STORY_ITEMS.length - 1;
-              return (
-                <View
-                  key={item.id}
-                  style={[styles.storyCard, isLast && styles.storyCardLast]}
-                >
-                  <Image
-                    source={{uri: item.imageUrl}}
-                    style={styles.storyImage}
-                    resizeMode="cover"
-                  />
-                  <View style={styles.storyLabel}>
-                    <Text style={styles.storyLabelText}>{item.title}</Text>
-                  </View>
-                </View>
-              );
-            })}
+              {storyItems.map((item, index) => {
+                const isLast = index === storyItems.length - 1;
+                return (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={[styles.storyCard, isLast && styles.storyCardLast]}
+                    activeOpacity={0.85}
+                    onPress={() => handleOpenStory(item)}
+                  >
+                    <Image
+                      source={{uri: item.imageUrl}}
+                      style={styles.storyImage}
+                      resizeMode="cover"
+                    />
+                    <View style={styles.storyLabel}>
+                      <Text style={styles.storyLabelText}>{item.title}</Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
           </View>
           <View style={styles.storyRearCap} />
           <View style={styles.storyWheelFront}>
@@ -793,6 +900,65 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
       {posts.map(item => (
         <View key={item.id}>{renderItem({item})}</View>
       ))}
+
+      <Modal
+        transparent
+        animationType="fade"
+        visible={!!activeStory}
+        onRequestClose={handleCloseStory}
+      >
+        <Pressable style={styles.storyModalBackdrop} onPress={handleCloseStory}>
+          <Pressable style={styles.storyModalCard}>
+            <View style={styles.storyModalHeader}>
+              <View style={styles.storyModalTitleWrap}>
+                <Text style={styles.storyModalTitle}>
+                  {activeStory?.title ?? 'Story'}
+                </Text>
+                <Text style={styles.storyModalSubtitle}>Today</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.storyModalClose}
+                onPress={handleCloseStory}
+              >
+                <MaterialCommunityIcons
+                  name="close"
+                  size={18}
+                  color="#2E7D64"
+                />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.storyModalImageWrap}>
+              {activeStory?.imageUrl ? (
+                <Image
+                  source={{uri: activeStory.imageUrl}}
+                  style={styles.storyModalImage}
+                  resizeMode="cover"
+                />
+              ) : null}
+            </View>
+            <View style={styles.storyModalFooter}>
+              <View style={styles.storyModalPill}>
+                <MaterialCommunityIcons
+                  name="map-marker"
+                  size={14}
+                  color="#2E7D64"
+                />
+                <Text style={styles.storyModalPillText}>
+                  Your trip highlight
+                </Text>
+              </View>
+              <TouchableOpacity style={styles.storyModalAction}>
+                <MaterialCommunityIcons
+                  name="share-variant"
+                  size={16}
+                  color="#2E7D64"
+                />
+                <Text style={styles.storyModalActionText}>Share</Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <Modal
         transparent

@@ -566,6 +566,97 @@ export const feedTabStyles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: '#FFFFFF'
   },
+  storyModalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(9, 20, 28, 0.72)',
+    justifyContent: 'center',
+    paddingHorizontal: 18
+  },
+  storyModalCard: {
+    backgroundColor: '#0B1D18',
+    borderRadius: 24,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    shadowColor: '#000000',
+    shadowOpacity: 0.25,
+    shadowRadius: 24,
+    shadowOffset: {width: 0, height: 14},
+    elevation: 6
+  },
+  storyModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12
+  },
+  storyModalTitleWrap: {
+    gap: 2
+  },
+  storyModalTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#F8FAFC'
+  },
+  storyModalSubtitle: {
+    fontSize: 11,
+    color: '#A7B4BF',
+    fontWeight: '600'
+  },
+  storyModalClose: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(207, 195, 195, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  storyModalImageWrap: {
+    height: 360,
+    borderRadius: 20,
+    overflow: 'hidden',
+    backgroundColor: '#0F2A22'
+  },
+  storyModalImage: {
+    width: '100%',
+    height: '100%'
+  },
+  storyModalFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 14
+  },
+  storyModalPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#EAF3EF',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999
+  },
+  storyModalPillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#2E7D64'
+  },
+  storyModalAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(109, 61, 61, 0.08)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)'
+  },
+  storyModalActionText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#D1FAE5'
+  },
   commentComposerPlaceholder: {
     fontSize: 12,
     color: '#9CA3AF'
