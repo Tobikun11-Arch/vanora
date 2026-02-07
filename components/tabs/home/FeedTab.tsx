@@ -31,6 +31,7 @@ interface PostAuthor {
   username: string | null;
   display_name: string | null;
   profile_picture_url: string | null;
+  hobbies?: string[] | null;
 }
 
 interface FeedPost {
@@ -208,7 +209,16 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
     try {
       // who am I following?
       let followingIds: string[] = [];
+      let currentUserHobbies: string[] = [];
       if (userId) {
+        const {data: currentProfile} = await supabase
+          .from('profiles')
+          .select('hobbies')
+          .eq('id', userId)
+          .maybeSingle();
+
+        currentUserHobbies = currentProfile?.hobbies || [];
+
         const {data: followingData} = await supabase
           .from('user_follows')
           .select('following_id')
@@ -233,7 +243,8 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
             id,
             username,
             display_name,
-            profile_picture_url
+            profile_picture_url,
+            hobbies
           ),
           post_media (
             id,
@@ -252,6 +263,7 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
         return;
       }
 
+      const currentHobbySet = new Set(currentUserHobbies);
       const filtered = (postsData || []).filter(p => {
         if (p.user_id === userId) return true; // my posts
         if (p.visibility === 'everyone') return true; // public
@@ -260,7 +272,18 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
         return false;
       });
 
-      const pollPostIds = filtered
+      const interestFiltered = filtered.filter(p => {
+        if (!userId) return true;
+        if (currentHobbySet.size === 0) return true;
+        if (p.user_id === userId) return true;
+        const profileData = Array.isArray(p.profiles)
+          ? p.profiles[0]
+          : p.profiles;
+        const hobbies = profileData?.hobbies || [];
+        return hobbies.some(hobby => currentHobbySet.has(hobby));
+      });
+
+      const pollPostIds = interestFiltered
         .filter(p => p.post_type === 'poll' || p.post_type === 'image_poll')
         .map(p => p.id);
 
@@ -312,7 +335,7 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
         }
       }
       const withStats: FeedPost[] = await Promise.all(
-        filtered.map(async p => {
+        interestFiltered.map(async p => {
           const sortedMedia = (p.post_media || []).sort(
             (a, b) => a.display_order - b.display_order
           );
