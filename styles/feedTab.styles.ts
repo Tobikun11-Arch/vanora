@@ -245,13 +245,17 @@ export const feedTabStyles = StyleSheet.create({
   feedHeaderTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    flexWrap: 'wrap'
+    gap: 10
+  },
+  feedHeaderNameWrap: {
+    flex: 1,
+    minWidth: 0
   },
   feedHeaderName: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#0F172A'
+    color: '#0F172A',
+    flexShrink: 1
   },
   followButton: {
     borderWidth: 1,
