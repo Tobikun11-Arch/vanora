@@ -640,7 +640,7 @@ const handleLogout = async () => {
         profile.skills?.length > 0 ||
         profile.lifestyle_tags?.length > 0) && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Interest</Text>
+          <Text style={styles.sectionTitle}>Hobbies and Interests</Text>
           <View style={styles.tagsContainer}>
             {/* Lifestyle Tags */}
             {profile.lifestyle_tags &&
