@@ -2,9 +2,12 @@ import {showToast} from '@/components/Toast';
 import {supabase} from '@/services/supabase';
 import {useFindTechStore} from '@/store/techStore';
 import {useUserStore} from '@/store/userStore';
+import {useRevenueCatSubscription} from '@/hooks/use-revenuecat-subscription';
 import {MaterialCommunityIcons} from '@expo/vector-icons';
+import {useRouter} from 'expo-router';
+import {useFocusEffect} from '@react-navigation/native';
 import * as Location from 'expo-location';
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -46,8 +49,9 @@ interface DiscussionComment {
 }
 
 export default function FindTechTab() {
-  const [activeTab, setActiveTab] = useState('featured');
-  const [mechanicTab, setMechanicTab] = useState('requests');
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState('marketplace');
+  const [mechanicTab, setMechanicTab] = useState('marketplace');
   const [scanned, setScanned] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const scanTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -161,6 +165,8 @@ export default function FindTechTab() {
   const [discussionFollowing, setDiscussionFollowing] = useState<
     Record<string, boolean>
   >({});
+  const {isSubscribed, isLoading: isSubscriptionLoading, refresh} =
+    useRevenueCatSubscription();
 
   // ✅ Fix: select each piece individually (no object literal)
   const mechanics = useFindTechStore(state => state.mechanics);
@@ -178,6 +184,12 @@ export default function FindTechTab() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userProfile?.nomad_type]);
+
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh])
+  );
 
   useEffect(() => {
     if (!userProfile) return;
@@ -540,6 +552,14 @@ export default function FindTechTab() {
     }));
   };
 
+  const handleRequestInvite = () => {
+    router.push('/membership-subscription');
+  };
+
+  const handleOpenBuilderHelp = (route: string) => {
+    router.push(route);
+  };
+
   const renderEmpty = () => (
     <View style={styles.emptyState}>
       <MaterialCommunityIcons name="account-wrench" size={48} color="#D1D5DB" />
@@ -653,6 +673,35 @@ export default function FindTechTab() {
   const featuredList = mechanics.slice(0, 3);
   const scanList = mechanics.slice(0, 2);
   const isMechanic = userProfile?.nomad_type?.toLowerCase() === 'mechanic';
+  const marketplaceCtaLabel = isMechanic
+    ? 'Verify as Builder'
+    : 'Unlock Premium';
+  const builderHelpItems = [
+    {
+      title: 'Build Guides',
+      subtitle: 'Step-by-step plans for van projects.',
+      icon: 'hammer-wrench',
+      route: '/(app)/builder-help/build-guides'
+    },
+    {
+      title: 'Troubleshooting Q&A',
+      subtitle: 'Ask verified builders for fixes.',
+      icon: 'comment-question-outline',
+      route: '/(app)/builder-help/troubleshooting-qa'
+    },
+    {
+      title: 'Supplier Resources',
+      subtitle: 'Curated vendors and part lists.',
+      icon: 'truck-cargo-container',
+      route: '/(app)/builder-help/supplier-resources'
+    },
+    {
+      title: 'Community Support',
+      subtitle: 'Private threads with other builders.',
+      icon: 'account-group-outline',
+      route: '/(app)/builder-help/community-support'
+    }
+  ];
 
   const getStatusLabel = (status: 'emergency' | 'urgent' | 'normal') => {
     if (status === 'emergency') return 'Emergency';
@@ -683,7 +732,7 @@ export default function FindTechTab() {
   }, []);
 
   useEffect(() => {
-    if (activeTab !== 'scan' && isScanning) {
+    if (activeTab !== 'mechanics' && isScanning) {
       if (scanTimerRef.current) {
         clearTimeout(scanTimerRef.current);
       }
@@ -736,6 +785,91 @@ export default function FindTechTab() {
     };
   }, [isScanning, scanPulse, scanSweep]);
 
+  const renderMarketplace = () => (
+    <ScrollView
+      style={styles.contentContainer}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.marketplaceHeader}>
+        <Text style={styles.marketplaceTitle}>Builder Help Marketplace</Text>
+        <Text style={styles.marketplaceSubtitle}>
+          Paid builder help for van projects with invite-only or verified
+          access to keep it safe and intentional.
+        </Text>
+      </View>
+
+      {isSubscriptionLoading ? (
+        <View style={styles.loadingRow}>
+          <ActivityIndicator size="large" color="#2E7D64" />
+        </View>
+      ) : isSubscribed ? (
+        <View style={styles.marketplaceGrid}>
+          {builderHelpItems.map(item => (
+            <TouchableOpacity
+              key={item.title}
+              style={styles.marketplaceCard}
+              onPress={() => handleOpenBuilderHelp(item.route)}
+              activeOpacity={0.9}
+            >
+              <View style={styles.marketplaceCardIcon}>
+                <MaterialCommunityIcons
+                  name={item.icon}
+                  size={22}
+                  color="#2E7D64"
+                />
+              </View>
+              <Text style={styles.marketplaceCardTitle}>{item.title}</Text>
+              <Text style={styles.marketplaceCardSubtitle}>
+                {item.subtitle}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      ) : (
+        <View style={styles.lockedSection}>
+          <Text style={styles.lockedTitle}>Invite-only builder help</Text>
+          <Text style={styles.lockedSubtitle}>
+            Unlock premium access to view full guides, private Q&A, and
+            resource lists.
+          </Text>
+          <View style={styles.marketplaceGrid}>
+            {builderHelpItems.map(item => (
+              <View key={item.title} style={styles.lockedCard}>
+                <View style={styles.lockedCardContent}>
+                  <MaterialCommunityIcons
+                    name={item.icon}
+                    size={20}
+                    color="#94A3B8"
+                  />
+                  <Text style={styles.lockedCardTitle}>{item.title}</Text>
+                  <Text style={styles.lockedCardSubtitle}>
+                    {item.subtitle}
+                  </Text>
+                </View>
+                <View style={styles.lockedOverlay}>
+                  <MaterialCommunityIcons
+                    name="lock"
+                    size={18}
+                    color="#ffffff"
+                  />
+                  <Text style={styles.lockedOverlayText}>Invite only</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+          <TouchableOpacity
+            style={styles.requestInviteButton}
+            onPress={handleRequestInvite}
+          >
+            <Text style={styles.requestInviteButtonText}>
+              {marketplaceCtaLabel}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </ScrollView>
+  );
+
   const sweepRotate = scanSweep.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '360deg']
@@ -764,7 +898,7 @@ export default function FindTechTab() {
     return (
       <View style={styles.container}>
         <View style={styles.tabsContainer}>
-          {['Requests', 'Discussion'].map(tab => (
+          {['Marketplace', 'Requests'].map(tab => (
             <TouchableOpacity
               key={tab}
               style={[
@@ -784,6 +918,8 @@ export default function FindTechTab() {
             </TouchableOpacity>
           ))}
         </View>
+
+        {mechanicTab === 'marketplace' && renderMarketplace()}
 
         {mechanicTab === 'requests' && (
           <ScrollView
@@ -883,172 +1019,6 @@ export default function FindTechTab() {
               <Text style={styles.errorText}>{helpSignalsError}</Text>
             )}
           </ScrollView>
-        )}
-
-        {mechanicTab === 'discussion' && (
-          <View style={styles.contentContainer}>
-            <View style={styles.discussionHeader}>
-              <View>
-                <Text style={styles.discussionTitle}>Mechanic Discussion</Text>
-                <Text style={styles.discussionSubtitle}>
-                  Share fixes, questions, and gear tips with the crew.
-                </Text>
-              </View>
-              <TouchableOpacity
-                style={styles.discussionNewButton}
-                onPress={() => setShowDiscussionModal(true)}
-              >
-                <MaterialCommunityIcons name="plus" size={18} color="#ffffff" />
-                <Text style={styles.discussionNewButtonText}>Post</Text>
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView
-              style={styles.discussionList}
-              showsVerticalScrollIndicator={false}
-            >
-              {discussionPosts.length === 0 ? (
-                <View style={styles.emptyState}>
-                  <MaterialCommunityIcons
-                    name="forum-outline"
-                    size={44}
-                    color="#CBD5F5"
-                  />
-                  <Text style={styles.emptyTitle}>No discussions yet</Text>
-                  <Text style={styles.emptySubtitle}>
-                    Be the first to start a thread for the community.
-                  </Text>
-                </View>
-              ) : (
-                discussionPosts.map(post => (
-                  <View key={post.id} style={styles.discussionCard}>
-                    <View style={styles.discussionCardHeader}>
-                      {post.author.avatarUrl ? (
-                        <Image
-                          source={{uri: post.author.avatarUrl}}
-                          style={styles.discussionAvatar}
-                        />
-                      ) : (
-                        <View
-                          style={[
-                            styles.discussionAvatar,
-                            styles.discussionAvatarPlaceholder
-                          ]}
-                        >
-                          <MaterialCommunityIcons
-                            name="account"
-                            size={18}
-                            color="#64748b"
-                          />
-                        </View>
-                      )}
-                      <View style={styles.discussionCardInfo}>
-                        <View style={styles.discussionNameRow}>
-                          <Text style={styles.discussionCardName}>
-                            {post.author.name}
-                          </Text>
-                          <TouchableOpacity
-                            style={[
-                              styles.discussionFollowButton,
-                              discussionFollowing[post.author.handle] &&
-                                styles.discussionFollowButtonActive
-                            ]}
-                            onPress={() =>
-                              handleDiscussionFollow(post.author.handle)
-                            }
-                          >
-                            <Text
-                              style={[
-                                styles.discussionFollowButtonText,
-                                discussionFollowing[post.author.handle] &&
-                                  styles.discussionFollowButtonTextActive
-                              ]}
-                            >
-                              {discussionFollowing[post.author.handle]
-                                ? 'Following'
-                                : 'Follow'}
-                            </Text>
-                          </TouchableOpacity>
-                        </View>
-                        <Text style={styles.discussionCardHandle}>
-                          {post.author.handle}
-                        </Text>
-                      </View>
-                      <Text style={styles.discussionCardTime}>
-                        {formatRelativeTime(post.created_at)}
-                      </Text>
-                    </View>
-
-                    <Text style={styles.discussionCardBody}>{post.body}</Text>
-
-                    <View style={styles.discussionActionsRow}>
-                      <TouchableOpacity
-                        style={styles.discussionAction}
-                        onPress={() => handleDiscussionLike(post.id)}
-                      >
-                        <MaterialCommunityIcons
-                          name={post.liked ? 'heart' : 'heart-outline'}
-                          size={22}
-                          color={post.liked ? '#2E7D64' : '#64748b'}
-                        />
-                        <Text
-                          style={[
-                            styles.discussionActionText,
-                            post.liked && styles.discussionActionTextActive
-                          ]}
-                        >
-                          {post.likes_count}
-                        </Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.discussionAction}
-                        onPress={() => handleDiscussionDislike(post.id)}
-                      >
-                        <MaterialCommunityIcons
-                          name="thumb-down-outline"
-                          size={22}
-                          color={post.disliked ? '#f97316' : '#64748b'}
-                        />
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={styles.discussionAction}
-                        onPress={() => setCommentPostId(post.id)}
-                      >
-                        <MaterialCommunityIcons
-                          name="comment-outline"
-                          size={22}
-                          color="#64748b"
-                        />
-                        <Text style={styles.discussionActionText}>
-                          {post.comments_count}
-                        </Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={styles.discussionAction}
-                        onPress={() => handleDiscussionShare(post.id)}
-                      >
-                        <MaterialCommunityIcons
-                          name="share-variant-outline"
-                          size={22}
-                          color={post.shared ? '#2E7D64' : '#64748b'}
-                        />
-                        <Text
-                          style={[
-                            styles.discussionActionText,
-                            post.shared && styles.discussionActionTextActive
-                          ]}
-                        >
-                          {post.shares_count}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                ))
-              )}
-            </ScrollView>
-          </View>
         )}
 
         <Modal
@@ -1220,7 +1190,7 @@ export default function FindTechTab() {
       <View style={styles.header} />
 
       <View style={styles.tabsContainer}>
-        {['Featured', 'Scan'].map(tab => (
+        {['Marketplace', 'Mechanics'].map(tab => (
           <TouchableOpacity
             key={tab}
             style={[
@@ -1241,12 +1211,97 @@ export default function FindTechTab() {
         ))}
       </View>
 
-      {activeTab === 'featured' && (
+      {activeTab === 'marketplace' && (
         <ScrollView
           style={styles.contentContainer}
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.resultsTitle}>Verified Mechanics</Text>
+          <View style={styles.marketplaceHeader}>
+            <Text style={styles.marketplaceTitle}>Builder Help Marketplace</Text>
+            <Text style={styles.marketplaceSubtitle}>
+              Paid builder help for van projects with invite-only or verified
+              access to keep it safe and intentional.
+            </Text>
+          </View>
+
+          {isSubscriptionLoading ? (
+            <View style={styles.loadingRow}>
+              <ActivityIndicator size="large" color="#2E7D64" />
+            </View>
+          ) : isSubscribed ? (
+            <View style={styles.marketplaceGrid}>
+              {builderHelpItems.map(item => (
+                <TouchableOpacity
+                  key={item.title}
+                  style={styles.marketplaceCard}
+                  onPress={() => handleOpenBuilderHelp(item.route)}
+                  activeOpacity={0.9}
+                >
+                  <View style={styles.marketplaceCardIcon}>
+                    <MaterialCommunityIcons
+                      name={item.icon}
+                      size={22}
+                      color="#2E7D64"
+                    />
+                  </View>
+                  <Text style={styles.marketplaceCardTitle}>{item.title}</Text>
+                  <Text style={styles.marketplaceCardSubtitle}>
+                    {item.subtitle}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+      ) : (
+        <View style={styles.lockedSection}>
+          <Text style={styles.lockedTitle}>Invite-only builder help</Text>
+          <Text style={styles.lockedSubtitle}>
+            Unlock premium access to view full guides, private Q&A, and
+                resource lists.
+              </Text>
+              <View style={styles.marketplaceGrid}>
+                {builderHelpItems.map(item => (
+                  <View key={item.title} style={styles.lockedCard}>
+                    <View style={styles.lockedCardContent}>
+                      <MaterialCommunityIcons
+                        name={item.icon}
+                        size={20}
+                        color="#94A3B8"
+                      />
+                      <Text style={styles.lockedCardTitle}>{item.title}</Text>
+                      <Text style={styles.lockedCardSubtitle}>
+                        {item.subtitle}
+                      </Text>
+                    </View>
+                    <View style={styles.lockedOverlay}>
+                      <MaterialCommunityIcons
+                        name="lock"
+                        size={18}
+                        color="#ffffff"
+                      />
+                      <Text style={styles.lockedOverlayText}>Invite only</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+              <TouchableOpacity
+            style={styles.requestInviteButton}
+            onPress={handleRequestInvite}
+          >
+            <Text style={styles.requestInviteButtonText}>
+              {marketplaceCtaLabel}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </ScrollView>
+      )}
+
+      {activeTab === 'mechanics' && (
+        <ScrollView
+          style={styles.contentContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          <Text style={styles.resultsTitle}>Featured Mechanics</Text>
           {loading ? (
             <View style={styles.loadingRow}>
               <ActivityIndicator size="large" color="#2E7D64" />
@@ -1257,163 +1312,166 @@ export default function FindTechTab() {
             featuredList.map(tech => renderTechCard(tech))
           )}
           {error && <Text style={styles.errorText}>{error}</Text>}
-        </ScrollView>
-      )}
 
-      {activeTab === 'scan' && (
-        <View style={styles.scanContainer}>
-          {!scanned ? (
-            <View style={styles.scanContent}>
-              <View style={styles.radarCard}>
-                <View style={styles.radarContainer}>
-                  <View style={styles.radarFrame}>
-                    <View style={styles.radarSurface}>
-                      <View style={styles.radarGrid}>
-                        {['25%', '50%', '75%'].map(position => (
+          <View style={styles.sectionDivider} />
+
+          <Text style={styles.sectionTitle}>Request Help</Text>
+          <View style={styles.scanSection}>
+            {!scanned ? (
+              <View style={styles.scanContent}>
+                <View style={styles.radarCard}>
+                  <View style={styles.radarContainer}>
+                    <View style={styles.radarFrame}>
+                      <View style={styles.radarSurface}>
+                        <View style={styles.radarGrid}>
+                          {['25%', '50%', '75%'].map(position => (
+                            <View
+                              key={`v-${position}`}
+                              style={[
+                                styles.gridLine,
+                                styles.gridLineVertical,
+                                {left: position}
+                              ]}
+                            />
+                          ))}
+                          {['25%', '50%', '75%'].map(position => (
+                            <View
+                              key={`h-${position}`}
+                              style={[
+                                styles.gridLine,
+                                styles.gridLineHorizontal,
+                                {top: position}
+                              ]}
+                            />
+                          ))}
+                        </View>
+
+                        {[180, 135, 95, 55].map(size => (
                           <View
-                            key={`v-${position}`}
+                            key={`ring-${size}`}
                             style={[
-                              styles.gridLine,
-                              styles.gridLineVertical,
-                              {left: position}
+                              styles.radarRing,
+                              {
+                                width: size,
+                                height: size,
+                                borderRadius: size / 2
+                              }
                             ]}
                           />
                         ))}
-                        {['25%', '50%', '75%'].map(position => (
-                          <View
-                            key={`h-${position}`}
-                            style={[
-                              styles.gridLine,
-                              styles.gridLineHorizontal,
-                              {top: position}
-                            ]}
-                          />
-                        ))}
-                      </View>
 
-                      {[180, 135, 95, 55].map(size => (
-                        <View
-                          key={`ring-${size}`}
+                        <View style={styles.radarCrosshairVertical} />
+                        <View style={styles.radarCrosshairHorizontal} />
+
+                        <Animated.View
                           style={[
-                            styles.radarRing,
+                            styles.radarSweep,
+                            {transform: [{rotate: sweepRotate}]}
+                          ]}
+                        >
+                          <View style={styles.radarSweepLine} />
+                          <View style={styles.radarSweepGlow} />
+                        </Animated.View>
+
+                        <Animated.View
+                          style={[
+                            styles.radarPulse,
                             {
-                              width: size,
-                              height: size,
-                              borderRadius: size / 2
+                              transform: [{scale: pulseScale}],
+                              opacity: pulseOpacity
                             }
                           ]}
                         />
-                      ))}
 
-                      <View style={styles.radarCrosshairVertical} />
-                      <View style={styles.radarCrosshairHorizontal} />
+                        <View
+                          style={[styles.radarBlip, styles.radarBlipBright]}
+                        />
+                        <View
+                          style={[
+                            styles.radarBlip,
+                            styles.radarBlipMid,
+                            {top: '28%', left: '34%'}
+                          ]}
+                        />
+                        <View
+                          style={[
+                            styles.radarBlip,
+                            styles.radarBlipSoft,
+                            {top: '62%', left: '68%'}
+                          ]}
+                        />
 
-                      <Animated.View
-                        style={[
-                          styles.radarSweep,
-                          {transform: [{rotate: sweepRotate}]}
-                        ]}
-                      >
-                        <View style={styles.radarSweepLine} />
-                        <View style={styles.radarSweepGlow} />
-                      </Animated.View>
-
-                      <Animated.View
-                        style={[
-                          styles.radarPulse,
-                          {
-                            transform: [{scale: pulseScale}],
-                            opacity: pulseOpacity
-                          }
-                        ]}
-                      />
-
-                      <View
-                        style={[styles.radarBlip, styles.radarBlipBright]}
-                      />
-                      <View
-                        style={[
-                          styles.radarBlip,
-                          styles.radarBlipMid,
-                          {top: '28%', left: '34%'}
-                        ]}
-                      />
-                      <View
-                        style={[
-                          styles.radarBlip,
-                          styles.radarBlipSoft,
-                          {top: '62%', left: '68%'}
-                        ]}
-                      />
-
-                      <View style={styles.radarCenter} />
+                        <View style={styles.radarCenter} />
+                      </View>
                     </View>
-                  </View>
-                  {!isScanning && (
-                    <Text style={styles.radarText}>Scan nearby mechanics</Text>
-                  )}
-                  {isScanning && (
-                    <View style={styles.scanIndicator}>
-                      <Text style={styles.scanIndicatorText}>
-                        Scanning nearby mechanics...
+                    {!isScanning && (
+                      <Text style={styles.radarText}>
+                        Scan nearby mechanics
                       </Text>
-                    </View>
-                  )}
+                    )}
+                    {isScanning && (
+                      <View style={styles.scanIndicator}>
+                        <Text style={styles.scanIndicatorText}>
+                          Scanning nearby mechanics...
+                        </Text>
+                      </View>
+                    )}
+                  </View>
                 </View>
+
+                <TouchableOpacity
+                  style={[
+                    styles.scanButton,
+                    isScanning && styles.scanButtonBusy
+                  ]}
+                  onPress={handleScan}
+                  disabled={isScanning}
+                >
+                  <Text style={styles.scanButtonText}>
+                    {isScanning ? 'Scanning...' : 'Scan'}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.signalButton,
+                    isScanning && styles.signalButtonBusy
+                  ]}
+                  onPress={handleSignalRequest}
+                  disabled={isScanning}
+                >
+                  <Text style={styles.signalButtonText}>Send Signal</Text>
+                </TouchableOpacity>
               </View>
+            ) : (
+              <View style={styles.scanResultsContainer}>
+                <Text style={styles.resultsTitle}>Mechanics Near You</Text>
+                {loading ? (
+                  <View style={styles.loadingRow}>
+                    <ActivityIndicator size="large" color="#2E7D64" />
+                  </View>
+                ) : scanList.length === 0 ? (
+                  renderEmpty()
+                ) : (
+                  scanList.map(tech => renderTechCard(tech))
+                )}
 
-              <TouchableOpacity
-                style={[styles.scanButton, isScanning && styles.scanButtonBusy]}
-                onPress={handleScan}
-                disabled={isScanning}
-              >
-                <Text style={styles.scanButtonText}>
-                  {isScanning ? 'Scanning...' : 'Scan'}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.signalButton,
-                  isScanning && styles.signalButtonBusy
-                ]}
-                onPress={handleSignalRequest}
-                disabled={isScanning}
-              >
-                <Text style={styles.signalButtonText}>Send Signal</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <ScrollView
-              style={styles.scanResultsContainer}
-              showsVerticalScrollIndicator={false}
-            >
-              <Text style={styles.resultsTitle}>Mechanics Near You</Text>
-              {loading ? (
-                <View style={styles.loadingRow}>
-                  <ActivityIndicator size="large" color="#2E7D64" />
-                </View>
-              ) : scanList.length === 0 ? (
-                renderEmpty()
-              ) : (
-                scanList.map(tech => renderTechCard(tech))
-              )}
-
-              <TouchableOpacity
-                style={styles.backScanButton}
-                onPress={() => {
-                  if (scanTimerRef.current) {
-                    clearTimeout(scanTimerRef.current);
-                  }
-                  setIsScanning(false);
-                  setScanned(false);
-                }}
-              >
-                <Text style={styles.backScanButtonText}>Scan Again</Text>
-              </TouchableOpacity>
-            </ScrollView>
-          )}
-        </View>
+                <TouchableOpacity
+                  style={styles.backScanButton}
+                  onPress={() => {
+                    if (scanTimerRef.current) {
+                      clearTimeout(scanTimerRef.current);
+                    }
+                    setIsScanning(false);
+                    setScanned(false);
+                  }}
+                >
+                  <Text style={styles.backScanButtonText}>Scan Again</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </ScrollView>
       )}
 
       <Modal
@@ -1634,7 +1692,7 @@ const styles = StyleSheet.create({
     gap: 0,
     backgroundColor: '#f0f0f0',
     marginHorizontal: 20,
-    marginTop: 40,
+    marginTop: 20,
     borderRadius: 24,
     padding: 4
   },
@@ -1663,17 +1721,151 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     marginBottom: 20
   },
-  scanContainer: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    justifyContent: 'space-between'
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1a1a1a',
+    marginBottom: 12
+  },
+  sectionDivider: {
+    height: 1,
+    backgroundColor: '#E2E8F0',
+    marginVertical: 20
+  },
+  scanSection: {
+    marginBottom: 16
   },
   scanContent: {
     flex: 1,
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingBottom: 20
+  },
+  marketplaceHeader: {
+    marginTop: 8,
+    marginBottom: 16
+  },
+  marketplaceTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#0f172a'
+  },
+  marketplaceSubtitle: {
+    marginTop: 8,
+    fontSize: 13,
+    color: '#64748b',
+    lineHeight: 18
+  },
+  marketplaceGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12
+  },
+  marketplaceCard: {
+    width: '48%',
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 150,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#0f172a',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: {width: 0, height: 6},
+    elevation: 2
+  },
+  marketplaceCardIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#E7F5F0',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  marketplaceCardTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0f172a',
+    marginTop: 10,
+    textAlign: 'center'
+  },
+  marketplaceCardSubtitle: {
+    marginTop: 6,
+    fontSize: 12,
+    color: '#64748b',
+    lineHeight: 16,
+    textAlign: 'center'
+  },
+  lockedSection: {
+    gap: 12
+  },
+  lockedTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0f172a'
+  },
+  lockedSubtitle: {
+    fontSize: 12,
+    color: '#64748b',
+    lineHeight: 16
+  },
+  lockedCard: {
+    width: '48%',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    overflow: 'hidden'
+  },
+  lockedCardContent: {
+    alignItems: 'center',
+    gap: 10,
+    opacity: 0.45
+  },
+  lockedCardTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0f172a',
+    textAlign: 'center'
+  },
+  lockedCardSubtitle: {
+    marginTop: 4,
+    fontSize: 11,
+    color: '#64748b',
+    lineHeight: 15,
+    textAlign: 'center'
+  },
+  lockedOverlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6
+  },
+  lockedOverlayText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#ffffff'
+  },
+  requestInviteButton: {
+    backgroundColor: '#111827',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 8
+  },
+  requestInviteButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '700'
   },
   radarCard: {
     flex: 1,

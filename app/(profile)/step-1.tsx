@@ -141,7 +141,7 @@ export default function Step1Screen() {
       <View style={styles.content}>
         <Text style={styles.sectionTitle}>🧍 Identity & Lifestyle</Text>
 
-        <Text style={styles.label}>Nomad Type</Text>
+        <Text style={styles.label}>Lifestyle type</Text>
         <View style={styles.grid}>
           {LIFESTYLE_TYPES.map(type => (
             <TouchableOpacity
