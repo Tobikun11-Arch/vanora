@@ -49,7 +49,7 @@ export const homeTabStyles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "#10B981",
+    backgroundColor: "#2E7D64",
     justifyContent: "center",
     alignItems: "center",
     shadowColor: "#000",

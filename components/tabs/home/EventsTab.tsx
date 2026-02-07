@@ -2,6 +2,7 @@ import {MaterialCommunityIcons} from '@expo/vector-icons';
 import React, {useEffect, useMemo, useState} from 'react';
 import {
   ActivityIndicator,
+  Dimensions,
   FlatList,
   Image,
   Modal,
@@ -70,6 +71,9 @@ type CreateEventResult = {
 };
 
 const CACHE_TTL_MS = 60 * 1000;
+const {width: WINDOW_WIDTH, height: WINDOW_HEIGHT} = Dimensions.get('window');
+const SAFE_H_PADDING = Math.max(16, Math.round(WINDOW_WIDTH * 0.045));
+const SAFE_V_SPACING = Math.max(12, Math.round(WINDOW_HEIGHT * 0.016));
 
 export default function EventsTab() {
   const [eventSubtab, setEventSubtab] = useState('upcoming');
@@ -118,6 +122,7 @@ export default function EventsTab() {
   const [pickerType, setPickerType] = useState<
     'startDate' | 'startTime' | 'endDate' | 'endTime' | null
   >(null);
+  const [showAttendeesList, setShowAttendeesList] = useState(false);
   const {isSubscribed} = useRevenueCatSubscription();
 
   const dateOptions = useMemo(() => {
@@ -277,7 +282,7 @@ export default function EventsTab() {
       image: coverUrl
         ? {uri: coverUrl}
         : require('../../../assets/images/vanora.png'),
-      attendees: `${participantCount}+`,
+      attendees: `${participantCount}`,
       isJoined,
       eventType: row.visibility === 'private' ? 'Private' : 'Public',
       description: row.description,
@@ -392,10 +397,12 @@ export default function EventsTab() {
 
   const handleViewEvent = (event: Event) => {
     setSelectedEvent(event);
+    setShowAttendeesList(false);
   };
 
   const handleCloseModal = () => {
     setSelectedEvent(null);
+    setShowAttendeesList(false);
   };
 
   const handleCreateEvent = () => {
@@ -802,7 +809,7 @@ export default function EventsTab() {
           style={styles.addEventButton}
           onPress={handleCreateEvent}
         >
-          <MaterialCommunityIcons name="plus" size={24} color="#ffffff" />
+          <MaterialCommunityIcons name="plus" size={28} color="#ffffff" />
         </TouchableOpacity>
 
         <ScrollView
@@ -1033,10 +1040,52 @@ export default function EventsTab() {
               </View>
 
               <View style={styles.whosGoingSection}>
+                {/** Static attendee sample data */}
+                {(() => {
+                  const attendeeSamples = [
+                    {
+                      name: 'Raya Peak',
+                      meta: 'Weekend hiker · 2y on the road',
+                      avatar: require('../../../assets/images/aria.jpg')
+                    },
+                    {
+                      name: 'Maya Trail',
+                      meta: 'Remote dev · Loves forest roads',
+                      avatar: require('../../../assets/images/solo_camper.jpg')
+                    },
+                    {
+                      name: 'Liam Nomad',
+                      meta: 'Photographer · Mountain routes',
+                      avatar: require('../../../assets/images/Noah.jpg')
+                    },
+                    {
+                      name: 'Duo Camper',
+                      meta: 'Couple · Sunrise chasers',
+                      avatar: require('../../../assets/images/duo_camper.jpg')
+                    }
+                  ];
+                  const attendeeCount = Math.max(
+                    0,
+                    Number.parseInt(selectedEvent.attendees, 10) || 0
+                  );
+                  const attendeeList =
+                    attendeeCount > 0
+                      ? Array.from({length: attendeeCount}, (_, i) =>
+                          attendeeSamples[i % attendeeSamples.length]
+                        )
+                      : attendeeSamples;
+                  const avatarList = attendeeList;
+
+                  return (
+                    <>
                 <View style={styles.whosGoingHeader}>
                   <Text style={styles.sectionHeader}>Who&apos;s Going</Text>
-                  <TouchableOpacity>
-                    <Text style={styles.seeAllLink}>See all</Text>
+                  <TouchableOpacity
+                    onPress={() => setShowAttendeesList(prev => !prev)}
+                  >
+                    <Text style={styles.seeAllLink}>
+                      {showAttendeesList ? 'Hide' : 'See all'}
+                    </Text>
                   </TouchableOpacity>
                 </View>
                 <View style={styles.modalAttendeesRow}>
@@ -1046,18 +1095,14 @@ export default function EventsTab() {
                     color="#999999"
                   />
                   <Text style={styles.modalAttendees}>
-                    {selectedEvent.attendees} Nomads attending
+                    {attendeeCount} Nomads attending
                   </Text>
                 </View>
                 <View style={styles.avatarContainer}>
-                  {[
-                    require('../../../assets/images/vanora.png'),
-                    require('../../../assets/images/vanora.png'),
-                    require('../../../assets/images/vanora.png')
-                  ].map((avatar, index) => (
+                  {avatarList.map((attendee, index) => (
                     <Image
-                      key={index}
-                      source={avatar}
+                      key={`${attendee.name}-${index}`}
+                      source={attendee.avatar}
                       style={[
                         styles.avatarSmall,
                         {marginLeft: index > 0 ? -8 : 0}
@@ -1065,6 +1110,32 @@ export default function EventsTab() {
                     />
                   ))}
                 </View>
+                {showAttendeesList && (
+                  <View style={styles.attendeesList}>
+                    {attendeeList.map((attendee, index) => (
+                      <View
+                        key={`${attendee.name}-${index}`}
+                        style={styles.attendeeRow}
+                      >
+                        <Image
+                          source={attendee.avatar}
+                          style={styles.attendeeAvatar}
+                        />
+                        <View style={styles.attendeeText}>
+                          <Text style={styles.attendeeName}>
+                            {attendee.name}
+                          </Text>
+                          <Text style={styles.attendeeMeta}>
+                            {attendee.meta}
+                          </Text>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                )}
+                    </>
+                  );
+                })()}
               </View>
 
               <View style={{height: 100}} />
@@ -1632,7 +1703,7 @@ export default function EventsTab() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff'
+    backgroundColor: '#F7FAF9'
   },
   contentWrapper: {
     flex: 1,
@@ -1640,8 +1711,8 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingVertical: 16
+    paddingHorizontal: SAFE_H_PADDING,
+    paddingVertical: SAFE_V_SPACING
   },
   addEventButton: {
     position: 'absolute',
@@ -1662,7 +1733,7 @@ const styles = StyleSheet.create({
   },
   eventSubtabs: {
     flexDirection: 'row',
-    marginBottom: 16,
+    marginBottom: SAFE_V_SPACING,
     gap: 6
   },
   eventSubtab: {
@@ -1687,15 +1758,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#1a1a1a',
-    marginBottom: 12
+    marginBottom: SAFE_V_SPACING
   },
   eventCard: {
-    backgroundColor: '#f9f9f9',
-    borderRadius: 12,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
     overflow: 'hidden',
-    marginBottom: 14,
+    marginBottom: SAFE_V_SPACING,
     borderWidth: 1,
-    borderColor: '#f0f0f0'
+    borderColor: '#E6ECE9',
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: {width: 0, height: 6},
+    elevation: 2
   },
   cardImageContainer: {
     position: 'relative',
@@ -1709,10 +1785,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 12,
     left: 12,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#0F172A',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
@@ -1734,7 +1810,7 @@ const styles = StyleSheet.create({
     color: '#2E7D64'
   },
   eventInfo: {
-    padding: 12
+    padding: 14
   },
   titleAttendeeRow: {
     flexDirection: 'row',
@@ -1753,10 +1829,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#e8faf6',
-    paddingHorizontal: 8,
+    backgroundColor: '#EAF7F0',
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 6
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#CDEBDD'
   },
   eventMeta: {
     flexDirection: 'row',
@@ -1805,8 +1883,8 @@ const styles = StyleSheet.create({
   viewButton: {
     flex: 1,
     backgroundColor: '#2E7D64',
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingVertical: 12,
+    borderRadius: 10,
     alignItems: 'center'
   },
   viewButtonText: {
@@ -1817,8 +1895,8 @@ const styles = StyleSheet.create({
   shareButton: {
     width: 40,
     height: 40,
-    borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+    borderRadius: 10,
+    backgroundColor: '#F1F5F9',
     justifyContent: 'center',
     alignItems: 'center'
   },
@@ -1894,11 +1972,11 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingVertical: 16
+    paddingHorizontal: SAFE_H_PADDING,
+    paddingVertical: SAFE_V_SPACING
   },
   modalHeader: {
-    marginBottom: 16
+    marginBottom: SAFE_V_SPACING
   },
   modalTitle: {
     fontSize: 20,
@@ -1919,7 +1997,7 @@ const styles = StyleSheet.create({
   dateTimeCardsContainer: {
     flexDirection: 'row',
     gap: 10,
-    marginBottom: 16
+    marginBottom: SAFE_V_SPACING
   },
   dateTimeCard: {
     flex: 1,
@@ -1952,7 +2030,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     gap: 12,
-    marginBottom: 16
+    marginBottom: SAFE_V_SPACING
   },
   locationContent: {
     flex: 1
@@ -1975,7 +2053,7 @@ const styles = StyleSheet.create({
     color: '#2E7D64'
   },
   aboutSection: {
-    marginBottom: 16
+    marginBottom: SAFE_V_SPACING
   },
   sectionHeader: {
     fontSize: 14,
@@ -1989,7 +2067,7 @@ const styles = StyleSheet.create({
     lineHeight: 18
   },
   whosGoingSection: {
-    marginBottom: 16
+    marginBottom: SAFE_V_SPACING
   },
   whosGoingHeader: {
     flexDirection: 'row',
@@ -2014,9 +2092,42 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#ffffff'
   },
+  attendeesList: {
+    marginTop: 12,
+    gap: 10
+  },
+  attendeeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#f0f0f0'
+  },
+  attendeeAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20
+  },
+  attendeeText: {
+    flex: 1
+  },
+  attendeeName: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1a1a1a'
+  },
+  attendeeMeta: {
+    fontSize: 11,
+    color: '#6B7280',
+    marginTop: 2
+  },
   modalButtonContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: SAFE_H_PADDING,
+    paddingVertical: SAFE_V_SPACING,
     borderTopWidth: 1,
     borderTopColor: '#f0f0f0'
   },
@@ -2058,8 +2169,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: SAFE_H_PADDING,
+    paddingVertical: SAFE_V_SPACING,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0'
   },
@@ -2094,8 +2205,8 @@ const styles = StyleSheet.create({
   },
   createModalContent: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingVertical: 16
+    paddingHorizontal: SAFE_H_PADDING,
+    paddingVertical: SAFE_V_SPACING
   },
   createModalLabel: {
     fontSize: 12,
@@ -2351,8 +2462,8 @@ const styles = StyleSheet.create({
   createModalButtons: {
     flexDirection: 'row',
     gap: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: SAFE_H_PADDING,
+    paddingVertical: SAFE_V_SPACING,
     borderTopWidth: 1,
     borderTopColor: '#e2e8f0'
   },
@@ -2406,8 +2517,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
+    paddingHorizontal: SAFE_H_PADDING,
+    paddingVertical: SAFE_V_SPACING,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0'
   },
@@ -2417,8 +2528,8 @@ const styles = StyleSheet.create({
     color: '#1a1a1a'
   },
   pickerOption: {
-    paddingHorizontal: 20,
-    paddingVertical: 14,
+    paddingHorizontal: SAFE_H_PADDING,
+    paddingVertical: SAFE_V_SPACING,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0'
   },
