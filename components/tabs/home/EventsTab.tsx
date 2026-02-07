@@ -1527,7 +1527,7 @@ export default function EventsTab() {
                   {!isSubscribed && (
                     <View style={styles.premiumCard}>
                       <MaterialCommunityIcons
-                        name="star"
+                        name="crown"
                         size={24}
                         color="#2E7D64"
                       />
@@ -1585,7 +1585,7 @@ export default function EventsTab() {
                   {!isSubscribed && (
                     <View style={styles.premiumCard}>
                       <MaterialCommunityIcons
-                        name="star"
+                        name="crown"
                         size={24}
                         color="#2E7D64"
                       />

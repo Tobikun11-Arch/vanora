@@ -2693,12 +2693,12 @@ const styles = StyleSheet.create({
   },
   respondButton: {
     backgroundColor: '#2E7D64',
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderRadius: 8,
     alignItems: 'center'
   },
   respondButtonText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '700',
     color: '#ffffff'
   }

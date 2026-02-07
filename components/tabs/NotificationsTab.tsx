@@ -22,7 +22,7 @@ import {
 
 const {width: WINDOW_WIDTH, height: WINDOW_HEIGHT} = Dimensions.get('window');
 const TOP_BAR_PADDING =
-  Platform.OS === 'ios' ? 52 : (StatusBar.currentHeight ?? 0) + 12;
+  Platform.OS === 'ios' ? 44 : (StatusBar.currentHeight ?? 0) + 12;
 const H_PADDING = Math.max(16, Math.round(WINDOW_WIDTH * 0.045));
 const V_SPACING = Math.max(10, Math.round(WINDOW_HEIGHT * 0.012));
 const SECTION_SPACING = Math.max(12, Math.round(WINDOW_HEIGHT * 0.016));
@@ -827,7 +827,7 @@ export default function NotificationsTab() {
   return (
     <View style={styles.screen}>
       <View style={styles.topBar}>
-        <Text style={styles.pageTitle}>Notifications</Text>
+        <Text style={styles.pageTitle}>Activities</Text>
         <TouchableOpacity
           style={styles.iconButton}
           onPress={() => setShowLegacyModal(true)}
@@ -1057,7 +1057,8 @@ export default function NotificationsTab() {
             </View>
 
             <ScrollView
-              style={styles.createModalContent}
+              style={styles.createModalScroll}
+              contentContainerStyle={styles.createModalContent}
               showsVerticalScrollIndicator={false}
             >
               <View style={styles.imageUploadSection}>
@@ -1276,7 +1277,7 @@ export default function NotificationsTab() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#F7FAF9',
     paddingHorizontal: H_PADDING,
     paddingTop: TOP_BAR_PADDING
   },
@@ -1284,10 +1285,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: V_SPACING
+    marginBottom: SECTION_SPACING
   },
   pageTitle: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '700',
     color: '#0F172A'
   },
@@ -1295,7 +1296,9 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E6ECE9',
     alignItems: 'center',
     justifyContent: 'center'
   },
@@ -1315,7 +1318,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 16,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E6ECE9',
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    shadowOffset: {width: 0, height: 4},
+    elevation: 2,
     marginBottom: SECTION_SPACING
   },
   searchInput: {
@@ -1342,9 +1352,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#ECFDF5',
     borderWidth: 1,
-    borderColor: '#2E7D64',
+    borderColor: '#9ED6C3',
     paddingHorizontal: 10,
     paddingVertical: 2,
     marginRight: 5,
@@ -1370,14 +1380,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 18,
+    width: '100%',
     shadowColor: '#0F172A',
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.06,
     shadowRadius: 16,
     shadowOffset: {width: 0, height: 10},
     elevation: 4
   },
+  createModalScroll: {
+    flexGrow: 0
+  },
   createModalContent: {
-    maxHeight: 420
+    paddingBottom: 4
   },
   createModalHeader: {
     flexDirection: 'row',
@@ -1480,9 +1494,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 12,
+    borderWidth: 1,
+    borderColor: '#E6ECE9',
     shadowColor: '#0F172A',
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
     shadowOffset: {width: 0, height: 6},
     elevation: 2
   },
@@ -1540,6 +1556,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     marginBottom: SECTION_SPACING,
+    borderWidth: 1,
+    borderColor: '#E6ECE9',
     shadowColor: '#0F172A',
     shadowOpacity: 0.04,
     shadowRadius: 8,
@@ -1634,7 +1652,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: '#ffffff'
+    backgroundColor: '#F7FAF9'
   },
   header: {
     flexDirection: 'row',
@@ -1644,7 +1662,7 @@ const styles = StyleSheet.create({
     paddingTop: TOP_BAR_PADDING,
     paddingBottom: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0'
+    borderBottomColor: '#E6ECE9'
   },
   headerTitle: {
     fontSize: 28,
@@ -1664,17 +1682,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: H_PADDING,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#E6ECE9',
     gap: 12
   },
   tab: {
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#f5f5f5'
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E6ECE9'
   },
   tabActive: {
-    backgroundColor: '#2E7D64'
+    backgroundColor: '#2E7D64',
+    borderColor: '#2E7D64'
   },
   tabText: {
     fontSize: 13,
@@ -1703,12 +1724,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 12,
     borderRadius: 12,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E6ECE9',
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: {width: 0, height: 4},
+    elevation: 2,
     alignItems: 'center',
     position: 'relative'
   },
   notificationCardRead: {
-    backgroundColor: '#ffffff'
+    backgroundColor: '#F8FBFA',
+    shadowOpacity: 0.02,
+    elevation: 1
   },
   avatarWrapper: {
     marginRight: 14,
@@ -1720,7 +1750,9 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#9ED6C3',
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden'
@@ -1786,7 +1818,7 @@ const styles = StyleSheet.create({
   },
   chatModal: {
     flex: 1,
-    backgroundColor: '#ffffff'
+    backgroundColor: '#F7FAF9'
   },
   chatHeader: {
     flexDirection: 'row',
@@ -1796,18 +1828,21 @@ const styles = StyleSheet.create({
     paddingTop: TOP_BAR_PADDING,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0'
+    borderBottomColor: '#E6ECE9',
+    backgroundColor: '#F7FAF9'
   },
   chatHeaderAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18
+    width: 40,
+    height: 40,
+    borderRadius: 20
   },
   chatBackButton: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E6ECE9',
     alignItems: 'center',
     justifyContent: 'center'
   },
@@ -1864,7 +1899,9 @@ const styles = StyleSheet.create({
   },
   chatBubble: {
     alignSelf: 'flex-start',
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E6ECE9',
     borderRadius: 16,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -1872,11 +1909,13 @@ const styles = StyleSheet.create({
   },
   chatBubbleMe: {
     alignSelf: 'flex-end',
-    backgroundColor: '#2E7D64'
+    backgroundColor: '#2E7D64',
+    borderColor: '#2E7D64'
   },
   chatBubbleSystem: {
     alignSelf: 'center',
-    backgroundColor: '#E2E8F0'
+    backgroundColor: '#F1F5F9',
+    borderColor: '#E2E8F0'
   },
   chatBubbleText: {
     fontSize: 13,
@@ -1906,13 +1945,14 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: Platform.OS === 'ios' ? 16 : 12,
     borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
+    borderTopColor: '#E6ECE9',
+    backgroundColor: '#FFFFFF',
     gap: 10
   },
   chatInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#E6ECE9',
     borderRadius: 18,
     paddingHorizontal: 12,
     paddingVertical: 12,
