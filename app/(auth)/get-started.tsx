@@ -62,7 +62,7 @@ const cardsData: CardData[] = [
     icon: 'airport-shuttle',
     title: 'Van Life Made Easy',
     description:
-      'Find tips, resources, and connect with builders/mechanic and service providers trusted by van lifers.',
+      'Find tips, resources, and connect with builders and service providers trusted by van lifers.',
     image: require('../../assets/images/van-bg-removed.png')
   }
 ];
@@ -106,6 +106,7 @@ export default function GetStartedScreen() {
       <View style={styles.overlay} />
 
       <View style={styles.container}>
+        <View style={styles.ambientGlow} />
         {/* Top Section with Logo and Name */}
         <View style={styles.topSection}>
           <Image
@@ -125,16 +126,18 @@ export default function GetStartedScreen() {
           onScroll={handleScroll}
           showsHorizontalScrollIndicator={false}
           style={styles.cardsContainer}
+          contentContainerStyle={styles.cardsContent}
         >
           {cardsData.map((card, index) => (
             <View key={index} style={styles.cardWrapper}>
               <View style={styles.cardShadowContainer}>
                 <BlurView
-                  intensity={Platform.OS === 'ios' ? 40 : 10}
+                  intensity={Platform.OS === 'ios' ? 15 : 15}
                   tint="light"
                   style={styles.glassCardSurface}
                 >
                   <View style={styles.glassCard}>
+                    <View style={styles.glassTint} />
                     {/* Card Header with Icon */}
                     <View style={styles.cardHeader}>
                       <View style={styles.cardIconCircle}>
@@ -216,6 +219,16 @@ const styles = StyleSheet.create({
     paddingVertical: Platform.OS === 'android' ? 28 : 40,
     zIndex: 1
   },
+  ambientGlow: {
+    position: 'absolute',
+    top: Platform.OS === 'android' ? 120 : 180,
+    left: -80,
+    width: width * 0.9,
+    height: width * 0.9,
+    borderRadius: width * 0.45,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    opacity: 0.45
+  },
   topSection: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -240,9 +253,13 @@ const styles = StyleSheet.create({
 
   cardsContainer: {
     flex: 1,
-    marginTop: Platform.OS === 'android' ? 10 : 140,
+    marginTop: Platform.OS === 'android' ? 10 : 0,
     marginBottom: 20,
     marginHorizontal: -20
+  },
+  cardsContent: {
+    alignItems: 'center',
+    paddingVertical: Platform.OS === 'android' ? 20 : 24
   },
   cardWrapper: {
     width,
@@ -254,42 +271,39 @@ const styles = StyleSheet.create({
     width: CARD_WIDTH,
     alignSelf: 'center',
     flex: 1,
-    minHeight: 460,
+    minHeight: 520,
     borderRadius: 20,
-    // Shadow for iOS - light from top
-
-    shadowOffset: {
-      width: 0,
-      height: 10
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 30
-    // Shadow for Android - light from top
+    shadowColor: 'rgba(0,0,0,0.35)',
+    shadowOpacity: 0.8,
+    shadowRadius: 3,
   },
   glassCardSurface: {
     flex: 1,
-    minHeight: 460,
+    minHeight: 520,
     borderRadius: 20,
     overflow: 'hidden',
     backgroundColor:
-      Platform.OS === 'android' ? 'rgba(235, 232, 232, 0)' : 'transparent'
+      Platform.OS === 'android'
+        ? 'rgba(255, 255, 255, 0.02)'
+        : 'rgba(255, 255, 255, 0)'
   },
   glassCard: {
     flex: 1,
-    minHeight: 460,
-    backgroundColor:
-      Platform.OS === 'android'
-        ? 'rgba(198, 205, 207, 0)'
-        : 'rgba(153, 74, 74, 0.21)',
+    minHeight: 520,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
     borderRadius: 20,
     padding: 32,
     borderWidth: 1.5,
     borderColor:
       Platform.OS === 'android'
-        ? 'rgba(214, 247, 245, 0.14)'
-        : 'rgba(255, 255, 255, 0.75)',
+        ? 'rgba(214, 247, 245, 0.1)'
+        : 'rgba(255, 255, 255, 0.35)',
     alignItems: 'stretch',
     justifyContent: 'flex-start'
+  },
+  glassTint: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)'
   },
   cardHeader: {
     flexDirection: 'row',
