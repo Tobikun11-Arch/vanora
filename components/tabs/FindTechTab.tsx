@@ -170,8 +170,11 @@ export default function FindTechTab() {
   const [discussionFollowing, setDiscussionFollowing] = useState<
     Record<string, boolean>
   >({});
-  const {isSubscribed, isLoading: isSubscriptionLoading, refresh} =
-    useRevenueCatSubscription();
+  const {
+    isSubscribed,
+    isLoading: isSubscriptionLoading,
+    refresh
+  } = useRevenueCatSubscription();
 
   // ✅ Fix: select each piece individually (no object literal)
   const mechanics = useFindTechStore(state => state.mechanics);
@@ -633,17 +636,6 @@ export default function FindTechTab() {
             </Text>
           </View>
         </View>
-
-        {(tech.skills || []).length > 0 && (
-          <View style={styles.tagsContainer}>
-            {(tech.skills || []).slice(0, 3).map((tag, index) => (
-              <Text key={`${tech.id}-tag-${index}`} style={styles.tag}>
-                {tag}
-              </Text>
-            ))}
-          </View>
-        )}
-
         <View style={styles.cardActions}>
           <TouchableOpacity
             style={[
@@ -806,7 +798,10 @@ export default function FindTechTab() {
   const renderMarketplace = () => (
     <ScrollView
       style={styles.contentContainer}
-      contentContainerStyle={{paddingHorizontal: H_PADDING, paddingBottom: V_SPACING * 2}}
+      contentContainerStyle={{
+        paddingHorizontal: H_PADDING,
+        paddingBottom: V_SPACING * 2
+      }}
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.marketplaceHeader}>
@@ -824,36 +819,33 @@ export default function FindTechTab() {
           const tint = primaryAccent.tint;
           const border = primaryAccent.border;
           return (
-          <TouchableOpacity
-            key={item.title}
-            style={[styles.marketplaceCard, {borderColor: border}]}
-            onPress={() => handleOpenBuilderHelp(item.route)}
-            activeOpacity={0.9}
-          >
-            <View
-              style={[
-                styles.marketplaceCardAccent,
-                {backgroundColor: accent}
-              ]}
-            />
-            <View
-              style={[
-                styles.marketplaceCardIcon,
-                {backgroundColor: tint}
-              ]}
+            <TouchableOpacity
+              key={item.title}
+              style={[styles.marketplaceCard, {borderColor: border}]}
+              onPress={() => handleOpenBuilderHelp(item.route)}
+              activeOpacity={0.9}
             >
-              <MaterialCommunityIcons
-                name={item.icon}
-                size={22}
-                color={accent}
+              <View
+                style={[
+                  styles.marketplaceCardAccent,
+                  {backgroundColor: accent}
+                ]}
               />
-            </View>
-            <Text style={styles.marketplaceCardTitle}>{item.title}</Text>
-            <Text style={styles.marketplaceCardSubtitle}>
-              {item.subtitle}
-            </Text>
-          </TouchableOpacity>
-        );
+              <View
+                style={[styles.marketplaceCardIcon, {backgroundColor: tint}]}
+              >
+                <MaterialCommunityIcons
+                  name={item.icon}
+                  size={22}
+                  color={accent}
+                />
+              </View>
+              <Text style={styles.marketplaceCardTitle}>{item.title}</Text>
+              <Text style={styles.marketplaceCardSubtitle}>
+                {item.subtitle}
+              </Text>
+            </TouchableOpacity>
+          );
         })}
       </View>
 
@@ -863,9 +855,7 @@ export default function FindTechTab() {
       >
         <View style={styles.requestInviteButtonContent}>
           <MaterialCommunityIcons name="crown" size={18} color="#ffffff" />
-          <Text style={styles.requestInviteButtonText}>
-            Unlock Marketplace
-          </Text>
+          <Text style={styles.requestInviteButtonText}>Unlock Marketplace</Text>
         </View>
       </TouchableOpacity>
     </ScrollView>
@@ -1339,9 +1329,7 @@ export default function FindTechTab() {
                       </View>
                     </View>
                     {!isScanning && (
-                      <Text style={styles.radarText}>
-                        Scan nearby builders
-                      </Text>
+                      <Text style={styles.radarText}>Scan nearby builders</Text>
                     )}
                     {isScanning && (
                       <View style={styles.scanIndicator}>
@@ -2028,7 +2016,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 1,
-    marginTop: 2 
+    marginTop: 2
   },
   locationText: {
     fontSize: 12,

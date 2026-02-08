@@ -17,6 +17,8 @@ const planToPackageId: Record<RevenueCatPlan, string> = {
 };
 
 let isConfigured = false;
+let currentAppUserId: string | null = null;
+let inFlightAuth: Promise<void> | null = null;
 
 const resolvePackage = (
   offerings: PurchasesOfferings,
@@ -32,7 +34,7 @@ const resolvePackage = (
 };
 
 export const revenueCatService = {
-  initialize(userId?: string) {
+  async initialize(userId?: string) {
     if (Platform.OS === 'web') return;
 
     const apiKey =
@@ -46,13 +48,35 @@ export const revenueCatService = {
       Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
     }
 
-    Purchases.configure({apiKey});
-
-    if (userId) {
-      Purchases.logIn(userId);
+    if (!isConfigured) {
+      Purchases.configure({apiKey});
+      isConfigured = true;
     }
 
-    isConfigured = true;
+    const targetUserId = userId ?? null;
+    if (currentAppUserId === targetUserId) return;
+
+    if (inFlightAuth) {
+      await inFlightAuth;
+    }
+
+    inFlightAuth = (async () => {
+      try {
+        if (targetUserId) {
+          await Purchases.logIn(targetUserId);
+          currentAppUserId = targetUserId;
+        } else if (currentAppUserId) {
+          await Purchases.logOut();
+          currentAppUserId = null;
+        }
+      } catch (error) {
+        console.warn('[RevenueCat] Auth error:', error);
+      } finally {
+        inFlightAuth = null;
+      }
+    })();
+
+    await inFlightAuth;
   },
 
   async getOfferings() {
