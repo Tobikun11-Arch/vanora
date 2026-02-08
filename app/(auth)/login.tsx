@@ -109,6 +109,10 @@ export default function LoginScreen() {
     setLoading(false);
   };
 
+  const handleForgotPassword = () => {
+    showToast('info', 'Coming Soon', 'Password reset is being configured');
+  };
+
   return (
     <View style={styles.screen}>
       <ImageBackground
@@ -154,7 +158,7 @@ export default function LoginScreen() {
             error={errors.password}
           />
 
-          <TouchableOpacity onPress={() => router.push('/(auth)/forgot')}>
+          <TouchableOpacity onPress={handleForgotPassword}>
             <Text style={styles.forgot}>Forgot Password?</Text>
           </TouchableOpacity>
 
