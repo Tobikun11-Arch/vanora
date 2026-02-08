@@ -54,6 +54,10 @@ export default function FindTechTab() {
   const {width: windowWidth, height: windowHeight} = Dimensions.get('window');
   const H_PADDING = Math.max(16, Math.round(windowWidth * 0.05));
   const V_SPACING = Math.max(10, Math.round(windowHeight * 0.015));
+  const MARKETPLACE_GAP = 14;
+  const marketplaceCardWidth = Math.floor(
+    (windowWidth - H_PADDING * 2 - MARKETPLACE_GAP) / 2
+  );
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('mechanics');
   const [mechanicTab, setMechanicTab] = useState('requests');
@@ -198,6 +202,18 @@ export default function FindTechTab() {
       refresh();
     }, [refresh])
   );
+
+  useEffect(() => {
+    const inMarketplace =
+      (userProfile?.nomad_type?.toLowerCase() === 'mechanic' &&
+        mechanicTab === 'marketplace') ||
+      (userProfile?.nomad_type?.toLowerCase() !== 'mechanic' &&
+        activeTab === 'marketplace');
+
+    if (inMarketplace) {
+      refresh();
+    }
+  }, [activeTab, mechanicTab, refresh, userProfile?.nomad_type]);
 
   useEffect(() => {
     if (!userProfile) return;
@@ -821,8 +837,25 @@ export default function FindTechTab() {
           return (
             <TouchableOpacity
               key={item.title}
-              style={[styles.marketplaceCard, {borderColor: border}]}
-              onPress={() => handleOpenBuilderHelp(item.route)}
+              style={[
+                styles.marketplaceCard,
+                {
+                  borderColor: border,
+                  width: marketplaceCardWidth,
+                  marginBottom: MARKETPLACE_GAP
+                }
+              ]}
+              onPress={() => {
+                if (!isSubscribed) {
+                  showToast(
+                    'info',
+                    'Unlock Premium',
+                    'Subscribe to access Marketplace tools.'
+                  );
+                  return;
+                }
+                handleOpenBuilderHelp(item.route);
+              }}
               activeOpacity={0.9}
             >
               <View
@@ -849,15 +882,19 @@ export default function FindTechTab() {
         })}
       </View>
 
-      <TouchableOpacity
-        style={styles.requestInviteButton}
-        onPress={handleRequestInvite}
-      >
-        <View style={styles.requestInviteButtonContent}>
-          <MaterialCommunityIcons name="crown" size={18} color="#ffffff" />
-          <Text style={styles.requestInviteButtonText}>Unlock Marketplace</Text>
-        </View>
-      </TouchableOpacity>
+      {!isSubscribed && (
+        <TouchableOpacity
+          style={styles.requestInviteButton}
+          onPress={handleRequestInvite}
+        >
+          <View style={styles.requestInviteButtonContent}>
+            <MaterialCommunityIcons name="crown" size={18} color="#ffffff" />
+            <Text style={styles.requestInviteButtonText}>
+              Unlock Marketplace
+            </Text>
+          </View>
+        </TouchableOpacity>
+      )}
     </ScrollView>
   );
 
@@ -1684,10 +1721,9 @@ const styles = StyleSheet.create({
   marketplaceGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 14
+    justifyContent: 'space-between'
   },
   marketplaceCard: {
-    width: '48%',
     backgroundColor: '#F7FBF9',
     borderRadius: 16,
     padding: 16,
