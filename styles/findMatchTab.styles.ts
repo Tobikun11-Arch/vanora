@@ -184,6 +184,31 @@ export const findMatchTabStyles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2
   },
+  challengeLockIcon: {
+    position: 'absolute',
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#F9FAFB',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  challengeLimitBadge: {
+    position: 'absolute',
+    bottom: -18,
+    left: -14,
+    right: -14,
+    backgroundColor: '#111827',
+    borderRadius: 10,
+    paddingVertical: 4,
+    paddingHorizontal: 6
+  },
+  challengeLimitText: {
+    color: '#F9FAFB',
+    fontSize: 10,
+    fontWeight: '600',
+    textAlign: 'center'
+  },
   lockBadge: {
     position: 'absolute',
     top: 6,

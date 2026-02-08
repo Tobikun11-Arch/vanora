@@ -4,6 +4,7 @@ import {showToast} from '@/components/Toast';
 import {useRevenueCatSubscription} from '@/hooks/use-revenuecat-subscription';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useEffect, useMemo, useRef, useState} from 'react';
+import {router} from 'expo-router';
 import {
   ActivityIndicator,
   Animated,
@@ -34,6 +35,7 @@ interface MatchProfile {
 }
 
 const FREE_CHALLENGES = 3;
+const CHALLENGE_COUNT_KEY = 'findMatchChallengeCountV1';
 
 export default function FindMatchTab() {
   const [loading, setLoading] = useState(true);
@@ -214,6 +216,26 @@ export default function FindMatchTab() {
     loadHint();
   }, []);
 
+  useEffect(() => {
+    const loadChallengeCount = async () => {
+      try {
+        const stored = await AsyncStorage.getItem(CHALLENGE_COUNT_KEY);
+        if (!stored) return;
+        const parsed = Number(stored);
+        if (Number.isFinite(parsed) && parsed >= 0) {
+          setChallengeCount(Math.min(parsed, FREE_CHALLENGES));
+        }
+      } catch {}
+    };
+    loadChallengeCount();
+  }, []);
+
+  useEffect(() => {
+    AsyncStorage.setItem(CHALLENGE_COUNT_KEY, String(challengeCount)).catch(
+      () => {}
+    );
+  }, [challengeCount]);
+
   const activeMatch = matches[currentIndex] || null;
   const displayName = activeMatch?.display_name || activeMatch?.username || '';
   const locationText = activeMatch?.current_location || 'Unknown location';
@@ -255,12 +277,12 @@ export default function FindMatchTab() {
   const handleChallenge = () => {
     if (!activeMatch) return;
     if (canUseChallenge) {
-      setChallengeCount(prev => prev + 1);
+      setChallengeCount(prev => Math.min(prev + 1, FREE_CHALLENGES));
       showToast('success', 'Challenge Sent', `Invited ${displayName}`);
       return;
     }
     if (!isPremium) {
-      setShowUpgradeModal(true);
+      router.push('/(app)/membership-subscription');
     }
   };
 
@@ -320,15 +342,6 @@ export default function FindMatchTab() {
     outputRange: ['-8deg', '0deg', '8deg']
   });
 
-  const nextCardScale = swipe.x.interpolate({
-    inputRange: [-150, 0, 150],
-    outputRange: [1, 0.96, 1]
-  });
-  const nextCardTranslate = swipe.x.interpolate({
-    inputRange: [-150, 0, 150],
-    outputRange: [0, 12, 0]
-  });
-
   const handleDismissIntro = async () => {
     setShowIntroHint(false);
     try {
@@ -343,9 +356,6 @@ export default function FindMatchTab() {
     const available = containerHeight - 120; // title + actions + padding
     return Math.max(440, Math.min(available, maxByWidth));
   }, [containerHeight]);
-
-  const nextMatch =
-    matches.length > 1 ? matches[(currentIndex + 1) % matches.length] : null;
 
   if (loading) {
     return (
@@ -411,8 +421,8 @@ export default function FindMatchTab() {
             </View>
             <Text style={styles.challengeInfoText}>
               Sending a Challenge is a formal invite to meet and connect. The
-              person you challenge will receive a notification that you’re
-              proposing a meet‑up. Use it when you’re ready to move the
+              person you challenge will receive a notification that you're
+              proposing a meet-up. Use it when you're ready to move the
               conversation forward in a respectful, intentional way.
             </Text>
             <TouchableOpacity
@@ -483,49 +493,6 @@ export default function FindMatchTab() {
       )}
 
       <View style={styles.cardWrap}>
-        {nextMatch && (
-          <Animated.View
-            style={[
-              styles.card,
-              styles.cardStacked,
-              {height: cardHeight},
-              {transform: [{scale: nextCardScale}, {translateY: nextCardTranslate}]}
-            ]}
-            pointerEvents="none"
-          >
-            <View style={styles.cardTouchable}>
-              <View style={styles.cardFill}>
-                {nextMatch.match_photo_url || nextMatch.profile_picture_url ? (
-                  <Image
-                    source={{
-                      uri:
-                        nextMatch.match_photo_url ||
-                        nextMatch.profile_picture_url ||
-                        ''
-                    }}
-                    style={styles.cardImage}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <View
-                    style={[
-                      styles.cardImage,
-                      {alignItems: 'center', justifyContent: 'center'}
-                    ]}
-                  >
-                    <MaterialCommunityIcons
-                      name="account"
-                      size={64}
-                      color="#9CA3AF"
-                    />
-                  </View>
-                )}
-                <View style={styles.cardOverlay} />
-              </View>
-            </View>
-          </Animated.View>
-        )}
-
         <Animated.View
           key={activeMatch.id}
           style={[
@@ -620,15 +587,25 @@ export default function FindMatchTab() {
           onPress={handleChallenge}
         >
           <MaterialCommunityIcons name="flash" size={28} color="#2563EB" />
+          {!canUseChallenge && (
+            <View style={styles.challengeLockIcon}>
+              <MaterialCommunityIcons name="lock" size={18} color="#111827" />
+            </View>
+          )}
           <TouchableOpacity
             style={styles.challengeInfoIcon}
-            onPress={() => setShowChallengeInfo(true)}
+            onPress={event => {
+              event.stopPropagation();
+              setShowChallengeInfo(true);
+            }}
           >
             <MaterialCommunityIcons name="information" size={14} color="#1F2937" />
           </TouchableOpacity>
           {!canUseChallenge && (
-            <View style={styles.lockBadge}>
-              <MaterialCommunityIcons name="lock" size={12} color="#fff" />
+            <View style={styles.challengeLimitBadge}>
+              <Text style={styles.challengeLimitText}>
+                3 free invites used
+              </Text>
             </View>
           )}
         </TouchableOpacity>
@@ -649,3 +626,4 @@ export default function FindMatchTab() {
     </View>
   );
 }
+
