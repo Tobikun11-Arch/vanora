@@ -1,5 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React from "react";
+import {useUserStore} from "../store/userStore";
 import {
     Image,
     Modal,
@@ -23,6 +24,7 @@ export default function JoinEventModal({
   onBack,
   onClose,
 }: JoinEventModalProps) {
+  const profile = useUserStore(state => state.profile);
   const organizerName =
     event?.hostName ||
     event?.organizerName ||
@@ -38,6 +40,14 @@ export default function JoinEventModal({
     typeof organizerName === "string" && organizerName.length > 0
       ? organizerName[0].toUpperCase()
       : "O";
+
+  const currentUserName =
+    profile?.display_name || profile?.username || "You";
+  const currentUserAvatar = profile?.profile_picture_url || null;
+  const currentUserInitial =
+    typeof currentUserName === "string" && currentUserName.length > 0
+      ? currentUserName[0].toUpperCase()
+      : "Y";
 
   return (
     <Modal
@@ -66,11 +76,18 @@ export default function JoinEventModal({
           {/* Composer Section */}
           <View style={styles.composerContainer}>
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>O</Text>
+              {currentUserAvatar ? (
+                <Image
+                  source={{uri: currentUserAvatar}}
+                  style={styles.avatarImage}
+                />
+              ) : (
+                <Text style={styles.avatarText}>{currentUserInitial}</Text>
+              )}
             </View>
 
             <Text style={styles.composerPlaceholder}>
-              Share a community moment...
+              Share an event update...
             </Text>
 
             <TouchableOpacity style={styles.imageIcon}>
@@ -121,22 +138,30 @@ export default function JoinEventModal({
                 van with string lights! 🔥
               </Text>
 
-              <View style={styles.updateStats}>
-                <View style={styles.statItem}>
+              <View style={styles.updateActions}>
+                <View style={styles.updateAction}>
                   <MaterialCommunityIcons
                     name="heart-outline"
-                    size={14}
-                    color="#999"
+                    size={16}
+                    color="#5C6A63"
                   />
-                  <Text style={styles.statText}>24</Text>
+                  <Text style={styles.updateActionText}>24</Text>
                 </View>
-                <View style={styles.statItem}>
+                <View style={styles.updateAction}>
                   <MaterialCommunityIcons
                     name="comment-outline"
-                    size={14}
-                    color="#999"
+                    size={16}
+                    color="#5C6A63"
                   />
-                  <Text style={styles.statText}>8</Text>
+                  <Text style={styles.updateActionText}>Comment</Text>
+                </View>
+                <View style={styles.updateAction}>
+                  <MaterialCommunityIcons
+                    name="share-variant-outline"
+                    size={16}
+                    color="#5C6A63"
+                  />
+                  <Text style={styles.updateActionText}>Share</Text>
                 </View>
               </View>
             </View>
@@ -204,6 +229,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 10,
+  },
+  avatarImage: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
   },
 
   avatarText: {
@@ -295,18 +325,24 @@ const styles = StyleSheet.create({
     color: "#374151",
     marginBottom: 12,
   },
-  updateStats: {
+  updateActions: {
     flexDirection: "row",
-    gap: 16,
+    gap: 12,
+    paddingTop: 8,
+    alignItems: "center",
   },
-  statItem: {
+  updateAction: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    backgroundColor: "#F5F8F7",
   },
-  statText: {
+  updateActionText: {
     fontSize: 12,
-    color: "#999",
-    fontWeight: "500",
+    color: "#5C6A63",
+    fontWeight: "600",
   },
 });

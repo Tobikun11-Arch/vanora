@@ -72,48 +72,52 @@ export default function HomeTab({ profile }: HomeTabProps) {
       <View style={styles.topNavContainer}>
         <View style={styles.topNav}>
           <TouchableOpacity
-            style={styles.tabButton}
+            style={[
+              styles.tabButton,
+              activeTab === "findMatch" && styles.tabButtonActive,
+            ]}
             onPress={() => setActiveTab("findMatch")}
           >
             <Text
               style={[
                 styles.tabText,
-                activeTab === "findMatch" && styles.activeTabText,
+                activeTab === "findMatch" && styles.tabTextActive,
               ]}
             >
               Find Match
             </Text>
-            {activeTab === "findMatch" && (
-              <View style={styles.activeIndicator} />
-            )}
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.tabButton}
+            style={[
+              styles.tabButton,
+              activeTab === "feed" && styles.tabButtonActive,
+            ]}
             onPress={() => setActiveTab("feed")}
           >
             <Text
               style={[
                 styles.tabText,
-                activeTab === "feed" && styles.activeTabText,
+                activeTab === "feed" && styles.tabTextActive,
               ]}
             >
               Feed
             </Text>
-            {activeTab === "feed" && <View style={styles.activeIndicator} />}
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.tabButton}
+            style={[
+              styles.tabButton,
+              activeTab === "events" && styles.tabButtonActive,
+            ]}
             onPress={() => setActiveTab("events")}
           >
             <Text
               style={[
                 styles.tabText,
-                activeTab === "events" && styles.activeTabText,
+                activeTab === "events" && styles.tabTextActive,
               ]}
             >
               Events
             </Text>
-            {activeTab === "events" && <View style={styles.activeIndicator} />}
           </TouchableOpacity>
         </View>
       </View>

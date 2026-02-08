@@ -4,6 +4,7 @@ import {showToast} from '@/components/Toast';
 import {useRevenueCatSubscription} from '@/hooks/use-revenuecat-subscription';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useEffect, useMemo, useRef, useState} from 'react';
+import {router} from 'expo-router';
 import {
   ActivityIndicator,
   Animated,
@@ -34,6 +35,7 @@ interface MatchProfile {
 }
 
 const FREE_CHALLENGES = 3;
+const CHALLENGE_COUNT_KEY = 'findMatchChallengeCountV1';
 
 export default function FindMatchTab() {
   const [loading, setLoading] = useState(true);
@@ -46,6 +48,7 @@ export default function FindMatchTab() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [containerHeight, setContainerHeight] = useState(0);
   const [showIntroHint, setShowIntroHint] = useState(false);
+  const [showChallengeInfo, setShowChallengeInfo] = useState(false);
   const {isSubscribed} = useRevenueCatSubscription();
   const isPremium = isSubscribed;
   const swipe = useRef(new Animated.ValueXY()).current;
@@ -213,6 +216,26 @@ export default function FindMatchTab() {
     loadHint();
   }, []);
 
+  useEffect(() => {
+    const loadChallengeCount = async () => {
+      try {
+        const stored = await AsyncStorage.getItem(CHALLENGE_COUNT_KEY);
+        if (!stored) return;
+        const parsed = Number(stored);
+        if (Number.isFinite(parsed) && parsed >= 0) {
+          setChallengeCount(Math.min(parsed, FREE_CHALLENGES));
+        }
+      } catch {}
+    };
+    loadChallengeCount();
+  }, []);
+
+  useEffect(() => {
+    AsyncStorage.setItem(CHALLENGE_COUNT_KEY, String(challengeCount)).catch(
+      () => {}
+    );
+  }, [challengeCount]);
+
   const activeMatch = matches[currentIndex] || null;
   const displayName = activeMatch?.display_name || activeMatch?.username || '';
   const locationText = activeMatch?.current_location || 'Unknown location';
@@ -254,12 +277,12 @@ export default function FindMatchTab() {
   const handleChallenge = () => {
     if (!activeMatch) return;
     if (canUseChallenge) {
-      setChallengeCount(prev => prev + 1);
+      setChallengeCount(prev => Math.min(prev + 1, FREE_CHALLENGES));
       showToast('success', 'Challenge Sent', `Invited ${displayName}`);
       return;
     }
     if (!isPremium) {
-      setShowUpgradeModal(true);
+      router.push('/(app)/membership-subscription');
     }
   };
 
@@ -376,6 +399,41 @@ export default function FindMatchTab() {
           </TouchableOpacity>
         </View>
       )}
+
+      <Modal
+        visible={showChallengeInfo}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowChallengeInfo(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.challengeInfoCard}>
+            <View style={styles.challengeInfoHeader}>
+              <Text style={styles.challengeInfoTitle}>
+                What is Challenge all about?
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowChallengeInfo(false)}
+                style={styles.challengeInfoClose}
+              >
+                <MaterialCommunityIcons name="close" size={18} color="#1F2937" />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.challengeInfoText}>
+              Sending a Challenge is a formal invite to meet and connect. The
+              person you challenge will receive a notification that you're
+              proposing a meet-up. Use it when you're ready to move the
+              conversation forward in a respectful, intentional way.
+            </Text>
+            <TouchableOpacity
+              style={styles.challengeInfoButton}
+              onPress={() => setShowChallengeInfo(false)}
+            >
+              <Text style={styles.challengeInfoButtonText}>Got it</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {!isPremium && (
         <Modal
@@ -530,8 +588,24 @@ export default function FindMatchTab() {
         >
           <MaterialCommunityIcons name="flash" size={28} color="#2563EB" />
           {!canUseChallenge && (
-            <View style={styles.lockBadge}>
-              <MaterialCommunityIcons name="lock" size={12} color="#fff" />
+            <View style={styles.challengeLockIcon}>
+              <MaterialCommunityIcons name="lock" size={18} color="#111827" />
+            </View>
+          )}
+          <TouchableOpacity
+            style={styles.challengeInfoIcon}
+            onPress={event => {
+              event.stopPropagation();
+              setShowChallengeInfo(true);
+            }}
+          >
+            <MaterialCommunityIcons name="information" size={14} color="#1F2937" />
+          </TouchableOpacity>
+          {!canUseChallenge && (
+            <View style={styles.challengeLimitBadge}>
+              <Text style={styles.challengeLimitText}>
+                3 free invites used
+              </Text>
             </View>
           )}
         </TouchableOpacity>
@@ -552,3 +626,4 @@ export default function FindMatchTab() {
     </View>
   );
 }
+

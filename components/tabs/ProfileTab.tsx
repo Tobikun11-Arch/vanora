@@ -463,14 +463,7 @@ const handleLogout = async () => {
                 <Text style={styles.headerStatLabel}>Following</Text>
               </View>
             </View>
-            {isOwnProfile ? (
-              <View style={styles.headerBioRow}>
-                <Text style={styles.headerBioLabel}>Bio:</Text>
-                <Text style={styles.headerBioText} numberOfLines={2}>
-                  {profile.bio || 'No bio yet.'}
-                </Text>
-              </View>
-            ) : (
+            {!isOwnProfile && (
               <View style={styles.headerActionRow}>
                 <TouchableOpacity
                   style={[
@@ -515,7 +508,13 @@ const handleLogout = async () => {
 
           <View style={styles.genderRow}>
             <MaterialCommunityIcons
-              name="gender-male-female"
+              name={
+                profile.gender?.toLowerCase() === 'male'
+                  ? 'gender-male'
+                  : profile.gender?.toLowerCase() === 'female'
+                    ? 'gender-female'
+                    : 'gender-male-female'
+              }
               size={14}
               color="#6B7280"
             />
@@ -539,9 +538,11 @@ const handleLogout = async () => {
             )}
           </View>
 
-          {!isOwnProfile && profile.bio ? (
-            <Text style={styles.bioText}>{profile.bio}</Text>
-          ) : null}
+          {(isOwnProfile || profile.bio) && (
+            <Text style={styles.bioText}>
+              {profile.bio || 'No bio yet.'}
+            </Text>
+          )}
         </View>
       </View>
 
@@ -639,7 +640,7 @@ const handleLogout = async () => {
         profile.skills?.length > 0 ||
         profile.lifestyle_tags?.length > 0) && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Interest</Text>
+          <Text style={styles.sectionTitle}>Hobbies and Interests</Text>
           <View style={styles.tagsContainer}>
             {/* Lifestyle Tags */}
             {profile.lifestyle_tags &&

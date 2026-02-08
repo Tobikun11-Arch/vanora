@@ -6,12 +6,15 @@ import {MaterialCommunityIcons} from '@expo/vector-icons';
 import {useRouter} from 'expo-router';
 import {useEffect, useMemo, useState} from 'react';
 import {
+  Dimensions,
+  Platform,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
+  StatusBar
 } from 'react-native';
 import {PurchasesPackage} from 'react-native-purchases';
 
@@ -22,6 +25,16 @@ type Benefit = {
   title: string;
   description: string;
 };
+
+const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
+const H_PADDING = Math.round(Math.max(16, Math.min(28, SCREEN_WIDTH * 0.06)));
+const V_SPACING = Math.round(Math.max(10, Math.min(20, SCREEN_HEIGHT * 0.018)));
+const CARD_RADIUS = Math.round(Math.max(16, Math.min(22, SCREEN_WIDTH * 0.05)));
+const TITLE_SIZE = Math.round(Math.max(22, Math.min(30, SCREEN_WIDTH * 0.075)));
+const SUBTITLE_SIZE = Math.round(Math.max(15, Math.min(17, SCREEN_WIDTH * 0.042)));
+const STATUS_BAR_HEIGHT =
+  Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0;
+const SAFE_TOP_PADDING = Math.max(0, STATUS_BAR_HEIGHT);
 
 export default function MembershipSubscriptionScreen() {
   const router = useRouter();
@@ -176,7 +189,7 @@ export default function MembershipSubscriptionScreen() {
 
     return {
       ...common,
-      heading: 'Mechanic/Builder Subscription',
+      heading: 'Builder Subscription',
       subheading: 'Turn visibility into real opportunities and future clients.',
       price: mechanicPrice,
       cadenceLabel: 'Quarterly',
@@ -185,9 +198,9 @@ export default function MembershipSubscriptionScreen() {
       benefits: [
         {
           icon: 'tools',
-          title: 'Featured Mechanic/Builder Profile',
+          title: 'Featured Builder Profile',
           description:
-            'Get highlighted in the Featured Mechanic/Builder section.'
+            'Get highlighted in the Builder section and stand out to the community.'
         },
         {
           icon: 'map-marker-radius',
@@ -199,7 +212,7 @@ export default function MembershipSubscriptionScreen() {
           icon: 'account-search',
           title: 'Increased Client Opportunities',
           description:
-            'Be seen by users actively looking for trusted mechanic/builder.'
+            'Be seen by users actively looking for trusted builders.'
         },
         {
           icon: 'trending-up',
@@ -235,105 +248,39 @@ export default function MembershipSubscriptionScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>{planContent.heading}</Text>
-        <Text style={styles.subtitle}>{planContent.subheading}</Text>
+        <View style={styles.content}>
+          <Text style={styles.title}>{planContent.heading}</Text>
+          <Text style={styles.subtitle}>{planContent.subheading}</Text>
 
-        <View style={styles.benefitsList}>
-          {planContent.benefits.map(b => (
-            <View key={b.title} style={styles.benefitRow}>
-              <View style={styles.benefitIconWrap}>
-                <MaterialCommunityIcons
-                  name={b.icon}
-                  size={22}
-                  color={planContent.primary}
-                />
+          <View style={styles.benefitsList}>
+            {planContent.benefits.map(b => (
+              <View key={b.title} style={styles.benefitRow}>
+                <View style={styles.benefitIconWrap}>
+                  <MaterialCommunityIcons
+                    name={b.icon}
+                    size={22}
+                    color={planContent.primary}
+                  />
+                </View>
+                <View style={styles.benefitTextWrap}>
+                  <Text style={styles.benefitTitle} numberOfLines={1}>
+                    {b.title}
+                  </Text>
+                  <Text style={styles.benefitDesc} numberOfLines={2}>
+                    {b.description}
+                  </Text>
+                </View>
               </View>
-              <View style={styles.benefitTextWrap}>
-                <Text style={styles.benefitTitle}>{b.title}</Text>
-                <Text style={styles.benefitDesc}>{b.description}</Text>
-              </View>
-            </View>
-          ))}
-        </View>
+            ))}
+          </View>
 
-        <View style={styles.cardsRow}>
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={() => setSelectedPlan('vanora')}
-            style={[
-              styles.planCard,
-              selectedPlan === 'vanora'
-                ? styles.planCardSelected
-                : styles.planCardUnselected
-            ]}
-          >
-            <View
-              style={[
-                styles.planPill,
-                selectedPlan === 'vanora'
-                  ? styles.planPillSelected
-                  : styles.planPillUnselected
-              ]}
-            >
-              <Text
-                style={[
-                  styles.planPillText,
-                  selectedPlan === 'vanora'
-                    ? styles.planPillTextSelected
-                    : styles.planPillTextUnselected
-                ]}
-              >
-                VANORA
-              </Text>
-            </View>
-
-            <View style={styles.planHeaderRow}>
-              <Text
-                style={[
-                  styles.planName,
-                  selectedPlan === 'vanora'
-                    ? styles.planNameSelected
-                    : styles.planNameUnselected
-                ]}
-              >
-                Vanora
-              </Text>
-              <View
-                style={[
-                  styles.radio,
-                  selectedPlan === 'vanora' && styles.radioSelected
-                ]}
-              >
-                {selectedPlan === 'vanora' ? (
-                  <View style={styles.radioDot} />
-                ) : null}
-              </View>
-            </View>
-
-            <Text style={styles.planCadence}>{'Monthly'}</Text>
-
-            <View style={styles.priceRow}>
-              <Text
-                style={[
-                  styles.price,
-                  selectedPlan === 'vanora'
-                    ? styles.priceSelected
-                    : styles.priceUnselected
-                ]}
-              >
-                {vanoraPrice}
-              </Text>
-              <Text style={styles.priceSuffix}>/mo</Text>
-            </View>
-          </TouchableOpacity>
-
-          {isMechanic ? (
+          <View style={styles.cardsRow}>
             <TouchableOpacity
               activeOpacity={0.9}
-              onPress={() => setSelectedPlan('mechanic')}
+              onPress={() => setSelectedPlan('vanora')}
               style={[
                 styles.planCard,
-                selectedPlan === 'mechanic'
+                selectedPlan === 'vanora'
                   ? styles.planCardSelected
                   : styles.planCardUnselected
               ]}
@@ -341,7 +288,7 @@ export default function MembershipSubscriptionScreen() {
               <View
                 style={[
                   styles.planPill,
-                  selectedPlan === 'mechanic'
+                  selectedPlan === 'vanora'
                     ? styles.planPillSelected
                     : styles.planPillUnselected
                 ]}
@@ -349,12 +296,12 @@ export default function MembershipSubscriptionScreen() {
                 <Text
                   style={[
                     styles.planPillText,
-                    selectedPlan === 'mechanic'
+                    selectedPlan === 'vanora'
                       ? styles.planPillTextSelected
                       : styles.planPillTextUnselected
                   ]}
                 >
-                  CRAFT PRO
+                  VANORA
                 </Text>
               </View>
 
@@ -362,86 +309,158 @@ export default function MembershipSubscriptionScreen() {
                 <Text
                   style={[
                     styles.planName,
-                    selectedPlan === 'mechanic'
+                    selectedPlan === 'vanora'
                       ? styles.planNameSelected
                       : styles.planNameUnselected
                   ]}
                 >
-                  Craft
+                  Vanora
                 </Text>
                 <View
                   style={[
                     styles.radio,
-                    selectedPlan === 'mechanic' && styles.radioSelected
+                    selectedPlan === 'vanora' && styles.radioSelected
                   ]}
                 >
-                  {selectedPlan === 'mechanic' ? (
+                  {selectedPlan === 'vanora' ? (
                     <View style={styles.radioDot} />
                   ) : null}
                 </View>
               </View>
 
-              <Text style={styles.planCadence}>{'Quarterly'}</Text>
+              <Text style={styles.planCadence}>{'Monthly'}</Text>
 
               <View style={styles.priceRow}>
                 <Text
                   style={[
                     styles.price,
-                    selectedPlan === 'mechanic'
+                    selectedPlan === 'vanora'
                       ? styles.priceSelected
                       : styles.priceUnselected
                   ]}
                 >
-                  {mechanicPrice}
+                  {vanoraPrice}
                 </Text>
-                <Text style={styles.priceSuffix}>/qtr</Text>
+                <Text style={styles.priceSuffix}>/mo</Text>
               </View>
             </TouchableOpacity>
-          ) : null}
+
+            {isMechanic ? (
+              <TouchableOpacity
+                activeOpacity={0.9}
+                onPress={() => setSelectedPlan('mechanic')}
+                style={[
+                  styles.planCard,
+                  selectedPlan === 'mechanic'
+                    ? styles.planCardSelected
+                    : styles.planCardUnselected
+                ]}
+              >
+                <View
+                  style={[
+                    styles.planPill,
+                    selectedPlan === 'mechanic'
+                      ? styles.planPillSelected
+                      : styles.planPillUnselected
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.planPillText,
+                      selectedPlan === 'mechanic'
+                        ? styles.planPillTextSelected
+                        : styles.planPillTextUnselected
+                    ]}
+                  >
+                    BUILDER
+                  </Text>
+                </View>
+
+                <View style={styles.planHeaderRow}>
+                  <Text
+                    style={[
+                      styles.planName,
+                      selectedPlan === 'mechanic'
+                        ? styles.planNameSelected
+                        : styles.planNameUnselected
+                    ]}
+                  >
+                    Builder
+                  </Text>
+                  <View
+                    style={[
+                      styles.radio,
+                      selectedPlan === 'mechanic' && styles.radioSelected
+                    ]}
+                  >
+                    {selectedPlan === 'mechanic' ? (
+                      <View style={styles.radioDot} />
+                    ) : null}
+                  </View>
+                </View>
+
+                <Text style={styles.planCadence}>{'Quarterly'}</Text>
+
+                <View style={styles.priceRow}>
+                  <Text
+                    style={[
+                      styles.price,
+                      selectedPlan === 'mechanic'
+                        ? styles.priceSelected
+                        : styles.priceUnselected
+                    ]}
+                  >
+                    {mechanicPrice}
+                  </Text>
+                  <Text style={styles.priceSuffix}>/qtr</Text>
+                </View>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+
+          <Text style={styles.footnote}>{planContent.footnote}</Text>
         </View>
 
-        <Text style={styles.footnote}>{planContent.footnote}</Text>
-      </ScrollView>
-
-      <View style={styles.bottomArea}>
-        {isSubscribed ? (
-          <>
-            <View style={styles.subscribedBadge}>
-              <MaterialCommunityIcons
-                name="check-decagram"
-                size={18}
-                color="#2e7d64"
-              />
-              <Text style={styles.subscribedText}>
-                You are already premium.
-              </Text>
-            </View>
+        <View style={styles.bottomArea}>
+          {isSubscribed ? (
+            <>
+              <View style={styles.subscribedBadge}>
+                <MaterialCommunityIcons
+                  name="check-decagram"
+                  size={18}
+                  color="#2e7d64"
+                />
+                <Text style={styles.subscribedText}>
+                  You are already premium.
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={styles.continueButton}
+                onPress={handleManageSubscription}
+                accessibilityRole="button"
+                accessibilityLabel="Manage subscription"
+              >
+                <Text style={styles.continueText}>Manage Subscription</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
             <TouchableOpacity
-              style={styles.continueButton}
-              onPress={handleManageSubscription}
+              style={[
+                styles.continueButton,
+                isPurchasing && styles.continueButtonDisabled
+              ]}
+              onPress={handleContinue}
+              disabled={isPurchasing}
               accessibilityRole="button"
-              accessibilityLabel="Manage subscription"
+              accessibilityLabel="Continue"
             >
-              <Text style={styles.continueText}>Manage Subscription</Text>
+              <Text style={styles.continueText}>
+                {isPurchasing ? 'Processing...' : 'Continue'}
+              </Text>
             </TouchableOpacity>
-          </>
-        ) : (
-          <TouchableOpacity
-            style={[
-              styles.continueButton,
-              isPurchasing && styles.continueButtonDisabled
-            ]}
-            onPress={handleContinue}
-            disabled={isPurchasing}
-            accessibilityRole="button"
-            accessibilityLabel="Continue"
-          >
-            <Text style={styles.continueText}>
-              {isPurchasing ? 'Processing...' : 'Continue'}
-            </Text>
-          </TouchableOpacity>
-        )}
-      </View>
+          )}
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -449,23 +468,23 @@ export default function MembershipSubscriptionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB'
+    backgroundColor: '#F9FAFB',
+    paddingTop: SAFE_TOP_PADDING
   },
   topBar: {
     height: 48,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    marginTop: 25,
+    paddingHorizontal: H_PADDING,
     backgroundColor: '#F9FAFB'
   },
   headerTitle: {
-    flex: 1,
-    textAlign: 'center',
     fontSize: 20,
     fontWeight: '700',
     color: '#1F2937',
+    textAlign: 'center',
+    flex: 1,
     letterSpacing: 0.2
   },
   backButton: {
@@ -479,41 +498,44 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44
   },
+  content: {
+    paddingHorizontal: H_PADDING,
+    paddingTop: V_SPACING,
+    paddingBottom: V_SPACING
+  },
   scroll: {
     flex: 1
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 20
+    paddingBottom: Math.max(16, V_SPACING)
   },
   title: {
-    fontSize: 32,
+    fontSize: TITLE_SIZE,
     fontWeight: '700',
     color: '#2e7d64',
     textAlign: 'center',
-    marginTop: 8,
+    marginTop: V_SPACING * 0.4,
     letterSpacing: 0.3
   },
   subtitle: {
-    marginTop: 8,
-    fontSize: 16,
+    marginTop: V_SPACING * 0.4,
+    fontSize: SUBTITLE_SIZE,
     color: '#6B7280',
     lineHeight: 24,
     textAlign: 'center',
     paddingHorizontal: 10
   },
   benefitsList: {
-    marginTop: 20,
-    gap: 14
+    marginTop: V_SPACING,
+    gap: Math.max(8, V_SPACING - 6)
   },
   benefitRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 8,
     backgroundColor: '#ffffff',
     padding: 12,
-    borderRadius: 16,
+    borderRadius: CARD_RADIUS,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 1},
     shadowOpacity: 0.05,
@@ -521,9 +543,9 @@ const styles = StyleSheet.create({
     elevation: 2
   },
   benefitIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
+    width: 42,
+    height: 42,
+    borderRadius: 14,
     backgroundColor: '#f0fdf9',
     borderWidth: 1.5,
     borderColor: '#9ed6c3',
@@ -534,27 +556,27 @@ const styles = StyleSheet.create({
     flex: 1
   },
   benefitTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     color: '#1F2937',
     letterSpacing: 0.2
   },
   benefitDesc: {
-    marginTop: 4,
-    fontSize: 14,
+    marginTop: 2,
+    fontSize: 13,
     color: '#6B7280',
-    lineHeight: 20
+    lineHeight: 18
   },
   cardsRow: {
-    marginTop: 24,
+    marginTop: V_SPACING,
     flexDirection: 'row',
-    gap: 16
+    gap: 10
   },
   planCard: {
     flex: 1,
-    borderRadius: 20,
-    padding: 18,
-    minHeight: 140,
+    borderRadius: CARD_RADIUS,
+    padding: 16,
+    minHeight: 130,
     justifyContent: 'space-between',
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
@@ -579,7 +601,7 @@ const styles = StyleSheet.create({
     top: -12,
     alignSelf: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 7,
+    paddingVertical: 6,
     borderRadius: 999,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
@@ -613,7 +635,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between'
   },
   planName: {
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: '700',
     letterSpacing: 0.2
   },
@@ -644,8 +666,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#2e7d64'
   },
   planCadence: {
-    marginTop: 6,
-    fontSize: 14,
+    marginTop: 4,
+    fontSize: 13,
     fontWeight: '700',
     color: '#9CA3AF'
   },
@@ -653,10 +675,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: 6,
-    marginTop: 12
+    marginTop: 8
   },
   price: {
-    fontSize: 30,
+    fontSize: 26,
     fontWeight: '700',
     letterSpacing: -0.5
   },
@@ -673,16 +695,16 @@ const styles = StyleSheet.create({
     paddingBottom: 4
   },
   footnote: {
-    marginTop: 20,
+    marginTop: V_SPACING,
     fontSize: 13,
     color: '#9CA3AF',
     textAlign: 'center',
     lineHeight: 18
   },
   bottomArea: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 20,
+    paddingHorizontal: H_PADDING,
+    paddingTop: V_SPACING * 0.6,
+    paddingBottom: Math.max(12, V_SPACING),
     backgroundColor: '#F9FAFB'
   },
   subscribedBadge: {

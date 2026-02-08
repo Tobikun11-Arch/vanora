@@ -801,11 +801,11 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
                   activeOpacity={0.85}
                 >
                   <View style={styles.joinTripIconCircle}>
-                    <MaterialCommunityIcons
-                      name="plus"
-                      size={20}
-                      color="#2E7D64"
-                    />
+                  <MaterialCommunityIcons
+                    name="plus"
+                    size={28}
+                    color="#2E7D64"
+                  />
                   </View>
                   <Text style={styles.joinTripText}>JOIN TRIP</Text>
                 </TouchableOpacity>

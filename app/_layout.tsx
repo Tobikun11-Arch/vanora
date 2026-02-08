@@ -29,13 +29,26 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
+    if (Platform.OS === 'android') {
+      // Make nav bar transparent
+      NavigationBar.setBackgroundColorAsync('transparent');
+      // Hide nav bar completely
+      NavigationBar.setVisibilityAsync('hidden');
+      // Optional: control button style (light/dark icons)
+      NavigationBar.setButtonStyleAsync('light');
+    }
+  }, []);
+
+  useEffect(() => {
     const bootstrapAsync = async () => {
       try {
         const session = await authService.getSession();
         if (session?.user) {
-          const profileResult = await profileService.getProfile(
-            session.user.id
-          );
+          const profileResult = await profileService.getProfile(session.user.id);
+
+          // Initialize RevenueCat with user ID
+          void revenueCatService.initialize(session.user.id);
+
           dispatch(prev => ({
             ...prev,
             userToken: session.access_token,
@@ -44,6 +57,9 @@ export default function RootLayout() {
             isLoading: false
           }));
         } else {
+          // Initialize RevenueCat without a user (anonymous)
+          void revenueCatService.initialize();
+
           dispatch(prev => ({
             ...prev,
             isLoading: false
@@ -61,60 +77,12 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    if (Platform.OS === 'android') {
-      // Make nav bar transparent
-      NavigationBar.setBackgroundColorAsync('transparent');
-      // Hide nav bar completely
-      NavigationBar.setVisibilityAsync('hidden');
-      // Optional: control button style (light/dark icons)
-      NavigationBar.setButtonStyleAsync('light');
-    }
-  }, []);
-
-useEffect(() => {
-  const bootstrapAsync = async () => {
-    try {
-      const session = await authService.getSession();
-      if (session?.user) {
-        const profileResult = await profileService.getProfile(session.user.id);
-
-        // Initialize RevenueCat with user ID
-        revenueCatService.initialize(session.user.id);
-
-        dispatch(prev => ({
-          ...prev,
-          userToken: session.access_token,
-          user: session.user,
-          profileComplete: profileResult.success,
-          isLoading: false
-        }));
-      } else {
-        // Initialize RevenueCat without a user (anonymous)
-        revenueCatService.initialize();
-
-        dispatch(prev => ({
-          ...prev,
-          isLoading: false
-        }));
-      }
-    } catch {
-      dispatch(prev => ({
-        ...prev,
-        isLoading: false
-      }));
-    }
-  };
-
-  bootstrapAsync();
-}, []);
-
-  useEffect(() => {
     const {data: {subscription}} = supabase.auth.onAuthStateChange(
       (_event, session) => {
         if (session?.user) {
-          revenueCatService.initialize(session.user.id);
+          void revenueCatService.initialize(session.user.id);
         } else {
-          revenueCatService.initialize();
+          void revenueCatService.initialize();
         }
       }
     );

@@ -1,9 +1,12 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React, { useEffect, useRef, useState } from "react";
 import {
+  Dimensions,
   Image,
   Modal,
+  Platform,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -12,6 +15,13 @@ import {
 import { useUserStore } from "../../store/userStore";
 import { showToast } from "../Toast";
 import { CameraView, useCameraPermissions } from "expo-camera";
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+const SAFE_H_PADDING = Math.max(16, Math.round(SCREEN_WIDTH * 0.045));
+const SAFE_V_SPACING = Math.max(12, Math.round(SCREEN_HEIGHT * 0.016));
+const CARD_RADIUS = Math.max(14, Math.round(SCREEN_WIDTH * 0.045));
+const STATUS_BAR_HEIGHT =
+  Platform.OS === "android" ? StatusBar.currentHeight ?? 0 : 0;
 
 export default function ExploreTab() {
   const [activeTab, setActiveTab] = useState("news");
@@ -209,26 +219,28 @@ export default function ExploreTab() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.tabsContainer}>
-        {["News", "Games"].map((tab) => (
-          <TouchableOpacity
-            key={tab}
-            style={[
-              styles.tab,
-              activeTab === tab.toLowerCase() && styles.tabActive,
-            ]}
-            onPress={() => setActiveTab(tab.toLowerCase())}
-          >
-            <Text
+      <View style={styles.topNavContainer}>
+        <View style={styles.topNav}>
+          {["News", "Games"].map((tab) => (
+            <TouchableOpacity
+              key={tab}
               style={[
-                styles.tabText,
-                activeTab === tab.toLowerCase() && styles.tabTextActive,
+                styles.tabButton,
+                activeTab === tab.toLowerCase() && styles.tabButtonActive,
               ]}
+              onPress={() => setActiveTab(tab.toLowerCase())}
             >
-              {tab}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === tab.toLowerCase() && styles.tabTextActive,
+                ]}
+              >
+                {tab}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
 
       {activeTab === "news" && (
@@ -577,7 +589,7 @@ export default function ExploreTab() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#F8FBFA",
   },
   header: {
     paddingHorizontal: 20,
@@ -590,49 +602,50 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#0f172a",
   },
-  tabsContainer: {
+  topNavContainer: {
+    backgroundColor: "#F8FBFA",
+    paddingTop: (Platform.OS === "ios" ? 44 : STATUS_BAR_HEIGHT) + SAFE_V_SPACING,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E6ECE9",
+  },
+  topNav: {
     flexDirection: "row",
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    gap: 0,
-    backgroundColor: "#f0f0f0",
-    marginHorizontal: 20,
-    marginTop: 40,
-    borderRadius: 24,
-    padding: 4,
+    paddingHorizontal: SAFE_H_PADDING,
+    gap: 14,
   },
-  tab: {
+  tabButton: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: "transparent",
+    paddingVertical: 12,
     alignItems: "center",
+    justifyContent: "center",
+    borderBottomWidth: 2,
+    borderBottomColor: "transparent",
   },
-  tabActive: {
-    backgroundColor: "#ffffff",
+  tabButtonActive: {
+    borderBottomColor: "#2E7D64",
   },
   tabText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "600",
-    color: "#999999",
+    color: "#94A3B8",
+    letterSpacing: 0.2,
   },
   tabTextActive: {
     color: "#2E7D64",
   },
   contentContainer: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: SAFE_H_PADDING,
+    paddingVertical: SAFE_V_SPACING,
   },
   sectionHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 12,
+    marginBottom: SAFE_V_SPACING,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: "700",
     color: "#0f172a",
   },
@@ -645,15 +658,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 12,
-    marginBottom: 18,
+    marginBottom: SAFE_V_SPACING + 4,
   },
   questCard: {
     width: "48%",
-    backgroundColor: "#f8fafc",
-    borderRadius: 16,
+    backgroundColor: "#ffffff",
+    borderRadius: CARD_RADIUS,
     padding: 12,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: "#E6ECE9",
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
   questTag: {
     alignSelf: "flex-start",
@@ -677,11 +695,13 @@ const styles = StyleSheet.create({
   },
   questMetaRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: 6,
     marginBottom: 6,
   },
   questMetaPill: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
@@ -690,7 +710,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 3,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: "#E6ECE9",
+    justifyContent: "center",
   },
   questMetaText: {
     fontSize: 10,
@@ -704,13 +725,13 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   questButton: {
-    backgroundColor: "#0f172a",
+    backgroundColor: "#2E7D64",
     borderRadius: 12,
     paddingVertical: 8,
     alignItems: "center",
   },
   questButtonSubmitted: {
-    backgroundColor: "#2E7D64",
+    backgroundColor: "#1F6A54",
   },
   questButtonText: {
     fontSize: 11,
@@ -719,11 +740,16 @@ const styles = StyleSheet.create({
   },
   bingoCard: {
     backgroundColor: "#ffffff",
-    borderRadius: 16,
+    borderRadius: CARD_RADIUS,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: "#E6ECE9",
     padding: 12,
-    marginBottom: 18,
+    marginBottom: SAFE_V_SPACING + 4,
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
   bingoHeader: {
     flexDirection: "row",
@@ -787,11 +813,16 @@ const styles = StyleSheet.create({
   },
   leaderboardCard: {
     backgroundColor: "#ffffff",
-    borderRadius: 16,
+    borderRadius: CARD_RADIUS,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: "#E6ECE9",
     paddingVertical: 6,
     marginBottom: 8,
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
   leaderboardRow: {
     flexDirection: "row",
@@ -841,10 +872,15 @@ const styles = StyleSheet.create({
     color: "#2E7D64",
   },
   featuredCard: {
-    borderRadius: 18,
+    borderRadius: CARD_RADIUS + 2,
     overflow: "hidden",
     backgroundColor: "#f1f5f9",
-    marginBottom: 16,
+    marginBottom: SAFE_V_SPACING,
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
   },
   featuredImage: {
     width: "100%",
@@ -879,12 +915,17 @@ const styles = StyleSheet.create({
   },
   newsList: {
     gap: 12,
-    marginBottom: 16,
+    marginBottom: SAFE_V_SPACING,
   },
   newsItem: {
     flexDirection: "row",
     gap: 12,
     alignItems: "center",
+    backgroundColor: "#ffffff",
+    padding: 10,
+    borderRadius: CARD_RADIUS,
+    borderWidth: 1,
+    borderColor: "#E6ECE9",
   },
   newsThumb: {
     width: 70,
@@ -912,9 +953,11 @@ const styles = StyleSheet.create({
   },
   roadAlertsCard: {
     backgroundColor: "#fff7ed",
-    borderRadius: 16,
+    borderRadius: CARD_RADIUS,
     padding: 12,
-    marginBottom: 16,
+    marginBottom: SAFE_V_SPACING,
+    borderWidth: 1,
+    borderColor: "#F5E5D5",
   },
   roadAlertsHeader: {
     flexDirection: "row",
@@ -931,10 +974,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 10,
     backgroundColor: "#ffffff",
-    borderRadius: 12,
+    borderRadius: CARD_RADIUS - 2,
     padding: 10,
     marginBottom: 10,
     alignItems: "flex-start",
+    borderWidth: 1,
+    borderColor: "#F2E8DA",
   },
   alertBar: {
     width: 4,
@@ -956,16 +1001,22 @@ const styles = StyleSheet.create({
     color: "#6b7280",
   },
   spotlightRow: {
+    marginTop: 15,
     gap: 12,
-    paddingBottom: 10,
+    paddingBottom: SAFE_V_SPACING,
   },
   spotlightCard: {
     width: 170,
-    borderRadius: 16,
+    borderRadius: CARD_RADIUS,
     overflow: "hidden",
     backgroundColor: "#ffffff",
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: "#E6ECE9",
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
   spotlightImage: {
     width: "100%",
@@ -1014,7 +1065,7 @@ const styles = StyleSheet.create({
   modalCard: {
     width: "100%",
     backgroundColor: "#ffffff",
-    borderRadius: 18,
+    borderRadius: CARD_RADIUS + 2,
     padding: 16,
   },
   modalImage: {
@@ -1067,7 +1118,7 @@ const styles = StyleSheet.create({
   gameModalCard: {
     width: "100%",
     backgroundColor: "#ffffff",
-    borderRadius: 18,
+    borderRadius: CARD_RADIUS + 2,
     padding: 16,
   },
   gameModalHeader: {
@@ -1097,11 +1148,11 @@ const styles = StyleSheet.create({
   },
   cameraPreview: {
     height: 180,
-    borderRadius: 16,
+    borderRadius: CARD_RADIUS,
     backgroundColor: "#0f172a",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 12,
+    marginBottom: SAFE_V_SPACING,
     gap: 6,
     overflow: "hidden",
   },
