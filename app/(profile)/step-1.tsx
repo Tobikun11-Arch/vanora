@@ -4,11 +4,15 @@ import {useRouter} from 'expo-router';
 import {useState} from 'react';
 import {
   ActivityIndicator,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View
 } from 'react-native';
 import {Button} from '../../components/Button';
@@ -130,7 +134,15 @@ export default function Step1Screen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <MaterialCommunityIcons name="arrow-left" size={24} color="#4a90e2" />
@@ -258,7 +270,7 @@ export default function Step1Screen() {
 
         {data.nomad_type === NOMAD_TYPE_MECHANIC && (
           <View>
-            <Text style={styles.label}>Mechanic Contact</Text>
+            <Text style={styles.label}>Builder Contact</Text>
 
             <View style={styles.inputWrapper}>
               <MaterialCommunityIcons
@@ -322,7 +334,9 @@ export default function Step1Screen() {
       <View style={styles.buttonContainer}>
         <Button title="Next" onPress={handleNext} />
       </View>
-    </ScrollView>
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -330,6 +344,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff'
+  },
+  scrollContent: {
+    flexGrow: 1
   },
   header: {
     flexDirection: 'row',
