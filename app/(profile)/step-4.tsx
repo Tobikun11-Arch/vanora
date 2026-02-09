@@ -140,7 +140,8 @@ export default function Step4Screen() {
 
       const profileData = {
         id: userId,
-        nomad_type: step1.nomad_type === 'Builder' ? 'Mechanic' : step1.nomad_type,
+        nomad_type:
+          step1.nomad_type === 'Builder' ? 'Mechanic' : step1.nomad_type,
         travel_style: step1.travel_style,
         relationship_intent: step1.relationship_intent,
         current_location: step1.current_location,
