@@ -1,5 +1,6 @@
 import {supabase} from '@/services/supabase';
 import {MaterialCommunityIcons} from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
 import {useRouter} from 'expo-router';
@@ -10,10 +11,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  SafeAreaView,
   StyleSheet,
+  StatusBar,
   Text,
   TouchableOpacity,
-  View
+  View,
+  Dimensions
 } from 'react-native';
 import {Button} from '../../components/Button';
 import {InputField} from '../../components/InputField';
@@ -24,8 +28,60 @@ import {GENDERS} from '../../utils/constants';
 
 export default function Step2Screen() {
   const router = useRouter();
-  const {step2: data, setStep2} = useProfileStore();
+  const {step2: data, setStep2, step1, setStep1} = useProfileStore();
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [loadingLocation, setLoadingLocation] = useState(false);
+  const isVanLifer = step1.nomad_type === 'Van Lifer';
+
+  const getLocationName = async (latitude: number, longitude: number) => {
+    try {
+      const result = await Location.reverseGeocodeAsync({
+        latitude,
+        longitude
+      });
+      if (result[0]) {
+        const {city, region, country} = result[0];
+        return `${city || region}, ${country}`;
+      }
+      return `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+    } catch (error) {
+      console.error('Reverse geocoding error:', error);
+      return `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+    }
+  };
+
+  const handleGetCurrentLocation = async () => {
+    setLoadingLocation(true);
+    try {
+      const {status} = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        showToast(
+          'error',
+          'Permission Denied',
+          'Location permission is required'
+        );
+        setLoadingLocation(false);
+        return;
+      }
+
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced
+      });
+
+      const locationName = await getLocationName(
+        location.coords.latitude,
+        location.coords.longitude
+      );
+
+      setStep1({...step1, current_location: locationName});
+      showToast('success', 'Location Found', locationName);
+    } catch (error) {
+      console.error('Location error:', error);
+      showToast('error', 'Location Error', 'Failed to get current location');
+    } finally {
+      setLoadingLocation(false);
+    }
+  };
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -90,7 +146,11 @@ export default function Step2Screen() {
       showToast('error', 'Required', 'Please enter bio');
       return;
     }
-    if (data.years_in_van_life < 0) {
+    if (!step1.current_location.trim()) {
+      showToast('error', 'Required', 'Please enter current location');
+      return;
+    }
+    if (isVanLifer && data.years_in_van_life < 0) {
       showToast('error', 'Required', 'Please enter years in van life');
       return;
     }
@@ -99,24 +159,39 @@ export default function Step2Screen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      <ScrollView>
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
+      >
+        <ScrollView>
+      <View style={styles.headerBlock}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backButton}
+          >
             <MaterialCommunityIcons
               name="arrow-left"
-              size={24}
-              color="#4a90e2"
+              size={22}
+              color={COLORS.primary}
             />
           </TouchableOpacity>
-          <Text style={styles.stepIndicator}>Step 2 of 4</Text>
+          <View style={styles.progressArea}>
+            <View style={styles.progressRow}>
+              <Text style={styles.progressStep}>Step 2 of 4</Text>
+              <Text style={styles.progressPercent}>50% Complete</Text>
+            </View>
+            <View style={styles.progressTrack}>
+              <View style={[styles.progressFill, {width: '50%'}]} />
+            </View>
+          </View>
         </View>
+      </View>
 
-        <View style={styles.content}>
-          <Text style={styles.sectionTitle}>Personal Details</Text>
+      <View style={styles.content}>
+        <Text style={styles.sectionTitle}>Personal Details</Text>
+        <View style={styles.sectionDivider} />
 
           <TouchableOpacity
             style={styles.profilePictureContainer}
@@ -133,24 +208,26 @@ export default function Step2Screen() {
                 <MaterialCommunityIcons
                   name="camera-plus"
                   size={40}
-                  color="#4a90e2"
+                  color={COLORS.primary}
                 />
               </View>
             )}
 
             {uploadingPhoto && (
               <View style={styles.loadingOverlay}>
-                <ActivityIndicator size="large" color="#4a90e2" />
+                <ActivityIndicator size="large" color={COLORS.primary} />
               </View>
             )}
           </TouchableOpacity>
 
+          <Text style={styles.label}>Age</Text>
           <InputField
-            placeholder="Age"
+            placeholder="Enter age"
             value={data.age ? data.age.toString() : ''}
             onChangeText={text => setStep2({...data, age: parseInt(text) || 0})}
             keyboardType="numeric"
             leftIcon="calendar-outline"
+            compact
           />
 
           <Text style={styles.label}>Gender</Text>
@@ -176,13 +253,6 @@ export default function Step2Screen() {
             ))}
           </View>
 
-          <InputField
-            placeholder="Pronouns (optional)"
-            value={data.pronouns}
-            onChangeText={text => setStep2({...data, pronouns: text})}
-            leftIcon="account-outline"
-          />
-
           <View style={styles.bioContainer}>
             <Text style={styles.label}>Bio / About Me</Text>
             <InputField
@@ -190,81 +260,202 @@ export default function Step2Screen() {
               value={data.bio}
               onChangeText={text => setStep2({...data, bio: text})}
               leftIcon="text-box-outline"
+              compact
             />
           </View>
 
-          <InputField
-            placeholder="Years in van life"
-            value={
-              data.years_in_van_life ? data.years_in_van_life.toString() : ''
-            }
-            onChangeText={text =>
-              setStep2({
-                ...data,
-                years_in_van_life: parseInt(text) || 0
-              })
-            }
-            keyboardType="numeric"
-            leftIcon="speedometer"
-          />
+          {isVanLifer && (
+            <>
+              <Text style={styles.label}>Years in van life</Text>
+              <InputField
+                placeholder="Enter years in van life"
+                value={
+                  data.years_in_van_life ? data.years_in_van_life.toString() : ''
+                }
+                onChangeText={text =>
+                  setStep2({
+                    ...data,
+                    years_in_van_life: parseInt(text) || 0
+                  })
+                }
+                keyboardType="numeric"
+                leftIcon="speedometer"
+                compact
+              />
+            </>
+          )}
+
+          <Text style={styles.label}>Current Location (City/Region)</Text>
+          <TouchableOpacity
+            onPress={handleGetCurrentLocation}
+            disabled={loadingLocation}
+          >
+            <View style={styles.locationInputWrapper}>
+              {loadingLocation ? (
+                <ActivityIndicator size="small" color={COLORS.primary} />
+              ) : (
+                <MaterialCommunityIcons
+                  name="map-marker-outline"
+                  size={18}
+                  color={COLORS.muted}
+                  style={styles.locationIcon}
+                />
+              )}
+              <Text style={styles.locationPlaceholder}>
+                {step1.current_location || 'Tap to select location'}
+              </Text>
+            </View>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.buttonContainer}>
           <Button title="Next" onPress={handleNext} />
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
+const {width, height} = Dimensions.get('window');
+const scale = (size: number) =>
+  Math.round((Math.min(width, height) / 375) * size);
+const STATUS_BAR_HEIGHT =
+  Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0;
+const SAFE_TOP_PADDING = Math.max(0, STATUS_BAR_HEIGHT);
+const IS_IOS = Platform.OS === 'ios';
+
+const SPACING = {
+  xs: scale(6),
+  sm: scale(10),
+  md: scale(14),
+  lg: scale(18),
+  xl: scale(24)
+};
+
+const COLORS = {
+  primary: '#2e7d64',
+  bg: '#f6f8f7',
+  card: '#ffffff',
+  text: '#0f1a15',
+  sub: '#5e6b65',
+  muted: '#8b9591',
+  border: '#e3e9e6',
+  chipBg: '#f1f5f3'
+};
+
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.bg,
+    paddingTop: SAFE_TOP_PADDING
+  },
   container: {
     flex: 1,
-    backgroundColor: '#fff'
+    backgroundColor: COLORS.bg
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 40,
-    paddingBottom: 20
+    paddingHorizontal: SPACING.sm,
+    paddingRight: SPACING.md,
+    paddingTop: IS_IOS ? 0 : SPACING.xl,
+    paddingBottom: SPACING.md
   },
-  stepIndicator: {
+  headerBlock: {
+    marginHorizontal: SPACING.sm,
+    marginBottom: SPACING.sm
+  },
+  backButton: {
+    width: scale(36),
+    height: scale(36),
+    borderRadius: scale(18),
+    backgroundColor: COLORS.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border
+  },
+  progressArea: {
     flex: 1,
-    textAlign: 'center',
-    fontSize: 14,
-    color: '#999',
-    marginRight: 24
+    marginLeft: SPACING.md
+  },
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SPACING.xs
+  },
+  progressStep: {
+    fontSize: scale(12),
+    color: COLORS.sub,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase'
+  },
+  progressPercent: {
+    fontSize: scale(12),
+    color: COLORS.primary,
+    fontWeight: '700'
+  },
+  progressTrack: {
+    height: scale(6),
+    backgroundColor: COLORS.border,
+    borderRadius: scale(999),
+    overflow: 'hidden'
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: COLORS.primary
   },
   content: {
-    paddingHorizontal: 20,
-    paddingVertical: 20
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.lg,
+    backgroundColor: COLORS.card,
+    marginHorizontal: SPACING.lg,
+    borderRadius: scale(20),
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: {width: 0, height: 6},
+    elevation: 2
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 24
+    fontSize: scale(20),
+    fontWeight: '700',
+    color: COLORS.text,
+    marginBottom: SPACING.sm,
+    letterSpacing: 0.2
+  },
+  sectionDivider: {
+    height: 1,
+    backgroundColor: COLORS.border,
+    marginBottom: SPACING.lg
   },
   profilePictureContainer: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: SPACING.lg,
+    marginTop: SPACING.sm,
     position: 'relative'
   },
   profilePicture: {
-    width: 120,
-    height: 120,
-    borderRadius: 60
+    width: scale(120),
+    height: scale(120),
+    borderRadius: scale(60),
+    borderWidth: 2,
+    borderColor: COLORS.border
   },
   placeholderPicture: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#f0f0f0',
+    width: scale(120),
+    height: scale(120),
+    borderRadius: scale(60),
+    backgroundColor: COLORS.chipBg,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#ddd',
+    borderWidth: 1,
+    borderColor: COLORS.border,
     borderStyle: 'dashed'
   },
   loadingOverlay: {
@@ -275,47 +466,69 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.6)',
-    borderRadius: 60
+    backgroundColor: 'rgba(255,255,255,0.65)',
+    borderRadius: scale(60)
   },
   label: {
-    fontSize: 14,
+    fontSize: scale(13),
     fontWeight: '600',
-    color: '#333',
-    marginBottom: 12,
-    marginTop: 16
+    color: COLORS.sub,
+    marginBottom: SPACING.xs,
+    marginTop: SPACING.sm,
+    letterSpacing: 0.2
   },
   genderGrid: {
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 16,
+    gap: SPACING.xs,
+    marginBottom: SPACING.sm,
     flexWrap: 'wrap'
   },
   genderChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs,
+    borderRadius: scale(18),
     borderWidth: 1,
-    borderColor: '#ddd',
-    backgroundColor: '#f9f9f9'
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.chipBg
   },
   genderChipSelected: {
-    backgroundColor: '#4a90e2',
-    borderColor: '#4a90e2'
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary
   },
   genderChipText: {
-    fontSize: 12,
-    color: '#666',
-    fontWeight: '500'
+    fontSize: scale(12),
+    color: COLORS.sub,
+    fontWeight: '600'
   },
   genderChipTextSelected: {
     color: '#fff'
   },
+  locationInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: scale(12),
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    backgroundColor: '#f7f9f8',
+    minHeight: scale(40),
+    marginBottom: SPACING.sm
+  },
+  locationIcon: {
+    marginRight: SPACING.xs
+  },
+  locationPlaceholder: {
+    flex: 1,
+    fontSize: scale(13),
+    color: COLORS.muted
+  },
   bioContainer: {
-    marginBottom: 16
+    marginBottom: SPACING.xs
   },
   buttonContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 40
+    paddingHorizontal: SPACING.lg,
+    paddingBottom: SPACING.xl,
+    paddingTop: SPACING.md
   }
 });

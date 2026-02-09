@@ -12,6 +12,7 @@ interface InputFieldProps {
   onRightIconPress?: () => void;
   error?: string;
   keyboardType?: "default" | "email-address" | "numeric" | "phone-pad";
+  compact?: boolean;
 }
 
 export const InputField: React.FC<InputFieldProps> = ({
@@ -24,22 +25,29 @@ export const InputField: React.FC<InputFieldProps> = ({
   onRightIconPress,
   error,
   keyboardType = "default",
+  compact = false,
 }) => {
   const [isSecure, setIsSecure] = useState(secureTextEntry);
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.inputWrapper, error && styles.errorBorder]}>
+    <View style={[styles.container, compact && styles.containerCompact]}>
+      <View
+        style={[
+          styles.inputWrapper,
+          compact && styles.inputWrapperCompact,
+          error && styles.errorBorder,
+        ]}
+      >
         {leftIcon && (
           <MaterialCommunityIcons
             name={leftIcon}
-            size={20}
+            size={compact ? 18 : 20}
             color="#999"
             style={styles.leftIcon}
           />
         )}
         <TextInput
-          style={styles.input}
+          style={[styles.input, compact && styles.inputCompact]}
           placeholder={placeholder}
           placeholderTextColor="#999"
           value={value}
@@ -59,7 +67,7 @@ export const InputField: React.FC<InputFieldProps> = ({
           >
             <MaterialCommunityIcons
               name={isSecure ? "eye-off" : "eye"}
-              size={20}
+              size={compact ? 18 : 20}
               color="#999"
             />
           </TouchableOpacity>
@@ -75,6 +83,9 @@ const styles = StyleSheet.create({
     marginBottom: 18,
     width: "100%",
   },
+  containerCompact: {
+    marginBottom: 10,
+  },
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
@@ -85,6 +96,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     backgroundColor: "#f4f8f5",
   },
+  inputWrapperCompact: {
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: "#f7f9f8",
+  },
   errorBorder: {
     borderColor: "#ff4444",
   },
@@ -93,6 +110,10 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     fontSize: 15,
     color: "#000",
+  },
+  inputCompact: {
+    paddingVertical: 6,
+    fontSize: 14,
   },
   leftIcon: {
     marginRight: 8,
