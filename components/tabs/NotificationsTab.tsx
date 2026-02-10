@@ -8,6 +8,7 @@ import {useEffect, useMemo, useRef, useState} from 'react';
 import {
   Dimensions,
   Image,
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -604,6 +605,22 @@ export default function NotificationsTab() {
       ]
     );
   };
+
+  useEffect(() => {
+    if (!chatModalVisible) return;
+    const scrollToLatest = () => {
+      setTimeout(() => {
+        chatScrollRef.current?.scrollToEnd({animated: true});
+      }, 50);
+    };
+    const showSub = Keyboard.addListener('keyboardDidShow', scrollToLatest);
+    const hideSub = Keyboard.addListener('keyboardDidHide', scrollToLatest);
+    scrollToLatest();
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, [chatModalVisible, activeChat?.id]);
 
   const openCommunityChat = (community: {
     name: string;
