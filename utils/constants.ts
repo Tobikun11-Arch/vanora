@@ -30,42 +30,53 @@ export const GENDERS = ['Male', 'Female', 'Non-binary', 'Prefer not to say'];
 export const HOBBIES = [
   'Climbing',
   'Cooking',
-  'Photography',
-  'Yoga',
-  'Surfing',
+  'Cycling',
+  'Fishing',
   'Hiking',
-  'Reading',
-  'Gaming',
+  'Journaling',
+  'Meditation',
   'Music',
-  'Art',
+  'Photography',
+  'Reading',
+  'Running',
+  'Surfing',
+  'Trail Running',
+  'Yoga'
 ];
 
 export const SKILLS = [
-  'Van-building',
+  'Carpentry',
   'Coding',
-  'Yoga',
-  'Cooking',
-  'Mechanical',
-  'Photography',
-  'Writing',
   'Design',
+  'First Aid',
+  'Mechanic',
+  'Meal Prep',
+  'Navigation',
+  'Photography',
+  'Public Speaking',
+  'Writing'
 ];
 
 export const LIFESTYLE_TAGS = [
-  'Vegan',
-  'Pet Owner',
-  'Solo Traveler',
-  'Family Nomad',
+  'Adventure Seeker',
   'Budget Conscious',
-  'Luxury Traveler',
-  'Digital Nomad',
+  'Eco Friendly',
+  'Family Nomad',
+  'Minimalist',
+  'Pet Owner',
+  'Remote Worker',
+  'Solo Traveler',
+  'Weekend Warrior'
 ];
 
 export const FAVORITE_ACTIVITIES = [
-  'Campfire nights',
-  'Group hikes',
-  'Remote work meetups',
   'Beach days',
-  'Mountain exploration',
+  'Campfire nights',
   'Community dinners',
+  'Farmers markets',
+  'Group hikes',
+  'Mountain exploration',
+  'Remote work meetups',
+  'Scenic drives',
+  'Sunrise coffee'
 ];

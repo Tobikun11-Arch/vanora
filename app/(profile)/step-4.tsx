@@ -8,10 +8,14 @@ import {
   FlatList,
   Image,
   ScrollView,
+  SafeAreaView,
   StyleSheet,
+  StatusBar,
   Text,
   TouchableOpacity,
-  View
+  View,
+  Dimensions,
+  Platform
 } from 'react-native';
 import {Button} from '../../components/Button';
 import {showToast} from '../../components/Toast';
@@ -229,16 +233,32 @@ export default function Step4Screen() {
   );
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color="#4a90e2" />
-        </TouchableOpacity>
-        <Text style={styles.stepIndicator}>Step 4 of 4</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView style={styles.container}>
+      <View style={styles.headerBlock}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <MaterialCommunityIcons
+              name="arrow-left"
+              size={22}
+              color={COLORS.primary}
+            />
+          </TouchableOpacity>
+          <View style={styles.progressArea}>
+            <View style={styles.progressRow}>
+              <Text style={styles.progressStep}>Step 4 of 4</Text>
+              <Text style={styles.progressPercent}>100% Complete</Text>
+            </View>
+            <View style={styles.progressTrack}>
+              <View style={[styles.progressFill, {width: '100%'}]} />
+            </View>
+          </View>
+        </View>
       </View>
 
       <View style={styles.content}>
         <Text style={styles.sectionTitle}>Gallery</Text>
+        <View style={styles.sectionDivider} />
         <Text style={styles.subtitle}>
           Add at least 1 photo to boost visibility
         </Text>
@@ -259,7 +279,7 @@ export default function Step4Screen() {
             <MaterialCommunityIcons
               name="image-multiple"
               size={40}
-              color="#999"
+              color={COLORS.muted}
             />
             <Text style={styles.emptyText}>No photos yet</Text>
           </View>
@@ -270,7 +290,7 @@ export default function Step4Screen() {
           onPress={pickImage}
           disabled={data.photos.length >= 3}
         >
-          <MaterialCommunityIcons name="plus" size={24} color="#4a90e2" />
+          <MaterialCommunityIcons name="plus" size={24} color={COLORS.primary} />
           <Text style={styles.addPhotoText}>
             Add Photo{' '}
             {data.photos.length < 3
@@ -288,53 +308,184 @@ export default function Step4Screen() {
           disabled={loading}
         />
       </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
+const {width, height} = Dimensions.get('window');
+const scale = (size: number) =>
+  Math.round((Math.min(width, height) / 375) * size);
+const STATUS_BAR_HEIGHT =
+  Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0;
+const SAFE_TOP_PADDING = Math.max(0, STATUS_BAR_HEIGHT);
+const IS_IOS = Platform.OS === 'ios';
+
+const SPACING = {
+  xs: scale(6),
+  sm: scale(10),
+  md: scale(14),
+  lg: scale(18),
+  xl: scale(24)
+};
+
+const COLORS = {
+  primary: '#2e7d64',
+  bg: '#f6f8f7',
+  card: '#ffffff',
+  text: '#0f1a15',
+  sub: '#5e6b65',
+  muted: '#8b9591',
+  border: '#e3e9e6',
+  chipBg: '#f1f5f3'
+};
+
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#fff'},
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.bg,
+    paddingTop: SAFE_TOP_PADDING
+  },
+  container: {flex: 1, backgroundColor: COLORS.bg},
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 40,
-    paddingBottom: 20
+    paddingHorizontal: SPACING.sm,
+    paddingRight: SPACING.md,
+    paddingTop: IS_IOS ? 0 : SPACING.xl,
+    paddingBottom: SPACING.md
   },
-  stepIndicator: {
+  headerBlock: {
+    marginHorizontal: SPACING.sm,
+    marginBottom: SPACING.sm
+  },
+  backButton: {
+    width: scale(36),
+    height: scale(36),
+    borderRadius: scale(18),
+    backgroundColor: COLORS.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border
+  },
+  progressArea: {
     flex: 1,
-    textAlign: 'center',
-    fontSize: 14,
-    color: '#999',
-    marginRight: 24
+    marginLeft: SPACING.md
   },
-  content: {paddingHorizontal: 20, paddingVertical: 20},
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SPACING.xs
+  },
+  progressStep: {
+    fontSize: scale(12),
+    color: COLORS.sub,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase'
+  },
+  progressPercent: {
+    fontSize: scale(12),
+    color: COLORS.primary,
+    fontWeight: '700'
+  },
+  progressTrack: {
+    height: scale(6),
+    backgroundColor: COLORS.border,
+    borderRadius: scale(999),
+    overflow: 'hidden'
+  },
+  progressFill: {
+    height: '100%',
+    width: '100%',
+    backgroundColor: COLORS.primary
+  },
+  content: {
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.lg,
+    backgroundColor: COLORS.card,
+    marginHorizontal: SPACING.lg,
+    borderRadius: scale(20),
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: {width: 0, height: 6},
+    elevation: 2
+  },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8
+    fontSize: scale(20),
+    fontWeight: '700',
+    color: COLORS.text,
+    marginBottom: SPACING.xs
   },
-  subtitle: {fontSize: 14, color: '#666', marginBottom: 16},
-  label: {fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 12},
-  photoGrid: {justifyContent: 'flex-start'},
-  photoItem: {margin: 4, position: 'relative'},
-  photo: {width: 100, height: 100, borderRadius: 8},
+  sectionDivider: {
+    height: 1,
+    backgroundColor: COLORS.border,
+    marginBottom: SPACING.md
+  },
+  subtitle: {
+    fontSize: scale(13),
+    color: COLORS.sub,
+    marginBottom: SPACING.md
+  },
+  label: {
+    fontSize: scale(13),
+    fontWeight: '600',
+    color: COLORS.sub,
+    marginBottom: SPACING.sm
+  },
+  photoGrid: {
+    justifyContent: 'space-between'
+  },
+  photoItem: {
+    flexBasis: '32%',
+    maxWidth: '32%',
+    aspectRatio: 1,
+    position: 'relative',
+    borderRadius: scale(12),
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginBottom: SPACING.xs
+  },
+  photo: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover'
+  },
   removeButton: {
     position: 'absolute',
-    top: 4,
-    right: 4,
-    backgroundColor: '#0008',
-    borderRadius: 12,
-    padding: 2
+    top: scale(6),
+    right: scale(6),
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderRadius: scale(10),
+    padding: scale(3)
   },
-  emptyState: {alignItems: 'center', marginVertical: 20},
-  emptyText: {color: '#999', marginTop: 8},
+  emptyState: {alignItems: 'center', marginVertical: SPACING.lg},
+  emptyText: {color: COLORS.muted, marginTop: SPACING.xs},
   addPhotoButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 16
+    marginTop: SPACING.md,
+    backgroundColor: COLORS.chipBg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: scale(12),
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md
   },
-  addPhotoText: {marginLeft: 8, color: '#4a90e2', fontWeight: '600'},
-  buttonContainer: {paddingHorizontal: 20, paddingBottom: 40}
+  addPhotoText: {
+    marginLeft: SPACING.xs,
+    color: COLORS.primary,
+    fontWeight: '600'
+  },
+  buttonContainer: {
+    paddingHorizontal: SPACING.lg,
+    paddingBottom: SPACING.xl,
+    paddingTop: SPACING.md
+  }
 });
