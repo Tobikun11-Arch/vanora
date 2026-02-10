@@ -4,7 +4,10 @@ import {MaterialCommunityIcons} from '@expo/vector-icons';
 import React, {forwardRef, useEffect, useImperativeHandle, useRef, useState} from 'react';
 import {
   Alert,
+  Dimensions,
+  KeyboardAvoidingView,
   Image,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,6 +16,20 @@ import {
   View
 } from 'react-native';
 import LocationSearchModal from './LocationSearchModal';
+
+const {width, height} = Dimensions.get('window');
+const scale = Math.min(Math.min(width, height) / 375, 1.2);
+const s = (value: number) => Math.round(value * scale);
+
+const COLORS = {
+  primary: '#2e7d64',
+  background: '#ffffff',
+  surface: '#ffffff',
+  border: '#e6efea',
+  text: '#1f2a24',
+  muted: '#7f8b85',
+  placeholder: '#9aa6a1'
+};
 
 interface PollPostProps {
   username?: string;
@@ -188,12 +205,18 @@ const PollPost = forwardRef<PollPostRef, PollPostProps>(function PollPost(
     : profile?.display_name || (username ? `@${username}` : '@user');
 
   return (
-    <ScrollView
+    <KeyboardAvoidingView
       style={styles.container}
-      showsVerticalScrollIndicator={false}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      {/* User Info */}
-      <View style={styles.userRow}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* User Info */}
+        <View style={styles.userRow}>
         {profile?.profile_picture_url ? (
           <Image
             source={{uri: profile.profile_picture_url}}
@@ -214,7 +237,7 @@ const PollPost = forwardRef<PollPostRef, PollPostProps>(function PollPost(
             <MaterialCommunityIcons
               name="map-marker"
               size={14}
-              color="#4A7C59"
+              color={COLORS.primary}
             />
             <Text style={styles.locationText}>
               {location || 'Add Location'}
@@ -228,7 +251,7 @@ const PollPost = forwardRef<PollPostRef, PollPostProps>(function PollPost(
                 <MaterialCommunityIcons
                   name="close-circle"
                   size={14}
-                  color="#9CA3AF"
+                  color={COLORS.placeholder}
                 />
               </TouchableOpacity>
             ) : null}
@@ -254,7 +277,7 @@ const PollPost = forwardRef<PollPostRef, PollPostProps>(function PollPost(
       <TextInput
         style={styles.captionInput}
         placeholder="Ask a question to the community..."
-        placeholderTextColor="#9CA3AF"
+        placeholderTextColor={COLORS.placeholder}
         multiline
         value={caption}
         onChangeText={setCaption}
@@ -269,7 +292,7 @@ const PollPost = forwardRef<PollPostRef, PollPostProps>(function PollPost(
             <TextInput
               style={styles.optionInput}
               placeholder={`Option ${index + 1}`}
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={COLORS.placeholder}
               value={option}
               onChangeText={value => updateOption(index, value)}
               editable={!isSubmitting}
@@ -282,27 +305,28 @@ const PollPost = forwardRef<PollPostRef, PollPostProps>(function PollPost(
       {/* Poll Settings */}
       <View style={styles.settingsContainer}>
         <TouchableOpacity style={styles.settingRow} disabled>
-          <MaterialCommunityIcons
-            name="clock-outline"
-            size={20}
-            color="#4A7C59"
-          />
+            <MaterialCommunityIcons
+              name="clock-outline"
+              size={20}
+              color={COLORS.primary}
+            />
           <Text style={styles.settingText}>Poll Duration</Text>
           <Text style={styles.settingValue}>2 days</Text>
           <MaterialCommunityIcons
             name="chevron-right"
             size={20}
-            color="#9CA3AF"
+            color={COLORS.placeholder}
           />
         </TouchableOpacity>
       </View>
 
-      <LocationSearchModal
-        visible={locationModalVisible}
-        onClose={() => setLocationModalVisible(false)}
-        onSelectLocation={handleSelectLocation}
-      />
-    </ScrollView>
+        <LocationSearchModal
+          visible={locationModalVisible}
+          onClose={() => setLocationModalVisible(false)}
+          onSelectLocation={handleSelectLocation}
+        />
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 });
 
@@ -310,117 +334,166 @@ export default PollPost;
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1
+    flex: 1,
+    backgroundColor: COLORS.background
+  },
+  contentContainer: {
+    paddingBottom: s(300)
   },
   userRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12
+    paddingHorizontal: s(16),
+    paddingVertical: s(12)
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#E5E7EB',
+    width: s(44),
+    height: s(44),
+    borderRadius: s(22),
+    backgroundColor: '#eef2f1',
     justifyContent: 'center',
     alignItems: 'center'
   },
   avatarImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20
+    width: s(44),
+    height: s(44),
+    borderRadius: s(22)
   },
   userInfo: {
     flex: 1,
-    marginLeft: 12
+    marginLeft: s(12)
   },
   username: {
-    fontSize: 14,
+    fontSize: s(15),
     fontWeight: '600',
-    color: '#1F2937'
+    color: COLORS.text,
+    letterSpacing: 0.2
   },
   locationBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 2
+    marginTop: s(2),
+    alignSelf: 'flex-start',
+    paddingHorizontal: s(6),
+    paddingVertical: s(3),
+    borderRadius: s(12),
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border
   },
   locationText: {
-    fontSize: 12,
-    color: '#4A7C59',
-    marginLeft: 4
+    fontSize: s(11),
+    color: COLORS.primary,
+    marginLeft: s(4)
   },
   clearLocationBtn: {
-    marginLeft: 6
+    marginLeft: s(6)
   },
   visibilityBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingHorizontal: s(10),
+    paddingVertical: s(6),
+    borderRadius: s(16),
     borderWidth: 1,
-    borderColor: '#E5E7EB'
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.surface,
+    alignSelf: 'center'
   },
   visibilityText: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginLeft: 4
+    fontSize: s(11),
+    color: COLORS.muted,
+    marginLeft: s(6)
   },
   captionInput: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 14,
-    color: '#374151',
-    minHeight: 60
+    marginHorizontal: s(16),
+    marginTop: s(8),
+    paddingHorizontal: s(14),
+    paddingVertical: s(10),
+    fontSize: s(14),
+    color: COLORS.text,
+    minHeight: s(72),
+    lineHeight: s(20),
+    borderRadius: s(14),
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    letterSpacing: 0.2,
+    shadowColor: '#0b1a12',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: {width: 0, height: 6},
+    elevation: 2
   },
   optionsContainer: {
-    paddingHorizontal: 16,
-    marginTop: 8
+    marginTop: s(16),
+    marginHorizontal: s(16),
+    paddingHorizontal: s(14),
+    paddingVertical: s(12),
+    borderRadius: s(16),
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    shadowColor: '#0b1a12',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: {width: 0, height: 6},
+    elevation: 2
   },
   optionsLabel: {
-    fontSize: 12,
+    fontSize: s(12),
     fontWeight: '600',
-    color: '#6B7280',
-    marginBottom: 8
+    color: COLORS.muted,
+    marginBottom: s(8),
+    letterSpacing: 0.2
   },
   optionInputRow: {
-    marginBottom: 8
+    marginBottom: s(10)
   },
   optionInput: {
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: '#1F2937'
+    borderColor: COLORS.border,
+    borderRadius: s(12),
+    paddingHorizontal: s(12),
+    paddingVertical: s(10),
+    fontSize: s(14),
+    color: COLORS.text,
+    backgroundColor: '#fbfdfc'
   },
   helperText: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    marginTop: 4
+    fontSize: s(12),
+    color: COLORS.placeholder,
+    marginTop: s(4)
   },
   settingsContainer: {
-    marginTop: 20
+    marginTop: s(18),
+    marginHorizontal: s(16),
+    borderRadius: s(16),
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.surface,
+    shadowColor: '#0b1a12',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: {width: 0, height: 6},
+    elevation: 2
   },
   settingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6'
+    paddingHorizontal: s(16),
+    paddingVertical: s(14)
   },
   settingText: {
     flex: 1,
-    fontSize: 14,
-    color: '#1F2937',
-    marginLeft: 12
+    fontSize: s(14),
+    color: COLORS.text,
+    marginLeft: s(12)
   },
   settingValue: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginRight: 8
+    fontSize: s(14),
+    color: COLORS.muted,
+    marginRight: s(8)
   }
 });
