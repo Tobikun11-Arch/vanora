@@ -3,7 +3,8 @@ import Purchases, {
   CustomerInfo,
   LOG_LEVEL,
   PurchasesOfferings,
-  PurchasesPackage
+  PurchasesPackage,
+  PURCHASES_ERROR_CODE
 } from 'react-native-purchases';
 export type RevenueCatPlan = 'vanora' | 'mechanic';
 
@@ -11,9 +12,10 @@ const REVENUECAT_ANDROID_KEY =
   process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY ?? '';
 const REVENUECAT_IOS_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY ?? '';
 
-const planToPackageId: Record<RevenueCatPlan, string> = {
-  vanora: '$rc_monthly', // package identifier for Vanora
-  mechanic: '$rc_three_month' // quarterly package identifier for Mechanic
+const ENTITLEMENT_ID = 'vanora_pro';
+const planToProductId: Record<RevenueCatPlan, string> = {
+  vanora: 'vanora_pro_monthly:monthly',
+  mechanic: 'vanora_pro_quarterly:quarterly'
 };
 
 let isConfigured = false;
@@ -27,9 +29,11 @@ const resolvePackage = (
   const offering = offerings.all[plan] ?? offerings.current;
   if (!offering) return null;
 
-  const targetId = planToPackageId[plan];
+  const targetId = planToProductId[plan];
   return (
-    offering.availablePackages.find(pkg => pkg.identifier === targetId) ?? null
+    offering.availablePackages.find(
+      pkg => pkg.product.identifier === targetId
+    ) ?? null
   );
 };
 
@@ -107,7 +111,7 @@ export const revenueCatService = {
   async hasActiveEntitlement() {
     const info = await this.getCustomerInfo();
     if (!info) return false;
-    return !!info.entitlements.active['Vanora Pro'];
+    return !!info.entitlements.active[ENTITLEMENT_ID];
   },
 
   async purchasePlan(plan: RevenueCatPlan) {
@@ -123,8 +127,15 @@ export const revenueCatService = {
       return {success: false, reason: 'package_not_found' as const};
     }
 
-    const {customerInfo} = await Purchases.purchasePackage(pkg);
-    return {success: true, customerInfo};
+    try {
+      const {customerInfo} = await Purchases.purchasePackage(pkg);
+      return {success: true, customerInfo};
+    } catch (error: any) {
+      if (error.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) {
+        return {success: false, reason: 'cancelled' as const};
+      }
+      return {success: false, reason: 'error', error};
+    }
   },
 
   async restorePurchases() {

@@ -18,6 +18,9 @@
       "autoIncrement": true,
       "android": {
         "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY": "goog_BAFisbLKMOXXCrFCcjJBHyAgNjI"
       }
     }
   },
