@@ -587,9 +587,9 @@ export default function FindTechTab() {
   const renderEmpty = () => (
     <View style={styles.emptyState}>
       <MaterialCommunityIcons name="account-wrench" size={48} color="#D1D5DB" />
-      <Text style={styles.emptyTitle}>No verified mechanics yet</Text>
+      <Text style={styles.emptyTitle}>No verified builders yet</Text>
       <Text style={styles.emptySubtitle}>
-        Verified mechanics will appear here once available.
+        Verified builders will appear here once available.
       </Text>
     </View>
   );
@@ -1404,7 +1404,7 @@ export default function FindTechTab() {
               </View>
             ) : (
               <View style={styles.scanResultsContainer}>
-                <Text style={styles.resultsTitle}>Mechanics Near You</Text>
+                <Text style={styles.resultsTitle}>Builders Near You</Text>
                 {loading ? (
                   <View style={styles.loadingRow}>
                     <ActivityIndicator size="large" color="#2E7D64" />
