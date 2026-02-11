@@ -2,14 +2,15 @@ import {supabase} from '@/services/supabase';
 import {feedTabStyles as styles} from '@/styles';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {MaterialCommunityIcons} from '@expo/vector-icons';
-import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+import {Image} from 'expo-image';
+import {useInfiniteQuery, useMutation, useQueryClient} from '@tanstack/react-query';
 import {useRouter} from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Image,
+  FlatList,
   Modal,
   Pressable,
   ScrollView,
@@ -72,6 +73,7 @@ interface FeedTabProps {
 }
 
 const CACHE_TTL_MS = 60 * 1000;
+const PAGE_SIZE = 8;
 const MENU_WIDTH = 140;
 const MENU_OFFSET = 8;
 const STORY_STORAGE_KEY = 'feedStoriesV1';
@@ -111,7 +113,9 @@ interface StoryItem {
 export default function FeedTab({refreshTrigger, profile}: FeedTabProps) {
   const router = useRouter();
   const [showNewPostModal, setShowNewPostModal] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<
+    string | null | undefined
+  >(undefined);
   const [votingPollIds, setVotingPollIds] = useState<Record<string, boolean>>(
     {}
   );
@@ -215,7 +219,60 @@ export default function FeedTab({refreshTrigger, profile}: FeedTabProps) {
     }
   };
 
-  const fetchPosts = async (userId: string | null) => {
+  const fetchPostCounts = async (postIds: string[]) => {
+    const emptyResult = {
+      likesByPostId: {} as Record<string, number>,
+      commentsByPostId: {} as Record<string, number>
+    };
+
+    if (postIds.length === 0) return emptyResult;
+
+    try {
+      const {data, error} = await supabase.rpc('feed_post_counts', {
+        post_ids: postIds
+      });
+      if (!error && Array.isArray(data)) {
+        const likesByPostId: Record<string, number> = {};
+        const commentsByPostId: Record<string, number> = {};
+        data.forEach(row => {
+          if (!row?.post_id) return;
+          likesByPostId[row.post_id] = Number(row.likes_count || 0);
+          commentsByPostId[row.post_id] = Number(row.comments_count || 0);
+        });
+        return {likesByPostId, commentsByPostId};
+      }
+      if (error) {
+        console.warn('feed_post_counts RPC error, falling back', error);
+      }
+    } catch (error) {
+      console.warn('feed_post_counts RPC failed, falling back', error);
+    }
+
+    const likesByPostId: Record<string, number> = {};
+    const commentsByPostId: Record<string, number> = {};
+
+    await Promise.all(
+      postIds.map(async postId => {
+        const [{count: likesCount}, {count: commentsCount}] =
+          await Promise.all([
+            supabase
+              .from('post_likes')
+              .select('*', {count: 'exact', head: true})
+              .eq('post_id', postId),
+            supabase
+              .from('post_comments')
+              .select('*', {count: 'exact', head: true})
+              .eq('post_id', postId)
+          ]);
+        likesByPostId[postId] = likesCount || 0;
+        commentsByPostId[postId] = commentsCount || 0;
+      })
+    );
+
+    return {likesByPostId, commentsByPostId};
+  };
+
+  const fetchPosts = async (userId: string | null, offset = 0) => {
     try {
       // who am I following?
       let followingIds: string[] = [];
@@ -266,7 +323,7 @@ export default function FeedTab({refreshTrigger, profile}: FeedTabProps) {
         )
         .in('post_type', ['feed', 'poll', 'image_poll'])
         .order('created_at', {ascending: false})
-        .limit(50);
+        .range(offset, offset + PAGE_SIZE - 1);
 
       if (error) {
         console.error('Error fetching posts:', error);
@@ -292,6 +349,10 @@ export default function FeedTab({refreshTrigger, profile}: FeedTabProps) {
         const hobbies = profileData?.hobbies || [];
         return hobbies.some(hobby => currentHobbySet.has(hobby));
       });
+
+      const postIds = interestFiltered.map(p => p.id);
+      const {likesByPostId, commentsByPostId} =
+        await fetchPostCounts(postIds);
 
       const pollPostIds = interestFiltered
         .filter(p => p.post_type === 'poll' || p.post_type === 'image_poll')
@@ -344,46 +405,35 @@ export default function FeedTab({refreshTrigger, profile}: FeedTabProps) {
           }
         }
       }
-      const withStats: FeedPost[] = await Promise.all(
-        interestFiltered.map(async p => {
-          const sortedMedia = (p.post_media || []).sort(
-            (a, b) => a.display_order - b.display_order
-          );
+      const withStats: FeedPost[] = interestFiltered.map(p => {
+        const sortedMedia = (p.post_media || []).sort(
+          (a, b) => a.display_order - b.display_order
+        );
 
-          const {count: likesCount} = await supabase
-            .from('post_likes')
-            .select('*', {count: 'exact', head: true})
-            .eq('post_id', p.id);
+        // Fix: profiles is an object, not an array
+        const profileData = Array.isArray(p.profiles) ? p.profiles[0] : p.profiles;
 
-          const {count: commentsCount} = await supabase
-            .from('post_comments')
-            .select('*', {count: 'exact', head: true})
-            .eq('post_id', p.id);
+        const pollResults = pollResultsByPostId[p.id] || [];
+        const pollId = pollResults[0]?.poll_id;
 
-          // Fix: profiles is an object, not an array
-          const profileData = Array.isArray(p.profiles)
-            ? p.profiles[0]
-            : p.profiles;
+        return {
+          ...p,
+          profiles: profileData,
+          post_media: sortedMedia,
+          likes_count: likesByPostId[p.id] ?? 0,
+          comments_count: commentsByPostId[p.id] ?? 0,
+          poll_results: pollResults,
+          poll_vote_option_id: pollId ? userVoteByPollId[pollId] : null
+        } as FeedPost;
+      });
 
-          const pollResults = pollResultsByPostId[p.id] || [];
-          const pollId = pollResults[0]?.poll_id;
-
-          return {
-            ...p,
-            profiles: profileData,
-            post_media: sortedMedia,
-            likes_count: likesCount || 0,
-            comments_count: commentsCount || 0,
-            poll_results: pollResults,
-            poll_vote_option_id: pollId ? userVoteByPollId[pollId] : null
-          } as FeedPost;
-        })
-      );
-
-      return withStats;
+      return {
+        items: withStats,
+        nextOffset: withStats.length === PAGE_SIZE ? offset + PAGE_SIZE : null
+      };
     } catch (e) {
       console.error('Error building feed:', e);
-      return [];
+      return {items: [], nextOffset: null};
     }
   };
 
@@ -392,24 +442,29 @@ export default function FeedTab({refreshTrigger, profile}: FeedTabProps) {
       const {
         data: {user}
       } = await supabase.auth.getUser();
-      setCurrentUserId(user?.id || null);
-      await fetchPosts(user?.id || null);
+      setCurrentUserId(user?.id ?? null);
     };
 
     init();
   }, []);
 
   const {
-    data: posts = [],
+    data,
     isLoading,
-    refetch
-  } = useQuery({
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
+  } = useInfiniteQuery({
     queryKey: ['feed', currentUserId],
-    queryFn: () => fetchPosts(currentUserId),
+    queryFn: ({pageParam = 0}) => fetchPosts(currentUserId, pageParam),
     enabled: currentUserId !== undefined,
     staleTime: CACHE_TTL_MS,
-    gcTime: CACHE_TTL_MS * 5
+    gcTime: CACHE_TTL_MS * 5,
+    getNextPageParam: lastPage => lastPage.nextOffset,
+    keepPreviousData: true
   });
+  const posts = data?.pages.flatMap(page => page.items) ?? [];
 
   useEffect(() => {
     if (refreshTrigger && refreshTrigger > 0) {
@@ -446,30 +501,35 @@ export default function FeedTab({refreshTrigger, profile}: FeedTabProps) {
       const {pollId, optionId, userId} = variables;
       setVotingPollIds(prev => ({...prev, [pollId]: true}));
       await queryClient.cancelQueries({queryKey: ['feed', userId]});
-      const previous =
-        queryClient.getQueryData<FeedPost[]>(['feed', userId]) || [];
+      const previous = queryClient.getQueryData(['feed', userId]);
 
-      const next = previous.map(post => {
-        if (!post.poll_results?.length) return post;
-        const postPollId = post.poll_results[0]?.poll_id;
-        if (postPollId !== pollId) return post;
-        if (post.poll_vote_option_id) return post;
+      const next = {
+        ...(previous as any),
+        pages: (previous as any)?.pages?.map((page: any) => ({
+          ...page,
+          items: (page?.items || []).map((post: FeedPost) => {
+            if (!post.poll_results?.length) return post;
+            const postPollId = post.poll_results[0]?.poll_id;
+            if (postPollId !== pollId) return post;
+            if (post.poll_vote_option_id) return post;
 
-        const updatedResults = post.poll_results.map(option => {
-          const increment = option.option_id === optionId ? 1 : 0;
-          return {
-            ...option,
-            vote_count: option.vote_count + increment,
-            total_votes: option.total_votes + 1
-          };
-        });
+            const updatedResults = post.poll_results.map(option => {
+              const increment = option.option_id === optionId ? 1 : 0;
+              return {
+                ...option,
+                vote_count: option.vote_count + increment,
+                total_votes: option.total_votes + 1
+              };
+            });
 
-        return {
-          ...post,
-          poll_results: updatedResults,
-          poll_vote_option_id: optionId
-        };
-      });
+            return {
+              ...post,
+              poll_results: updatedResults,
+              poll_vote_option_id: optionId
+            };
+          })
+        }))
+      };
 
       queryClient.setQueryData(['feed', userId], next);
 
@@ -577,6 +637,65 @@ export default function FeedTab({refreshTrigger, profile}: FeedTabProps) {
         </View>
       </View>
     </TouchableOpacity>
+  );
+
+  const renderStorySection = () => (
+    <View style={styles.storySection}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.storyScrollContent}
+      >
+        <View style={styles.storyBus}>
+          <View style={styles.storyStripe} />
+          <View style={styles.storyFrontCap} />
+          <View style={styles.storyFront}>
+            <View style={styles.storyFrontWindow} />
+            <View style={styles.storyHeadlight} />
+            <View style={styles.storyFrontBumper} />
+            <TouchableOpacity
+              style={styles.joinTripCard}
+              onPress={handleAddStory}
+              activeOpacity={0.85}
+            >
+              <View style={styles.joinTripIconCircle}>
+                <MaterialCommunityIcons name="plus" size={20} color="#2E7D64" />
+              </View>
+              <Text style={styles.joinTripText}>JOIN TRIP</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.storyBody}>
+            {storyItems.map((item, index) => {
+              const isLast = index === storyItems.length - 1;
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  style={[styles.storyCard, isLast && styles.storyCardLast]}
+                  activeOpacity={0.85}
+                  onPress={() => handleOpenStory(item)}
+                >
+                  <Image
+                    source={{uri: item.imageUrl}}
+                    style={styles.storyImage}
+                    contentFit="cover"
+                  />
+                  <View style={styles.storyLabel}>
+                    <Text style={styles.storyLabelText}>{item.title}</Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          <View style={styles.storyRearCap} />
+          <View style={styles.storyWheelFront}>
+            <View style={styles.storyWheelInner} />
+          </View>
+          <View style={styles.storyWheelBack}>
+            <View style={styles.storyWheelInner} />
+          </View>
+        </View>
+      </ScrollView>
+    </View>
   );
 
   const renderItem = ({item}: {item: FeedPost}) => {
@@ -717,7 +836,7 @@ export default function FeedTab({refreshTrigger, profile}: FeedTabProps) {
               marginTop: 8,
               backgroundColor: '#F3F4F6'
             }}
-            resizeMode="cover"
+            contentFit="cover"
           />
         )}
 
@@ -831,166 +950,125 @@ export default function FeedTab({refreshTrigger, profile}: FeedTabProps) {
     );
   };
 
-  if (isLoading) {
-    return (
-      <View style={styles.tabContent}>
-        <ActivityIndicator size="large" color="#4A7C59" />
-      </View>
-    );
-  }
-
-  // Story area
-  if (posts.length === 0) {
-    return (
-      <View style={styles.tabContent}>
-        {renderCreateBar()}
-        <View style={styles.storySection}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.storyScrollContent}
-          >
-            <View style={styles.storyBus}>
-              <View style={styles.storyStripe} />
-              <View style={styles.storyFront}>
-                <View style={styles.storyHeadlight} />
-                <View style={styles.storyFrontBumper} />
-                <TouchableOpacity
-                  style={styles.joinTripCard}
-                  onPress={handleAddStory}
-                  activeOpacity={0.85}
-                >
-                  <View style={styles.joinTripIconCircle}>
-                  <MaterialCommunityIcons
-                    name="plus"
-                    size={28}
-                    color="#2E7D64"
-                  />
-                  </View>
-                  <Text style={styles.joinTripText}>JOIN TRIP</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.storyBody}>
-                {storyItems.map((item, index) => {
-                  const isLast = index === storyItems.length - 1;
-                  return (
-                    <TouchableOpacity
-                      key={item.id}
-                      style={[styles.storyCard, isLast && styles.storyCardLast]}
-                      activeOpacity={0.85}
-                      onPress={() => handleOpenStory(item)}
-                    >
-                      <Image
-                        source={{uri: item.imageUrl}}
-                        style={styles.storyImage}
-                        resizeMode="cover"
-                      />
-                      <View style={styles.storyLabel}>
-                        <Text style={styles.storyLabelText}>
-                          {item.title}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
-            </View>
-            <View style={styles.storyRearCap} />
-            <View style={styles.storyWheelFront}>
-              <View style={styles.storyWheelInner} />
-            </View>
-            <View style={styles.storyWheelBack}>
-              <View style={styles.storyWheelInner} />
-            </View>
-          </View>
-        </ScrollView>
-      </View>
+  const listHeader = (
+    <View>
+      {renderCreateBar()}
+      {renderStorySection()}
       <View style={styles.roadSeparator} />
-        <View style={{alignItems: 'center', marginTop: 24}}>
-          <MaterialCommunityIcons
-            name="post-outline"
-            size={48}
-            color="#D1D5DB"
-          />
-          <Text style={{marginTop: 8, color: '#9CA3AF'}}>No posts yet</Text>
-        </View>
+    </View>
+  );
 
-        <NewPostModal
-          visible={showNewPostModal}
-          onClose={() => setShowNewPostModal(false)}
-          onPostSuccess={handlePostSuccess}
-          username={username}
+  const renderSkeletonItem = (key: string) => (
+    <View key={key} style={{marginBottom: 14}}>
+      <View
+        style={{
+          backgroundColor: '#FFFFFF',
+          borderRadius: 18,
+          borderWidth: 1,
+          borderColor: '#E3EAE6',
+          padding: 16
+        }}
+      >
+        <View style={{flexDirection: 'row', alignItems: 'center', gap: 12}}>
+          <View
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 22,
+              backgroundColor: '#EEF2F3'
+            }}
+          />
+          <View style={{flex: 1, gap: 8}}>
+            <View
+              style={{
+                height: 12,
+                width: '45%',
+                borderRadius: 6,
+                backgroundColor: '#EEF2F3'
+              }}
+            />
+            <View
+              style={{
+                height: 10,
+                width: '30%',
+                borderRadius: 6,
+                backgroundColor: '#F2F4F6'
+              }}
+            />
+          </View>
+        </View>
+        <View style={{marginTop: 12, gap: 8}}>
+          <View
+            style={{
+              height: 12,
+              width: '90%',
+              borderRadius: 6,
+              backgroundColor: '#EEF2F3'
+            }}
+          />
+          <View
+            style={{
+              height: 12,
+              width: '75%',
+              borderRadius: 6,
+              backgroundColor: '#EEF2F3'
+            }}
+          />
+        </View>
+        <View
+          style={{
+            height: 180,
+            borderRadius: 12,
+            backgroundColor: '#F3F4F6',
+            marginTop: 12
+          }}
         />
       </View>
-    );
-  }
+    </View>
+  );
+
+  const renderSkeletonList = () => (
+    <View style={{paddingTop: 4, width: '100%'}}>
+      {[0, 1, 2, 3].map(index => renderSkeletonItem(`skeleton-${index}`))}
+    </View>
+  );
+
+  const listEmpty = isLoading ? (
+    <View style={{marginTop: 24, width: '100%'}}>
+      {renderSkeletonList()}
+    </View>
+  ) : (
+    <View style={{alignItems: 'center', marginTop: 24}}>
+      <MaterialCommunityIcons name="post-outline" size={48} color="#D1D5DB" />
+      <Text style={{marginTop: 8, color: '#9CA3AF'}}>No posts yet</Text>
+    </View>
+  );
 
   return (
     <View style={styles.tabContent}>
-      {renderCreateBar()}
-      <View style={styles.storySection}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.storyScrollContent}
-        >
-          <View style={styles.storyBus}>
-            <View style={styles.storyStripe} />
-            <View style={styles.storyFrontCap} />
-            <View style={styles.storyFront}>
-              <View style={styles.storyFrontWindow} />
-              <View style={styles.storyHeadlight} />
-              <View style={styles.storyFrontBumper} />
-              <TouchableOpacity
-                style={styles.joinTripCard}
-                onPress={handleAddStory}
-                activeOpacity={0.85}
-              >
-                <View style={styles.joinTripIconCircle}>
-                  <MaterialCommunityIcons
-                    name="plus"
-                    size={20}
-                    color="#2E7D64"
-                  />
-                </View>
-                <Text style={styles.joinTripText}>JOIN TRIP</Text>
-              </TouchableOpacity>
+      <FlatList
+        data={posts}
+        renderItem={renderItem}
+        keyExtractor={item => item.id}
+        ListHeaderComponent={listHeader}
+        ListEmptyComponent={listEmpty}
+        onEndReached={() => {
+          if (hasNextPage && !isFetchingNextPage) {
+            fetchNextPage();
+          }
+        }}
+        onEndReachedThreshold={0.6}
+        ListFooterComponent={
+          isFetchingNextPage ? (
+            <View style={{paddingVertical: 16}}>
+              {renderSkeletonItem('skeleton-footer')}
             </View>
-            <View style={styles.storyBody}>
-              {storyItems.map((item, index) => {
-                const isLast = index === storyItems.length - 1;
-                return (
-                  <TouchableOpacity
-                    key={item.id}
-                    style={[styles.storyCard, isLast && styles.storyCardLast]}
-                    activeOpacity={0.85}
-                    onPress={() => handleOpenStory(item)}
-                  >
-                    <Image
-                      source={{uri: item.imageUrl}}
-                      style={styles.storyImage}
-                      resizeMode="cover"
-                    />
-                    <View style={styles.storyLabel}>
-                      <Text style={styles.storyLabelText}>{item.title}</Text>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-          </View>
-          <View style={styles.storyRearCap} />
-          <View style={styles.storyWheelFront}>
-            <View style={styles.storyWheelInner} />
-          </View>
-          <View style={styles.storyWheelBack}>
-            <View style={styles.storyWheelInner} />
-          </View>
-        </View>
-      </ScrollView>
-    </View>
-      <View style={styles.roadSeparator} />
-      {posts.map(item => (
-        <View key={item.id}>{renderItem({item})}</View>
-      ))}
+          ) : null
+        }
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{paddingBottom: 24}}
+        style={{flex: 1}}
+      />
 
       <Modal
         transparent
@@ -1023,7 +1101,7 @@ export default function FeedTab({refreshTrigger, profile}: FeedTabProps) {
                 <Image
                   source={{uri: activeStory.imageUrl}}
                   style={styles.storyModalImage}
-                  resizeMode="cover"
+                  contentFit="cover"
                 />
               ) : null}
             </View>
