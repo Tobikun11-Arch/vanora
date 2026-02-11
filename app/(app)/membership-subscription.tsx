@@ -53,6 +53,18 @@ export default function MembershipSubscriptionScreen() {
   const {isSubscribed, refresh: refreshSubscription} =
     useRevenueCatSubscription();
 
+  const showCancelledToast = () => {
+    try {
+      showToast(
+        'info',
+        'Purchase Cancelled',
+        "You didn't complete the subscription."
+      );
+    } catch (toastError) {
+      console.warn('[Toast] Cancelled toast error:', toastError);
+    }
+  };
+
   useEffect(() => {
     if (!isMechanic && selectedPlan === 'mechanic') {
       setSelectedPlan('vanora');
@@ -110,7 +122,10 @@ export default function MembershipSubscriptionScreen() {
       }
       const result = await revenueCatService.purchasePlan(effectivePlan);
       if (!result.success) {
-        console.warn('[RevenueCat] Purchase failed:', result.reason);
+        if (result.reason === 'cancelled') {
+          showCancelledToast();
+          return;
+        }
         showToast('error', 'Subscription Failed', 'Please try again.');
         return;
       }
