@@ -2,7 +2,13 @@ import {StyleSheet} from 'react-native';
 
 export const feedTabStyles = StyleSheet.create({
   tabContent: {
+    flex: 1,
     padding: 18,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: '#F4F7F6'
   },
   createBar: {
