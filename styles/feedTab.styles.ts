@@ -83,7 +83,7 @@ export const feedTabStyles = StyleSheet.create({
     borderBottomRightRadius: 0,
     overflow: 'hidden',
     paddingTop: 16,
-    paddingLeft: 16,
+    paddingLeft: 0,
      borderWidth: 1,
     borderColor: '#E3EAE6',
     shadowColor: '#0B1D18',

@@ -321,6 +321,19 @@ export default function NotificationsTab() {
       },
       ...prev
     ]);
+    setCommunityChats(prev => ({
+      ...prev,
+      [trimmedName]: [
+        {
+          id: `${trimmedName}-vanora-created`,
+          sender: 'them',
+          text: `Your community "${trimmedName}" was created successfully. Invite members and start the conversation.`,
+          timestamp: 'Just now',
+          senderName: 'Vanora',
+          senderAvatar: require('../../assets/images/vanora.png')
+        }
+      ]
+    }));
     resetCreateCommunityForm();
     setShowCreateCommunityModal(false);
   };
