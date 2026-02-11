@@ -1,6 +1,6 @@
 import { homeTabStyles as styles } from "@/styles";
 import { useEffect, useMemo, useState } from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 import EventsTab from "./home/EventsTab";
 import FeedTab from "./home/FeedTab";
 import FindMatchTab from "./home/FindMatchTab";
@@ -108,13 +108,9 @@ export default function HomeTab({ profile }: HomeTabProps) {
       {/* Tab Content */}
       <View style={styles.scrollContainer}>
         <View style={tabVisibilityStyle("findMatch")}>{findMatchTab}</View>
-        <ScrollView
-          style={[styles.scrollContainer, tabVisibilityStyle("feed")]}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
+        <View style={[styles.scrollContainer, tabVisibilityStyle("feed")]}>
           {feedTab}
-        </ScrollView>
+        </View>
         <View style={tabVisibilityStyle("events")}>{eventsTab}</View>
       </View>
 

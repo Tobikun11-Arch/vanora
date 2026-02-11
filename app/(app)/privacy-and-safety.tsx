@@ -1,11 +1,11 @@
 import {useUserStore} from '@/store/userStore';
 import {MaterialCommunityIcons} from '@expo/vector-icons';
-import * as Location from 'expo-location';
 import {useRouter} from 'expo-router';
 import React, {useEffect, useMemo, useState} from 'react';
 import {
   Platform,
   SafeAreaView,
+  Image,
   ScrollView,
   StyleSheet,
   StatusBar,
@@ -14,7 +14,6 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import MapView, {Circle, Marker} from 'react-native-maps';
 
 type LocationPrecision = 'approximate' | 'exact';
 const STATUS_BAR_HEIGHT =
@@ -31,6 +30,8 @@ export default function PrivacyAndSafetyScreen() {
     longitude: number;
   } | null>(null);
   const [isGeocoding, setIsGeocoding] = useState(false);
+  const [mapImageUrl, setMapImageUrl] = useState<string | null>(null);
+  const geoapifyKey = process.env.EXPO_PUBLIC_GEOAPIFY_API_KEY;
 
   const [showOnMap, setShowOnMap] = useState(true);
   const [parkedMode, setParkedMode] = useState(true);
@@ -76,44 +77,70 @@ export default function PrivacyAndSafetyScreen() {
     };
   }, [mapCoords, locationPrecision]);
 
-useEffect(() => {
-  let isMounted = true;
+  useEffect(() => {
+    let isMounted = true;
 
-  const fetchCurrentLocation = async () => {
-    try {
-      // Ask for permission
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        console.warn("Permission to access location was denied");
+    const fetchGeocode = async () => {
+      const locationQuery = profile?.current_location?.trim();
+      if (!locationQuery || !geoapifyKey) {
+        if (isMounted) {
+          setMapCoords(null);
+          setMapImageUrl(null);
+        }
         return;
       }
 
-      // Get current GPS position
-      const pos = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High
-      });
+      try {
+        setIsGeocoding(true);
+        const encoded = encodeURIComponent(locationQuery);
+        const url = `https://api.geoapify.com/v1/geocode/search?text=${encoded}&limit=1&format=json&apiKey=${geoapifyKey}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        const result = data?.results?.[0];
+        if (!result) {
+          if (isMounted) {
+            setMapCoords(null);
+            setMapImageUrl(null);
+          }
+          return;
+        }
 
-      if (isMounted) {
-        setMapCoords({
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude
-        });
+        const latitude = Number(result.lat);
+        const longitude = Number(result.lon);
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+          if (isMounted) {
+            setMapCoords(null);
+            setMapImageUrl(null);
+          }
+          return;
+        }
+
+        if (isMounted) {
+          setMapCoords({latitude, longitude});
+        }
+
+        const zoom = locationPrecision === 'exact' ? 13 : 9;
+        const staticUrl = `https://maps.geoapify.com/v1/staticmap?style=osm-carto&width=800&height=360&center=lonlat:${longitude},${latitude}&zoom=${zoom}&marker=lonlat:${longitude},${latitude};color:%231dd1a1;size:medium&apiKey=${geoapifyKey}`;
+        if (isMounted) {
+          setMapImageUrl(staticUrl);
+        }
+      } catch (err) {
+        console.error('Geoapify geocode error:', err);
+        if (isMounted) {
+          setMapCoords(null);
+          setMapImageUrl(null);
+        }
+      } finally {
+        if (isMounted) setIsGeocoding(false);
       }
-    } catch (err) {
-      console.error("Error getting current position:", err);
-      if (isMounted) setMapCoords(null);
-    } finally {
-      if (isMounted) setIsGeocoding(false);
-    }
-  };
+    };
 
-  setIsGeocoding(true);
-  fetchCurrentLocation();
+    fetchGeocode();
 
-  return () => {
-    isMounted = false;
-  };
-}, []);
+    return () => {
+      isMounted = false;
+    };
+  }, [geoapifyKey, locationPrecision, profile?.current_location]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -146,25 +173,13 @@ useEffect(() => {
 
         <View style={styles.mapCard}>
           <View style={styles.mapPreview}>
-            <MapView
-              style={StyleSheet.absoluteFillObject}
-              region={mapRegion}
-              pointerEvents="none"
-            >
-              {mapCoords ? (
-                <>
-                  <Marker coordinate={mapCoords} pinColor="#1dd1a1" />
-                  {locationPrecision === 'approximate' ? (
-                    <Circle
-                      center={mapCoords}
-                      radius={3219}
-                      strokeColor="rgba(29, 209, 161, 0.55)"
-                      fillColor="rgba(29, 209, 161, 0.18)"
-                    />
-                  ) : null}
-                </>
-              ) : null}
-            </MapView>
+            {mapImageUrl ? (
+              <Image
+                source={{uri: mapImageUrl}}
+                style={StyleSheet.absoluteFillObject}
+                resizeMode="cover"
+              />
+            ) : null}
 
             {!mapCoords && !isGeocoding ? (
               <>

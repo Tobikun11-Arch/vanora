@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   Dimensions,
   FlatList,
+  InteractionManager,
   Image,
   Modal,
   Pressable,
@@ -124,6 +125,7 @@ export default function EventsTab() {
   >(null);
   const [showAttendeesList, setShowAttendeesList] = useState(false);
   const {isSubscribed} = useRevenueCatSubscription();
+  const [imagesReady, setImagesReady] = useState(false);
 
   const dateOptions = useMemo(() => {
     const options: {label: string; value: Date}[] = [];
@@ -172,6 +174,26 @@ export default function EventsTab() {
 
     init();
   }, []);
+
+  useEffect(() => {
+    const task = InteractionManager.runAfterInteractions(() => {
+      setImagesReady(true);
+    });
+    return () => {
+      task?.cancel?.();
+    };
+  }, []);
+
+  const renderImage = (
+    source: any,
+    style: any,
+    resizeMode: 'cover' | 'contain' | 'stretch' | 'center' = 'cover'
+  ) => {
+    if (!imagesReady) {
+      return <View style={[style, styles.imagePlaceholder]} />;
+    }
+    return <Image source={source} style={style} resizeMode={resizeMode} />;
+  };
 
   const openPicker = (
     type: 'startDate' | 'startTime' | 'endDate' | 'endTime'
@@ -854,7 +876,7 @@ export default function EventsTab() {
             filteredEvents.map(event => (
               <View key={event.id} style={styles.eventCard}>
                 <View style={styles.cardImageContainer}>
-                  <Image source={event.image} style={styles.eventImage} />
+                  {renderImage(event.image, styles.eventImage, 'cover')}
                 </View>
 
                 <View style={styles.eventInfo}>
@@ -936,7 +958,7 @@ export default function EventsTab() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <View style={styles.modalImageContainer}>
-              <Image source={selectedEvent.image} style={styles.modalImage} />
+              {renderImage(selectedEvent.image, styles.modalImage, 'cover')}
 
               <View style={styles.eventTagContainer}>
                 <Text style={styles.eventTag}>{selectedEvent.eventType}</Text>
@@ -1100,14 +1122,15 @@ export default function EventsTab() {
                 </View>
                 <View style={styles.avatarContainer}>
                   {avatarList.map((attendee, index) => (
-                    <Image
+                    <View
                       key={`${attendee.name}-${index}`}
-                      source={attendee.avatar}
                       style={[
                         styles.avatarSmall,
-                        {marginLeft: index > 0 ? -8 : 0}
+                        {marginLeft: index > 0 ? -8 : 0, overflow: 'hidden'}
                       ]}
-                    />
+                    >
+                      {renderImage(attendee.avatar, styles.avatarSmall, 'cover')}
+                    </View>
                   ))}
                 </View>
                 {showAttendeesList && (
@@ -1117,10 +1140,7 @@ export default function EventsTab() {
                         key={`${attendee.name}-${index}`}
                         style={styles.attendeeRow}
                       >
-                        <Image
-                          source={attendee.avatar}
-                          style={styles.attendeeAvatar}
-                        />
+                        {renderImage(attendee.avatar, styles.attendeeAvatar, 'cover')}
                         <View style={styles.attendeeText}>
                           <Text style={styles.attendeeName}>
                             {attendee.name}
@@ -1195,10 +1215,7 @@ export default function EventsTab() {
                   activeOpacity={0.8}
                 >
                   {eventImageUri ? (
-                    <Image
-                      source={{uri: eventImageUri}}
-                      style={styles.imagePreview}
-                    />
+                    renderImage({uri: eventImageUri}, styles.imagePreview, 'cover')
                   ) : (
                     <>
                       <MaterialCommunityIcons
@@ -1478,14 +1495,13 @@ export default function EventsTab() {
                               style={styles.friendItem}
                               onPress={() => toggleInvitee(friend.id)}
                             >
-                              <Image
-                                source={
-                                  friend.avatar
-                                    ? {uri: friend.avatar}
-                                    : require('../../../assets/images/vanora.png')
-                                }
-                                style={styles.friendAvatar}
-                              />
+                              {renderImage(
+                                friend.avatar
+                                  ? {uri: friend.avatar}
+                                  : require('../../../assets/images/vanora.png'),
+                                styles.friendAvatar,
+                                'cover'
+                              )}
                               <Text style={styles.friendName}>
                                 {friend.name}
                               </Text>
@@ -1906,6 +1922,9 @@ const styles = StyleSheet.create({
     color: '#999999',
     textAlign: 'center',
     marginTop: 40
+  },
+  imagePlaceholder: {
+    backgroundColor: '#E5E7EB'
   },
   modalOverlay: {
     position: 'absolute',

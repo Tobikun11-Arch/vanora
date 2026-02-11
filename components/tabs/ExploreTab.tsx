@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   Dimensions,
   Image,
+  InteractionManager,
   Modal,
   Platform,
   ScrollView,
@@ -25,6 +26,7 @@ const STATUS_BAR_HEIGHT =
 
 export default function ExploreTab() {
   const [activeTab, setActiveTab] = useState("news");
+  const [imagesReady, setImagesReady] = useState(false);
   const [selectedSpotlight, setSelectedSpotlight] = useState<null | {
     id: string;
     name: string;
@@ -217,6 +219,26 @@ export default function ExploreTab() {
     }
   }, [activeQuestId, cameraPermission?.granted, requestCameraPermission]);
 
+  useEffect(() => {
+    const task = InteractionManager.runAfterInteractions(() => {
+      setImagesReady(true);
+    });
+    return () => {
+      task?.cancel?.();
+    };
+  }, []);
+
+  const renderImage = (
+    source: any,
+    style: any,
+    resizeMode: "cover" | "contain" | "stretch" | "center" = "cover"
+  ) => {
+    if (!imagesReady) {
+      return <View style={[style, styles.imagePlaceholder]} />;
+    }
+    return <Image source={source} style={style} resizeMode={resizeMode} />;
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.topNavContainer}>
@@ -253,7 +275,7 @@ export default function ExploreTab() {
           </View>
 
           <TouchableOpacity style={styles.featuredCard} activeOpacity={0.9}>
-            <Image source={featuredNews.image} style={styles.featuredImage} />
+            {renderImage(featuredNews.image, styles.featuredImage, "cover")}
             <View style={styles.featuredOverlay}>
               <View style={styles.tagPill}>
                 <Text style={styles.tagText}>{featuredNews.tag}</Text>
@@ -265,7 +287,7 @@ export default function ExploreTab() {
           <View style={styles.newsList}>
             {newsItems.map((item) => (
               <View key={item.id} style={styles.newsItem}>
-                <Image source={item.image} style={styles.newsThumb} />
+                {renderImage(item.image, styles.newsThumb, "cover")}
                 <View style={styles.newsTextBlock}>
                   <Text style={styles.newsCategory}>{item.category}</Text>
                   <Text style={styles.newsTitle}>{item.title}</Text>
@@ -305,7 +327,7 @@ export default function ExploreTab() {
           >
             {communitySpotlight.map((person) => (
               <View key={person.id} style={styles.spotlightCard}>
-                <Image source={person.image} style={styles.spotlightImage} />
+                {renderImage(person.image, styles.spotlightImage, "cover")}
                 <View style={styles.spotlightContent}>
                   <Text style={styles.spotlightName}>{person.name}</Text>
                   <Text style={styles.spotlightSubtitle}>{person.subtitle}</Text>
@@ -423,7 +445,7 @@ export default function ExploreTab() {
                 <View style={styles.leaderboardRank}>
                   <Text style={styles.leaderboardRankText}>{index + 1}</Text>
                 </View>
-                <Image source={entry.image} style={styles.leaderboardAvatar} />
+                {renderImage(entry.image, styles.leaderboardAvatar, "cover")}
                 <View style={styles.leaderboardInfo}>
                   <Text style={styles.leaderboardName}>{entry.name}</Text>
                   <Text style={styles.leaderboardBadge}>{entry.badge}</Text>
@@ -447,10 +469,7 @@ export default function ExploreTab() {
           <View style={styles.modalCard}>
             {selectedSpotlight && (
               <>
-                <Image
-                  source={selectedSpotlight.image}
-                  style={styles.modalImage}
-                />
+                {renderImage(selectedSpotlight.image, styles.modalImage, "cover")}
                 <Text style={styles.modalName}>{selectedSpotlight.name}</Text>
                 <Text style={styles.modalSubtitle}>
                   {selectedSpotlight.subtitle}
@@ -504,11 +523,11 @@ export default function ExploreTab() {
             </Text>
             <View style={styles.cameraPreview}>
               {hasQuestPhoto ? (
-                <Image
-                  source={{ uri: activeQuestPhoto ?? "" }}
-                  style={styles.cameraPreviewImage}
-                  resizeMode="cover"
-                />
+                renderImage(
+                  { uri: activeQuestPhoto ?? "" },
+                  styles.cameraPreviewImage,
+                  "cover"
+                )
               ) : cameraPermission?.granted ? (
                 <CameraView
                   key={`camera-${cameraResetCounter}`}
@@ -1054,6 +1073,9 @@ const styles = StyleSheet.create({
     color: "#999999",
     textAlign: "center",
     marginTop: 40,
+  },
+  imagePlaceholder: {
+    backgroundColor: "#E5E7EB",
   },
   modalBackdrop: {
     flex: 1,
