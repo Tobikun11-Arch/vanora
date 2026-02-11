@@ -641,7 +641,7 @@ export default function FeedTab({refreshTrigger, profile}: FeedTabProps) {
   const renderStorySection = () => (
     <View style={styles.storySection}>
       <ScrollView
-        horizontal
+      horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.storyScrollContent}
       >
@@ -965,7 +965,7 @@ export default function FeedTab({refreshTrigger, profile}: FeedTabProps) {
           borderRadius: 18,
           borderWidth: 1,
           borderColor: '#E3EAE6',
-          padding: 16
+          padding: 16,
         }}
       >
         <View style={{flexDirection: 'row', alignItems: 'center', gap: 12}}>

@@ -257,7 +257,7 @@ const handleLogout = async () => {
               <MaterialCommunityIcons
                 name="crown"
                 size={60}
-                color="#F59E0B"
+                color="#2e7d64"
                 style={styles.premiumIcon}
               />
 

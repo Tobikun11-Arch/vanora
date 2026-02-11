@@ -492,7 +492,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: H_PADDING,
-    backgroundColor: '#F9FAFB'
+    backgroundColor: '#F9FAFB',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#2e7d64'
   },
   headerTitle: {
     fontSize: 20,
