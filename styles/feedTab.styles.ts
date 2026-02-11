@@ -5,6 +5,69 @@ export const feedTabStyles = StyleSheet.create({
     padding: 18,
     backgroundColor: '#F4F7F6'
   },
+  createBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: '#E3EAE6',
+    marginBottom: 8,
+    shadowColor: '#0B1D18',
+    shadowOffset: {width: 0, height: 8},
+    shadowOpacity: 0.06,
+    shadowRadius: 14,
+    elevation: 3
+  },
+  createBarLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    minWidth: 0,
+    marginRight: 10
+  },
+  createAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#D1D5DB'
+  },
+  createAvatarFallback: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    marginRight: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#D9E2DE',
+    borderWidth: 1,
+    borderColor: '#CBD5D0'
+  },
+  createPlaceholder: {
+    fontSize: 13,
+    color: '#5C6A63',
+    flexShrink: 1
+  },
+  createActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6
+  },
+  createIconButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F2F6F4',
+    borderWidth: 1,
+    borderColor: '#DDE6E1'
+  },
   tabContentTitle: {
     fontSize: 22,
     fontWeight: '700',
@@ -13,12 +76,40 @@ export const feedTabStyles = StyleSheet.create({
     letterSpacing: 0.2
   },
   storySection: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    overflow: 'hidden',
+    paddingTop: 16,
+    paddingLeft: 0,
+     borderWidth: 1,
+    borderColor: '#E3EAE6',
+    shadowColor: '#0B1D18',
+    shadowOffset: {width: 0, height: 8},
+    shadowOpacity: 0.06,
+    shadowRadius: 14,
+    elevation: 3
+  },
+  storyCardWrap: {
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+    borderRadius: 18,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#E3EAE6',
+    shadowColor: '#0B1D18',
+    shadowOffset: {width: 0, height: 8},
+    shadowOpacity: 0.06,
+    shadowRadius: 14,
+    elevation: 3
   },
   roadSeparator: {
     height: 4,
     backgroundColor: '#a8a9a9',
     borderRadius: 999,
-    marginBottom: 16
+    marginBottom: 10
   },
   storyScrollContent: {
     paddingRight: 24,

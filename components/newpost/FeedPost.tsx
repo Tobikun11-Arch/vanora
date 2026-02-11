@@ -18,7 +18,9 @@ import React, {
 } from 'react';
 import {
   Alert,
+  KeyboardAvoidingView,
   Image,
+  Platform,
   ScrollView,
   Text,
   TextInput,
@@ -64,7 +66,7 @@ const FeedPost = forwardRef<FeedPostRef, FeedPostProps>(function FeedPost(
 ) {
   const profile = useUserStore(state => state.profile);
   const [caption, setCaption] = useState('');
-  const [location, setLocation] = useState(''); // Default location
+  const [location, setLocation] = useState('Philippines');
   const [visibility, setVisibility] = useState<'everyone' | 'followers'>(
     'everyone'
   );
@@ -139,7 +141,7 @@ const FeedPost = forwardRef<FeedPostRef, FeedPostProps>(function FeedPost(
   };
 
   const clearLocation = () => {
-    setLocation('');
+    setLocation('Philippines');
   };
 
   const toggleVisibility = () => {
@@ -316,7 +318,7 @@ const FeedPost = forwardRef<FeedPostRef, FeedPostProps>(function FeedPost(
       // Success - Reset form and trigger refetch
       setCaption('');
       setMedia([]);
-      setLocation('');
+      setLocation('Philippines');
       setVisibility('everyone');
       setGearTags([]);
       setCategory(null);
@@ -369,12 +371,18 @@ const FeedPost = forwardRef<FeedPostRef, FeedPostProps>(function FeedPost(
   };
 
   return (
-    <ScrollView
+    <KeyboardAvoidingView
       style={baseStyles.container}
-      showsVerticalScrollIndicator={false}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      {/* User Info Row */}
-      <View style={userStyles.userRow}>
+      <ScrollView
+        style={baseStyles.container}
+        contentContainerStyle={baseStyles.contentContainer}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* User Info Row */}
+        <View style={userStyles.userRow}>
         <View style={userStyles.avatarContainer}>
           {profile?.profile_picture_url ? (
             <Image
@@ -400,7 +408,7 @@ const FeedPost = forwardRef<FeedPostRef, FeedPostProps>(function FeedPost(
             <MaterialCommunityIcons
               name="map-marker"
               size={14}
-              color="#4A7C59"
+              color="#2e7d64"
             />
             <Text style={userStyles.locationText}>
               {location || 'Add Location'}
@@ -413,7 +421,7 @@ const FeedPost = forwardRef<FeedPostRef, FeedPostProps>(function FeedPost(
                 <MaterialCommunityIcons
                   name="close-circle"
                   size={14}
-                  color="#9CA3AF"
+                  color="#9aa6a1"
                 />
               </TouchableOpacity>
             ) : null}
@@ -438,7 +446,7 @@ const FeedPost = forwardRef<FeedPostRef, FeedPostProps>(function FeedPost(
       <TextInput
         style={baseStyles.captionInput}
         placeholder="Share your latest adventure, tip, or question with the community..."
-        placeholderTextColor="#9CA3AF"
+        placeholderTextColor="#9aa6a1"
         multiline
         value={caption}
         onChangeText={setCaption}
@@ -469,7 +477,7 @@ const FeedPost = forwardRef<FeedPostRef, FeedPostProps>(function FeedPost(
             onPress={pickMedia}
             disabled={isSubmitting}
           >
-            <MaterialCommunityIcons name="plus" size={24} color="#4A7C59" />
+            <MaterialCommunityIcons name="plus" size={24} color="#2e7d64" />
           </TouchableOpacity>
         </View>
       ) : (
@@ -478,7 +486,7 @@ const FeedPost = forwardRef<FeedPostRef, FeedPostProps>(function FeedPost(
           onPress={pickMedia}
           disabled={isSubmitting}
         >
-          <MaterialCommunityIcons name="image-plus" size={48} color="#4A7C59" />
+          <MaterialCommunityIcons name="image-plus" size={48} color="#2e7d64" />
           <Text style={mediaStyles.mediaTitle}>Add Photo or Video</Text>
           <Text style={mediaStyles.mediaSubtitle}>
             High quality visuals get 2× more reach
@@ -495,18 +503,18 @@ const FeedPost = forwardRef<FeedPostRef, FeedPostProps>(function FeedPost(
           <MaterialCommunityIcons
             name="account-multiple"
             size={20}
-            color="#4A7C59"
+            color="#2e7d64"
           />
           <Text style={optionsStyles.optionText}>Tag Nomads</Text>
           {taggedUsers.length > 0 && (
-            <View style={[optionsStyles.badge, {backgroundColor: '#4A7C59'}]}>
+            <View style={[optionsStyles.badge, {backgroundColor: '#2e7d64'}]}>
               <Text style={optionsStyles.badgeText}>{taggedUsers.length}</Text>
             </View>
           )}
           <MaterialCommunityIcons
             name="chevron-right"
             size={20}
-            color="#9CA3AF"
+            color="#9aa6a1"
             style={optionsStyles.chevron}
           />
         </TouchableOpacity>
@@ -525,7 +533,7 @@ const FeedPost = forwardRef<FeedPostRef, FeedPostProps>(function FeedPost(
           <MaterialCommunityIcons
             name="chevron-right"
             size={20}
-            color="#9CA3AF"
+            color="#9aa6a1"
             style={optionsStyles.chevron}
           />
         </TouchableOpacity>
@@ -556,7 +564,7 @@ const FeedPost = forwardRef<FeedPostRef, FeedPostProps>(function FeedPost(
           <MaterialCommunityIcons
             name="chevron-right"
             size={20}
-            color="#9CA3AF"
+            color="#9aa6a1"
             style={optionsStyles.chevron}
           />
         </TouchableOpacity>
@@ -584,7 +592,7 @@ const FeedPost = forwardRef<FeedPostRef, FeedPostProps>(function FeedPost(
                     <MaterialCommunityIcons
                       name="account"
                       size={10}
-                      color="#4A7C59"
+                      color="#2e7d64"
                     />
                   </View>
                 )}
@@ -648,13 +656,14 @@ const FeedPost = forwardRef<FeedPostRef, FeedPostProps>(function FeedPost(
       />
 
       {/* Tag Nomads Modal */}
-      <TagNomadsModal
-        visible={tagNomadsModalVisible}
-        onClose={() => setTagNomadsModalVisible(false)}
-        selectedUsers={taggedUsers}
-        onUpdateUsers={setTaggedUsers}
-      />
-    </ScrollView>
+        <TagNomadsModal
+          visible={tagNomadsModalVisible}
+          onClose={() => setTagNomadsModalVisible(false)}
+          selectedUsers={taggedUsers}
+          onUpdateUsers={setTaggedUsers}
+        />
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 });
 

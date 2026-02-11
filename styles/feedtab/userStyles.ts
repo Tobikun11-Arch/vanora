@@ -1,22 +1,35 @@
-import {StyleSheet} from 'react-native';
+import {Dimensions, StyleSheet} from 'react-native';
+
+const {width, height} = Dimensions.get('window');
+const scale = Math.min(Math.min(width, height) / 375, 1.2);
+const s = (value: number) => Math.round(value * scale);
+
+const COLORS = {
+  primary: '#2e7d64',
+  text: '#1f2a24',
+  muted: '#7f8b85',
+  border: '#e6efea',
+  surface: '#ffffff',
+  surfaceMuted: '#f1f5f3'
+};
 
 export const userStyles = StyleSheet.create({
   userRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12
+    paddingHorizontal: s(16),
+    paddingVertical: s(12)
   },
   avatarContainer: {
-    marginRight: 12
+    marginRight: s(12)
   },
   avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22
+    width: s(44),
+    height: s(44),
+    borderRadius: s(22)
   },
   avatarPlaceholder: {
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#eef2f1',
     justifyContent: 'center',
     alignItems: 'center'
   },
@@ -24,36 +37,45 @@ export const userStyles = StyleSheet.create({
     flex: 1
   },
   username: {
-    fontSize: 15,
+    fontSize: s(15),
     fontWeight: '600',
-    color: '#1F2937'
+    color: COLORS.text,
+    letterSpacing: 0.2
   },
   locationBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4
+    marginTop: s(2),
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: s(12),
+    paddingHorizontal: s(6),
+    paddingVertical: s(3),
+    alignSelf: 'flex-start'
   },
   locationText: {
-    fontSize: 13,
-    color: '#4A7C59',
-    marginLeft: 4
+    fontSize: s(11),
+    color: COLORS.primary,
+    marginLeft: s(4)
   },
   clearLocationBtn: {
-    marginLeft: 4
+    marginLeft: s(4)
   },
   visibilityBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: s(10),
+    paddingVertical: s(6),
+    borderRadius: s(16),
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#fff'
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.surface,
+    alignSelf: 'center'
   },
   visibilityText: {
-    fontSize: 13,
-    color: '#6B7280',
-    marginLeft: 6
+    fontSize: s(11),
+    color: COLORS.muted,
+    marginLeft: s(6)
   }
 });

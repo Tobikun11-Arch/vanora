@@ -5,7 +5,7 @@ import {MaterialCommunityIcons} from '@expo/vector-icons';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useRouter} from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import React,{useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -18,6 +18,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import {NewPostModal} from '../../newpost';
 
 interface PostMedia {
   id: string;
@@ -64,6 +65,10 @@ interface PollResultOption {
 
 interface FeedTabProps {
   refreshTrigger?: number;
+  profile?: {
+    id?: string | null;
+    profile_picture_url?: string | null;
+  };
 }
 
 const CACHE_TTL_MS = 60 * 1000;
@@ -103,8 +108,9 @@ interface StoryItem {
   imageUrl: string;
 }
 
-export default function FeedTab({refreshTrigger}: FeedTabProps) {
+export default function FeedTab({refreshTrigger, profile}: FeedTabProps) {
   const router = useRouter();
+  const [showNewPostModal, setShowNewPostModal] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [votingPollIds, setVotingPollIds] = useState<Record<string, boolean>>(
     {}
@@ -133,6 +139,10 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
   const menuButtonRefs = useRef<Record<string, View | null>>({});
 
   const storyItems = [...localStories, ...STORY_ITEMS];
+  const username = profile?.id ? 'vandora_official' : 'user';
+  const createPlaceholder = profile?.id
+    ? `What's on your mind`
+    : "What's on your mind?";
 
   useEffect(() => {
     const loadLocalStories = async () => {
@@ -407,6 +417,11 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
     }
   }, [refreshTrigger, refetch]);
 
+  const handlePostSuccess = useCallback(() => {
+    setShowNewPostModal(false);
+    refetch();
+  }, [refetch]);
+
   const voteMutation = useMutation({
     mutationFn: async ({
       pollId,
@@ -525,6 +540,45 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
     setActiveStory(null);
   };
 
+  const renderCreateBar = () => (
+    <TouchableOpacity
+      style={styles.createBar}
+      activeOpacity={0.85}
+      onPress={() => setShowNewPostModal(true)}
+    >
+      <View style={styles.createBarLeft}>
+        {profile?.profile_picture_url ? (
+          <Image
+            source={{uri: profile.profile_picture_url}}
+            style={styles.createAvatar}
+          />
+        ) : (
+          <View style={styles.createAvatarFallback}>
+            <MaterialCommunityIcons name="account" size={18} color="#6B7280" />
+          </View>
+        )}
+        <Text style={styles.createPlaceholder} numberOfLines={1}>
+          {createPlaceholder}
+        </Text>
+      </View>
+      <View style={styles.createActions}>
+        <View style={styles.createIconButton}>
+          <MaterialCommunityIcons name="camera" size={18} color="#2E7D64" />
+        </View>
+        <View style={styles.createIconButton}>
+          <MaterialCommunityIcons name="image" size={18} color="#2E7D64" />
+        </View>
+        <View style={styles.createIconButton}>
+          <MaterialCommunityIcons
+            name="emoticon-happy-outline"
+            size={18}
+            color="#2E7D64"
+          />
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
   const renderItem = ({item}: {item: FeedPost}) => {
     const author = item.profiles;
     const authorId = author?.id || item.user_id;
@@ -551,6 +605,7 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
     const isShared = !!sharedPostIds[item.id];
     const likeCount = likeCounts[item.id] ?? item.likes_count;
     const shareCount = shareCounts[item.id] ?? 0;
+    const isOwnPost = !!currentUserId && authorId === currentUserId;
 
     return (
       <View style={styles.feedPost}>
@@ -605,22 +660,24 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
                     {displayName}
                   </Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.followButton,
-                    isFollowing && styles.followButtonActive
-                  ]}
-                  onPress={() => handleFollow(authorId)}
-                >
-                  <Text
+                {!isOwnPost && (
+                  <TouchableOpacity
                     style={[
-                      styles.followButtonText,
-                      isFollowing && styles.followButtonTextActive
+                      styles.followButton,
+                      isFollowing && styles.followButtonActive
                     ]}
+                    onPress={() => handleFollow(authorId)}
                   >
-                    {isFollowing ? 'Following' : 'Follow'}
-                  </Text>
-                </TouchableOpacity>
+                    <Text
+                      style={[
+                        styles.followButtonText,
+                        isFollowing && styles.followButtonTextActive
+                      ]}
+                    >
+                      {isFollowing ? 'Following' : 'Follow'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
               {!!item.location && (
                 <View style={styles.feedHeaderLocationRow}>
@@ -738,24 +795,26 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
             />
             <Text style={styles.feedActionText}>Comment</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.feedAction}
-            onPress={() => handleShare(item.id, 0)}
-          >
-            <MaterialCommunityIcons
-              name="share-variant-outline"
-              size={20}
-              color={isShared ? '#2E7D64' : '#6B7280'}
-            />
-            <Text
-              style={[
-                styles.feedActionText,
-                isShared && styles.actionActiveText
-              ]}
+          {!isOwnPost && (
+            <TouchableOpacity
+              style={styles.feedAction}
+              onPress={() => handleShare(item.id, 0)}
             >
-              {shareCount}
-            </Text>
-          </TouchableOpacity>
+              <MaterialCommunityIcons
+                name="share-variant-outline"
+                size={20}
+                color={isShared ? '#2E7D64' : '#6B7280'}
+              />
+              <Text
+                style={[
+                  styles.feedActionText,
+                  isShared && styles.actionActiveText
+                ]}
+              >
+                {shareCount}
+              </Text>
+            </TouchableOpacity>
+          )}
           {actionTags.length > 0 && (
             <View style={styles.actionTagsWrap}>
               {actionTags.map(tag => (
@@ -784,6 +843,7 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
   if (posts.length === 0) {
     return (
       <View style={styles.tabContent}>
+        {renderCreateBar()}
         <View style={styles.storySection}>
           <ScrollView
             horizontal
@@ -853,12 +913,20 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
           />
           <Text style={{marginTop: 8, color: '#9CA3AF'}}>No posts yet</Text>
         </View>
+
+        <NewPostModal
+          visible={showNewPostModal}
+          onClose={() => setShowNewPostModal(false)}
+          onPostSuccess={handlePostSuccess}
+          username={username}
+        />
       </View>
     );
   }
 
   return (
     <View style={styles.tabContent}>
+      {renderCreateBar()}
       <View style={styles.storySection}>
         <ScrollView
           horizontal
@@ -1142,6 +1210,13 @@ export default function FeedTab({refreshTrigger}: FeedTabProps) {
           </Pressable>
         </Pressable>
       </Modal>
+
+      <NewPostModal
+        visible={showNewPostModal}
+        onClose={() => setShowNewPostModal(false)}
+        onPostSuccess={handlePostSuccess}
+        username={username}
+      />
     </View>
   );
 }
