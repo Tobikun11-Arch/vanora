@@ -90,3 +90,6 @@ yarn-error.*
 database-match-photo.sql
 database-schema.sql
 storage-bucket-setup.sql
+sql/
+sql
+.sql

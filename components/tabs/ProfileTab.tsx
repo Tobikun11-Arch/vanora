@@ -6,6 +6,7 @@ import React, {useEffect, useRef, useState, useCallback} from 'react';
 import {
   ActivityIndicator,
   Dimensions,
+  InteractionManager,
   Image,
   Modal,
   ScrollView,
@@ -84,6 +85,7 @@ export default function ProfileTab({
   const {isSubscribed, isLoading, refresh} = useRevenueCatSubscription();
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(0);
+  const [imagesReady, setImagesReady] = useState(false);
   const [settingsAnchor, setSettingsAnchor] = useState<{
     x: number;
     y: number;
@@ -115,6 +117,26 @@ export default function ProfileTab({
     };
     loadCurrentUser();
   }, [currentUserId]);
+
+  useEffect(() => {
+    const task = InteractionManager.runAfterInteractions(() => {
+      setImagesReady(true);
+    });
+    return () => {
+      task?.cancel?.();
+    };
+  }, []);
+
+  const renderImage = (
+    source: any,
+    style: any,
+    resizeMode: 'cover' | 'contain' | 'stretch' | 'center' = 'cover'
+  ) => {
+    if (!imagesReady) {
+      return <View style={[style, styles.imagePlaceholder]} />;
+    }
+    return <Image source={source} style={style} resizeMode={resizeMode} />;
+  };
 
   const isOwnProfile = !!currentUserId && currentUserId === profile.id;
 
@@ -426,20 +448,21 @@ const handleLogout = async () => {
       <View style={styles.profileHeader}>
         <View style={styles.profileTopRow}>
           {/* Profile Picture */}
-          {profile.profile_picture_url ? (
-            <Image
-              source={{uri: profile.profile_picture_url}}
-              style={styles.profilePicture}
-            />
-          ) : (
-            <View style={[styles.profilePicture, styles.placeholderPicture]}>
-              <MaterialCommunityIcons
-                name="account"
-                size={60}
-                color="#9CA3AF"
-              />
-            </View>
-          )}
+          {profile.profile_picture_url
+            ? renderImage(
+                {uri: profile.profile_picture_url},
+                styles.profilePicture,
+                'cover'
+              )
+            : (
+              <View style={[styles.profilePicture, styles.placeholderPicture]}>
+                <MaterialCommunityIcons
+                  name="account"
+                  size={60}
+                  color="#9CA3AF"
+                />
+              </View>
+            )}
 
           {/* Header Stats beside avatar */}
           <View style={styles.headerStatsColumn}>
@@ -555,11 +578,11 @@ const handleLogout = async () => {
           <View style={styles.galleryGrid}>
             {profile.gallery_photos.map(photo => (
               <View key={photo.id} style={styles.galleryImageContainer}>
-                <Image
-                  source={{uri: photo.photo_url}}
-                  style={styles.galleryImage}
-                  resizeMode="cover"
-                />
+                {renderImage(
+                  {uri: photo.photo_url},
+                  styles.galleryImage,
+                  'cover'
+                )}
                 <View style={styles.photoTypeLabel}>
                   <Text style={styles.photoTypeLabelText}>
                     {photo.photo_type}
@@ -1287,6 +1310,9 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#fff',
     fontWeight: '500'
+  },
+  imagePlaceholder: {
+    backgroundColor: '#E5E7EB'
   },
   memberSection: {
     flexDirection: 'row',

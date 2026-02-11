@@ -8,6 +8,7 @@ import {useEffect, useMemo, useRef, useState} from 'react';
 import {
   Dimensions,
   Image,
+  InteractionManager,
   Keyboard,
   KeyboardAvoidingView,
   Modal,
@@ -63,6 +64,7 @@ interface DirectConnection {
 export default function NotificationsTab() {
   const {width: windowWidth} = Dimensions.get('window');
   const chatBubbleMaxWidth = Math.round(windowWidth * 0.72);
+  const [imagesReady, setImagesReady] = useState(false);
   const [showLegacyModal, setShowLegacyModal] = useState(false);
   const [showCreateCommunityModal, setShowCreateCommunityModal] =
     useState(false);
@@ -126,6 +128,26 @@ export default function NotificationsTab() {
       actor: null
     }
   ];
+
+  useEffect(() => {
+    const task = InteractionManager.runAfterInteractions(() => {
+      setImagesReady(true);
+    });
+    return () => {
+      task?.cancel?.();
+    };
+  }, []);
+
+  const renderImage = (
+    source: any,
+    style: any,
+    resizeMode: 'cover' | 'contain' | 'stretch' | 'center' = 'cover'
+  ) => {
+    if (!imagesReady) {
+      return <View style={[style, styles.imagePlaceholder]} />;
+    }
+    return <Image source={source} style={style} resizeMode={resizeMode} />;
+  };
 
   const [joinedCommunities, setJoinedCommunities] = useState([
     {
@@ -830,7 +852,7 @@ export default function NotificationsTab() {
             >
               <View style={styles.avatarWrapper}>
                 <View style={styles.avatarBadge}>
-                  <Image source={avatarSource} style={styles.avatar} />
+                  {renderImage(avatarSource, styles.avatar, 'cover')}
                 </View>
               </View>
 
@@ -911,10 +933,7 @@ export default function NotificationsTab() {
         {suggestedCommunities.map(item => (
             <View key={item.name} style={styles.communityCard}>
               <View style={styles.communityImage}>
-                <Image
-                  source={item.image}
-                  style={styles.communityImageFill}
-                />
+                {renderImage(item.image, styles.communityImageFill, 'cover')}
               </View>
               <Text style={styles.communityName}>{item.name}</Text>
               <Text style={styles.communityCreator}>{item.creator}</Text>
@@ -956,10 +975,7 @@ export default function NotificationsTab() {
               onPress={() => openCommunityChat(item)}
             >
               <View style={styles.listAvatar}>
-                <Image
-                  source={item.image}
-                  style={styles.listAvatarImage}
-                />
+                {renderImage(item.image, styles.listAvatarImage, 'cover')}
               </View>
               <View style={styles.listTextWrap}>
                 <Text style={styles.listTitle}>{item.name}</Text>
@@ -994,15 +1010,17 @@ export default function NotificationsTab() {
               >
                 <View style={styles.listAvatar}>
                   {connection.profile_picture_url ? (
-                    <Image
-                      source={{uri: connection.profile_picture_url}}
-                      style={styles.listAvatarImage}
-                    />
+                    renderImage(
+                      {uri: connection.profile_picture_url},
+                      styles.listAvatarImage,
+                      'cover'
+                    )
                   ) : (
-                    <Image
-                      source={require('../../assets/images/vanora.png')}
-                      style={styles.listAvatarImage}
-                    />
+                    renderImage(
+                      require('../../assets/images/vanora.png'),
+                      styles.listAvatarImage,
+                      'cover'
+                    )
                   )}
                   <View style={styles.onlineDot} />
                 </View>
@@ -1170,7 +1188,7 @@ export default function NotificationsTab() {
               />
             </TouchableOpacity>
             {activeChat?.avatar && (
-              <Image source={activeChat.avatar} style={styles.chatHeaderAvatar} />
+              renderImage(activeChat.avatar, styles.chatHeaderAvatar, 'cover')
             )}
             <View style={styles.chatHeaderText}>
               <Text style={styles.chatTitle}>{activeChat?.title}</Text>
@@ -1212,10 +1230,7 @@ export default function NotificationsTab() {
                   {message.sender === 'them' && (
                     <View style={styles.chatAvatarWrap}>
                       {themAvatar ? (
-                        <Image
-                          source={themAvatar}
-                          style={styles.chatAvatar}
-                        />
+                        renderImage(themAvatar, styles.chatAvatar, 'cover')
                       ) : (
                         <View style={styles.chatAvatarFallback}>
                           <MaterialCommunityIcons
@@ -1254,10 +1269,11 @@ export default function NotificationsTab() {
                   {message.sender === 'me' && (
                     <View style={styles.chatAvatarWrapMe}>
                       {userProfile?.profile_picture_url ? (
-                        <Image
-                          source={{uri: userProfile.profile_picture_url}}
-                          style={styles.chatAvatar}
-                        />
+                        renderImage(
+                          {uri: userProfile.profile_picture_url},
+                          styles.chatAvatar,
+                          'cover'
+                        )
                       ) : (
                         <View style={styles.chatAvatarFallback}>
                           <MaterialCommunityIcons
@@ -1512,6 +1528,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: '#FFFFFF'
+  },
+  imagePlaceholder: {
+    backgroundColor: '#E5E7EB'
   },
   suggestedRow: {
     flexDirection: 'row',

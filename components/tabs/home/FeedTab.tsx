@@ -8,7 +8,6 @@ import {useRouter} from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
-  ActivityIndicator,
   Alert,
   FlatList,
   Modal,
