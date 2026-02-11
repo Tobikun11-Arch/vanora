@@ -1175,7 +1175,11 @@ export default function NotificationsTab() {
         animationType="slide"
         onRequestClose={() => setChatModalVisible(false)}
       >
-        <View style={styles.chatModal}>
+        <KeyboardAvoidingView
+          style={styles.chatModal}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? TOP_BAR_PADDING : 0}
+        >
           <View style={styles.chatHeader}>
             <TouchableOpacity
               style={styles.chatBackButton}
@@ -1203,6 +1207,7 @@ export default function NotificationsTab() {
             style={styles.chatMessages}
             contentContainerStyle={styles.chatMessagesContent}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
             onContentSizeChange={() => chatScrollRef.current?.scrollToEnd({animated: true})}
           >
             {(activeChat?.type === 'community'
@@ -1290,31 +1295,26 @@ export default function NotificationsTab() {
             })}
           </ScrollView>
 
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
-          >
-            <View style={styles.chatComposer}>
-              <TextInput
-                style={styles.chatInput}
-                placeholder="Write a message..."
-                placeholderTextColor="#94A3B8"
-                value={chatDraft}
-                onChangeText={setChatDraft}
+          <View style={styles.chatComposer}>
+            <TextInput
+              style={styles.chatInput}
+              placeholder="Write a message..."
+              placeholderTextColor="#94A3B8"
+              value={chatDraft}
+              onChangeText={setChatDraft}
+            />
+            <TouchableOpacity
+              style={styles.chatSendButton}
+              onPress={handleSendMessage}
+            >
+              <MaterialCommunityIcons
+                name="send"
+                size={18}
+                color="#ffffff"
               />
-              <TouchableOpacity
-                style={styles.chatSendButton}
-                onPress={handleSendMessage}
-              >
-                <MaterialCommunityIcons
-                  name="send"
-                  size={18}
-                  color="#ffffff"
-                />
-              </TouchableOpacity>
-            </View>
-          </KeyboardAvoidingView>
-        </View>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );

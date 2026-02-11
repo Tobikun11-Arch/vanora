@@ -4,7 +4,7 @@
     "slug": "vanora",
     "version": "3.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/vanoralogo.png",
+    "icon": "./assets/images/vanoraforlogo.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/images/vanora.png",
@@ -17,6 +17,7 @@
     "ios": {},
     "android": {
       "package": "com.shipyard.vanora",
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "backgroundColor": "#ffffff"
       },
