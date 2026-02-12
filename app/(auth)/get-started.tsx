@@ -1,7 +1,7 @@
-import ScrollViewComponent from "@/features/auth/get-started/components/ScrollView";
-import {width} from "@/features/auth/get-started/constants";
-import {cardsData} from "@/features/auth/get-started/data";
-import {styles} from "@/features/auth/get-started/style";
+import ScrollViewComponent from "@/components/auth/get-started/components/ScrollView";
+import {width} from "@/components/auth/get-started/constants";
+import {cardsData} from "@/components/auth/get-started/data";
+import {styles} from "@/components/auth/get-started/style";
 import {useRouter} from "expo-router";
 import React, {useEffect, useRef, useState} from "react";
 import {Image, ImageBackground, ScrollView, Text, View} from "react-native";

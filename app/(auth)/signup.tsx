@@ -1,7 +1,7 @@
-import {styles} from '@/features/auth/signup/style';
-import {MaterialCommunityIcons} from '@expo/vector-icons';
-import {useRouter} from 'expo-router';
-import React, {useState} from 'react';
+import {styles} from "@/components/auth/signup/style";
+import {MaterialCommunityIcons} from "@expo/vector-icons";
+import {useRouter} from "expo-router";
+import React, {useState} from "react";
 import {
   Image,
   ImageBackground,
@@ -9,46 +9,46 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from 'react-native';
-import {Button} from '../../components/Button';
-import {InputField} from '../../components/InputField';
-import {showToast} from '../../components/Toast';
-import {authService} from '../../services/auth.service';
+} from "react-native";
+import {Button} from "../../components/Button";
+import {InputField} from "../../components/InputField";
+import {showToast} from "../../components/Toast";
+import {authService} from "../../services/auth.service";
 
 export default function SignupScreen() {
   const router = useRouter();
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({
-    fullName: '',
-    email: '',
-    password: ''
+    fullName: "",
+    email: "",
+    password: "",
   });
 
   const validateForm = () => {
     let isValid = true;
-    const newErrors = {fullName: '', email: '', password: ''};
+    const newErrors = {fullName: "", email: "", password: ""};
 
     if (!fullName.trim()) {
-      newErrors.fullName = 'Full name is required';
+      newErrors.fullName = "Full name is required";
       isValid = false;
     }
 
     if (!email) {
-      newErrors.email = 'Email is required';
+      newErrors.email = "Email is required";
       isValid = false;
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = 'Please enter a valid email';
+      newErrors.email = "Please enter a valid email";
       isValid = false;
     }
 
     if (!password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = "Password is required";
       isValid = false;
     } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = "Password must be at least 6 characters";
       isValid = false;
     }
 
@@ -63,14 +63,14 @@ export default function SignupScreen() {
     const result = await authService.signUp(email, password, fullName);
 
     if (result.success) {
-      showToast('success', 'Success', 'Account created successfully');
-      router.replace('/(profile)/step-1');
+      showToast("success", "Success", "Account created successfully");
+      router.replace("/(profile)/step-1");
     } else {
-      if (result.error?.includes('already registered')) {
-        showToast('error', 'Error', 'Email already registered. Please login.');
-        router.push('/(auth)/login');
+      if (result.error?.includes("already registered")) {
+        showToast("error", "Error", "Email already registered. Please login.");
+        router.push("/(auth)/login");
       } else {
-        showToast('error', 'Signup Failed', result.error);
+        showToast("error", "Signup Failed", result.error);
       }
     }
 
@@ -79,13 +79,13 @@ export default function SignupScreen() {
 
   const handleGoogleSignup = async () => {
     setLoading(true);
-    showToast('info', 'Coming Soon', 'Google signup is being configured');
+    showToast("info", "Coming Soon", "Google signup is being configured");
     setLoading(false);
   };
 
   const handleAzureSignup = async () => {
     setLoading(true);
-    showToast('info', 'Coming Soon', 'Azure signup is being configured');
+    showToast("info", "Coming Soon", "Azure signup is being configured");
     setLoading(false);
   };
 
@@ -97,14 +97,14 @@ export default function SignupScreen() {
       >
         <ImageBackground
           source={{
-            uri: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=1000&auto=format&fit=crop'
+            uri: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=1000&auto=format&fit=crop",
           }}
           style={styles.topBackground}
         >
           <View style={styles.topOverlay} />
           <View style={styles.headerRow}>
             <Image
-              source={require('../../assets/images/vanora-logo-only.png')}
+              source={require("../../assets/images/vanora-logo-only.png")}
               style={styles.logoImage}
               resizeMode="contain"
             />
@@ -183,7 +183,7 @@ export default function SignupScreen() {
 
           <View style={styles.loginRow}>
             <Text style={styles.haveText}>Already have an account? </Text>
-            <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
+            <TouchableOpacity onPress={() => router.push("/(auth)/login")}>
               <Text style={styles.loginLink}>Log In</Text>
             </TouchableOpacity>
           </View>

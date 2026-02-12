@@ -1,44 +1,44 @@
-import {supabase} from '@/services/supabase';
-import {MaterialCommunityIcons} from '@expo/vector-icons';
-import {useRouter} from 'expo-router';
-import React, {useState} from 'react';
-import {styles} from '@/features/auth/login/style';
+import {styles} from "@/components/auth/login/style";
+import {supabase} from "@/services/supabase";
+import {MaterialCommunityIcons} from "@expo/vector-icons";
+import {useRouter} from "expo-router";
+import React, {useState} from "react";
 import {
   Image,
   ImageBackground,
   Text,
   TouchableOpacity,
   View,
-} from 'react-native';
-import {Button} from '../../components/Button';
-import {InputField} from '../../components/InputField';
-import {showToast} from '../../components/Toast';
-import {authService} from '../../services/auth.service';
+} from "react-native";
+import {Button} from "../../components/Button";
+import {InputField} from "../../components/InputField";
+import {showToast} from "../../components/Toast";
+import {authService} from "../../services/auth.service";
 
 export default function LoginScreen() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState({email: '', password: ''});
+  const [errors, setErrors] = useState({email: "", password: ""});
 
   const validateForm = () => {
     let isValid = true;
-    const newErrors = {email: '', password: ''};
+    const newErrors = {email: "", password: ""};
 
     if (!email) {
-      newErrors.email = 'Email is required';
+      newErrors.email = "Email is required";
       isValid = false;
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = 'Please enter a valid email';
+      newErrors.email = "Please enter a valid email";
       isValid = false;
     }
 
     if (!password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = "Password is required";
       isValid = false;
     } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = "Password must be at least 6 characters";
       isValid = false;
     }
 
@@ -53,41 +53,41 @@ export default function LoginScreen() {
     const result = await authService.signIn(email, password);
 
     if (result.success) {
-      showToast('success', 'Success', 'Login successful');
+      showToast("success", "Success", "Login successful");
 
       // Check if user has a profile
       try {
         const {
-          data: {user}
+          data: {user},
         } = await supabase.auth.getUser();
 
         if (user) {
           const {data} = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
+            .from("profiles")
+            .select("*")
+            .eq("id", user.id)
             .single();
 
           if (data) {
-            router.replace('/(app)/dashboard');
+            router.replace("/(app)/dashboard");
           } else {
-            router.replace('/(profile)/step-1');
+            router.replace("/(profile)/step-1");
           }
         } else {
-          router.replace('/(profile)/step-1');
+          router.replace("/(profile)/step-1");
         }
       } catch (error) {
-        console.error('Error checking profile:', error);
-        router.replace('/(profile)/step-1');
+        console.error("Error checking profile:", error);
+        router.replace("/(profile)/step-1");
       }
     } else {
-      if (result.error?.includes('Invalid login credentials')) {
-        showToast('error', 'Error', 'Invalid email or password');
-      } else if (result.error?.includes('not found')) {
-        showToast('error', 'Account Not Found', 'Please sign up first');
-        router.push('/(auth)/signup');
+      if (result.error?.includes("Invalid login credentials")) {
+        showToast("error", "Error", "Invalid email or password");
+      } else if (result.error?.includes("not found")) {
+        showToast("error", "Account Not Found", "Please sign up first");
+        router.push("/(auth)/signup");
       } else {
-        showToast('error', 'Login Failed', result.error);
+        showToast("error", "Login Failed", result.error);
       }
     }
 
@@ -96,32 +96,32 @@ export default function LoginScreen() {
 
   const handleGoogleLogin = async () => {
     setLoading(true);
-    showToast('info', 'Coming Soon', 'Google login is being configured');
+    showToast("info", "Coming Soon", "Google login is being configured");
     setLoading(false);
   };
 
   const handleAzureLogin = async () => {
     setLoading(true);
-    showToast('info', 'Coming Soon', 'Azure login is being configured');
+    showToast("info", "Coming Soon", "Azure login is being configured");
     setLoading(false);
   };
 
   const handleForgotPassword = () => {
-    showToast('info', 'Coming Soon', 'Password reset is being configured');
+    showToast("info", "Coming Soon", "Password reset is being configured");
   };
 
   return (
     <View style={styles.screen}>
       <ImageBackground
         source={{
-          uri: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=1000&auto=format&fit=crop'
+          uri: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=1000&auto=format&fit=crop",
         }}
         style={styles.topBackground}
       >
         <View style={styles.topOverlay} />
         <View style={styles.headerRow}>
           <Image
-            source={require('../../assets/images/vanora-logo-only.png')}
+            source={require("../../assets/images/vanora-logo-only.png")}
             style={styles.logoImage}
             resizeMode="contain"
           />
@@ -196,7 +196,7 @@ export default function LoginScreen() {
 
         <View style={styles.signupRow}>
           <Text style={styles.newText}>New to Vanora? </Text>
-          <TouchableOpacity onPress={() => router.push('/(auth)/signup')}>
+          <TouchableOpacity onPress={() => router.push("/(auth)/signup")}>
             <Text style={styles.signupLink}>Sign Up</Text>
           </TouchableOpacity>
         </View>
