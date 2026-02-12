@@ -77,7 +77,6 @@ export default function Step2Screen() {
       showToast('success', 'Location Found', locationName);
     } catch (error) {
       console.error('Location error:', error);
-      showToast('error', 'Location Error', 'Failed to get current location');
     } finally {
       setLoadingLocation(false);
     }

@@ -347,7 +347,6 @@ export default function FindTechTab() {
       showToast('success', 'Location Found', locationName);
     } catch (error) {
       console.error('Location error:', error);
-      showToast('error', 'Location Error', 'Failed to get current location');
     } finally {
       setLoadingSignalLocation(false);
     }
@@ -1442,7 +1441,7 @@ export default function FindTechTab() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Hire Mechanic</Text>
+              <Text style={styles.modalTitle}>Hire Builder</Text>
               <TouchableOpacity onPress={() => setShowHireModal(false)}>
                 <MaterialCommunityIcons
                   name="close"
