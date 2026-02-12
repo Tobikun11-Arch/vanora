@@ -18,7 +18,7 @@ import {showToast} from "../../components/Toast";
 import {profileService} from "../../services/profile.service";
 import {useProfileStore} from "../../store/profileStore";
 
-import {COLORS, styles} from "@/components/onboarding/step-4/style";
+import {COLORS, styles} from "@/features/onboarding/step-4/style";
 
 export default function Step4Screen() {
   const router = useRouter();

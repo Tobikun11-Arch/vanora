@@ -1,4 +1,4 @@
-import {COLORS, styles} from "@/components/onboarding/step-2/style";
+import {COLORS, styles} from "@/features/onboarding/step-2/style";
 import {supabase} from "@/services/supabase";
 import {MaterialCommunityIcons} from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system/legacy";
@@ -23,7 +23,6 @@ import {showToast} from "../../components/Toast";
 import {profileService} from "../../services/profile.service";
 import {useProfileStore} from "../../store/profileStore";
 import {GENDERS} from "../../utils/constants";
-
 
 export default function Step2Screen() {
   const router = useRouter();

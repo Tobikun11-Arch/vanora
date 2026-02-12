@@ -1,19 +1,19 @@
-import {styles} from "@/components/auth/login/style";
-import {supabase} from "@/services/supabase";
-import {MaterialCommunityIcons} from "@expo/vector-icons";
-import {useRouter} from "expo-router";
-import React, {useState} from "react";
+import { styles } from "@/features/auth/login/style";
+import { supabase } from "@/services/supabase";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import React, { useState } from "react";
 import {
-  Image,
-  ImageBackground,
-  Text,
-  TouchableOpacity,
-  View,
+    Image,
+    ImageBackground,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
-import {Button} from "../../components/Button";
-import {InputField} from "../../components/InputField";
-import {showToast} from "../../components/Toast";
-import {authService} from "../../services/auth.service";
+import { Button } from "../../components/Button";
+import { InputField } from "../../components/InputField";
+import { showToast } from "../../components/Toast";
+import { authService } from "../../services/auth.service";
 
 export default function LoginScreen() {
   const router = useRouter();

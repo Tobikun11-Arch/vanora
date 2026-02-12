@@ -1,4 +1,4 @@
-import {COLORS, styles} from "@/components/onboarding/step-1/style";
+import {COLORS, styles} from "@/features/onboarding/step-1/style";
 import {MaterialCommunityIcons} from "@expo/vector-icons";
 import {useRouter} from "expo-router";
 import React from "react";
