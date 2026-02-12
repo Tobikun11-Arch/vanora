@@ -1529,8 +1529,16 @@ export default function FindTechTab() {
         animationType="fade"
         onRequestClose={() => setShowSignalModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
+        <KeyboardAvoidingView
+          style={styles.modalKeyboard}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 20 : 0}
+        >
+          <ScrollView
+            contentContainerStyle={styles.modalOverlay}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Send Signal</Text>
               <TouchableOpacity onPress={() => setShowSignalModal(false)}>
@@ -1608,8 +1616,9 @@ export default function FindTechTab() {
                 <Text style={styles.modalPrimaryButtonText}>Send Signal</Text>
               )}
             </TouchableOpacity>
-          </View>
-        </View>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -2279,8 +2288,11 @@ const styles = StyleSheet.create({
   statusBadgeTextNormal: {
     color: '#166534'
   },
+  modalKeyboard: {
+    flex: 1
+  },
   modalOverlay: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: 'rgba(15, 23, 42, 0.45)',
     justifyContent: 'center',
     alignItems: 'center',
