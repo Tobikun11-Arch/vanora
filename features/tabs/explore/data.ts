@@ -16,7 +16,7 @@ export const getRoadAlerts = (userLocation: string) => [
 export const getFeaturedNews = (userLocation: string) => ({
   title: `10 Best Hidden Boondocking Spots Near ${userLocation}`,
   tag: "EDITOR'S CHOICE",
-  image: require("../../assets/images/featured_news.jpg"),
+  image: require("../../../assets/images/featured_news.jpg"),
 });
 
 export const newsItems = [
@@ -26,7 +26,7 @@ export const newsItems = [
     category: "TECH + GEAR",
     time: "2 hours ago",
     read: "5 min read",
-    image: require("../../assets/images/solar_van.jpg"),
+    image: require("../../../assets/images/solar_van.jpg"),
   },
   {
     id: "2",
@@ -34,7 +34,7 @@ export const newsItems = [
     category: "WORK LIFE",
     time: "Yesterday",
     read: "4 min read",
-    image: require("../../assets/images/cozy_van.jpg"),
+    image: require("../../../assets/images/cozy_van.jpg"),
   },
 ];
 
@@ -43,7 +43,7 @@ export const communitySpotlight = [
     id: "1",
     name: "Jis & Luna",
     subtitle: "Full-timing since 2021",
-    image: require("../../assets/images/duo_camper.jpg"),
+    image: require("../../../assets/images/duo_camper.jpg"),
     location: "Sedona, AZ",
     journey: "Desert loops, red rock camps, and weekly sunrise hikes.",
   },
@@ -51,7 +51,7 @@ export const communitySpotlight = [
     id: "2",
     name: "Elena Wild",
     subtitle: "Solo Sprinter Builder",
-    image: require("../../assets/images/solo_camper.jpg"),
+    image: require("../../../assets/images/solo_camper.jpg"),
     location: "Bend, OR",
     journey: "Mountain trails by day, wood-stove nights by the river.",
   },
@@ -59,7 +59,7 @@ export const communitySpotlight = [
     id: "3",
     name: "Theo & Mina",
     subtitle: "Weekend Warriors",
-    image: require("../../assets/images/theo.jpg"),
+    image: require("../../../assets/images/theo.jpg"),
     location: "Bozeman, MT",
     journey: "Quick escapes, hot springs stops, and ski weekends.",
   },
@@ -67,7 +67,7 @@ export const communitySpotlight = [
     id: "4",
     name: "Riley Stone",
     subtitle: "Remote Dev on Wheels",
-    image: require("../../assets/images/stones.jpg"),
+    image: require("../../../assets/images/stones.jpg"),
     location: "Asheville, NC",
     journey: "Coffee shop code sprints and Blue Ridge overnights.",
   },
@@ -75,7 +75,7 @@ export const communitySpotlight = [
     id: "5",
     name: "Aria & Pax",
     subtitle: "Family Micro-Adventure",
-    image: require("../../assets/images/aria.jpg"),
+    image: require("../../../assets/images/aria.jpg"),
     location: "Moab, UT",
     journey: "School-on-the-road and nightly campfire stories.",
   },
@@ -83,7 +83,7 @@ export const communitySpotlight = [
     id: "6",
     name: "Noah Reyes",
     subtitle: "Budget Build Enthusiast",
-    image: require("../../assets/images/Noah.jpg"),
+    image: require("../../../assets/images/Noah.jpg"),
     location: "Flagstaff, AZ",
     journey: "DIY upgrades and forest service road exploring.",
   },

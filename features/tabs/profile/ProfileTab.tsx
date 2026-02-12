@@ -1,28 +1,27 @@
-import {useRevenueCatSubscription} from '@/hooks/use-revenuecat-subscription';
-import {MaterialCommunityIcons} from '@expo/vector-icons';
-import {useRouter} from 'expo-router';
-import {useFocusEffect} from '@react-navigation/native';
-import React, {useEffect, useRef, useState, useCallback} from 'react';
+import {showToast} from "@/components/Toast";
+import {useRevenueCatSubscription} from "@/hooks/use-revenuecat-subscription";
+import {supabase} from "@/services/supabase";
+import {useUserStore} from "@/store/userStore";
+import {MaterialCommunityIcons} from "@expo/vector-icons";
+import {useFocusEffect} from "@react-navigation/native";
+import {useRouter} from "expo-router";
+import React, {useCallback, useEffect, useRef, useState} from "react";
 import {
   ActivityIndicator,
   Dimensions,
-  InteractionManager,
   Image,
+  InteractionManager,
   Modal,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
-} from 'react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {authService} from '../../services/auth.service';
-import {showToast} from '../Toast';
-import Purchases from 'react-native-purchases';
-import {supabase} from '@/services/supabase';
-import {useUserStore} from '@/store/userStore';
+  View,
+} from "react-native";
+import {useSafeAreaInsets} from "react-native-safe-area-context";
+import {authService} from "../../../services/auth.service";
 
-const {width} = Dimensions.get('window');
+const {width} = Dimensions.get("window");
 const GALLERY_IMAGE_SIZE = (width - 60) / 3;
 const FALLBACK_HEADER_HEIGHT = 64;
 const SETTINGS_MENU_OFFSET = 8;
@@ -67,19 +66,19 @@ interface ProfileTabProps {
 
 export default function ProfileTab({
   profile,
-  showHeader = true
+  showHeader = true,
 }: ProfileTabProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const currentUserProfile = useUserStore(state => state.profile);
+  const currentUserProfile = useUserStore((state) => state.profile);
   const [currentUserId, setCurrentUserId] = useState<string | null>(
-    currentUserProfile?.id ?? null
+    currentUserProfile?.id ?? null,
   );
   const [isFollowing, setIsFollowing] = useState(false);
   const [isCheckingFollow, setIsCheckingFollow] = useState(false);
   const [followBusy, setFollowBusy] = useState(false);
   const [followerCount, setFollowerCount] = useState(
-    profile.followers_count ?? 0
+    profile.followers_count ?? 0,
   );
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const {isSubscribed, isLoading, refresh} = useRevenueCatSubscription();
@@ -98,7 +97,7 @@ export default function ProfileTab({
     useCallback(() => {
       // Refresh subscription whenever screen comes into focus
       refresh();
-    }, [refresh])
+    }, [refresh]),
   );
 
   useEffect(() => {
@@ -111,7 +110,7 @@ export default function ProfileTab({
     if (currentUserId) return;
     const loadCurrentUser = async () => {
       const {
-        data: {user}
+        data: {user},
       } = await supabase.auth.getUser();
       setCurrentUserId(user?.id ?? null);
     };
@@ -130,7 +129,7 @@ export default function ProfileTab({
   const renderImage = (
     source: any,
     style: any,
-    resizeMode: 'cover' | 'contain' | 'stretch' | 'center' = 'cover'
+    resizeMode: "cover" | "contain" | "stretch" | "center" = "cover",
   ) => {
     if (!imagesReady) {
       return <View style={[style, styles.imagePlaceholder]} />;
@@ -154,16 +153,16 @@ export default function ProfileTab({
       setIsCheckingFollow(true);
       try {
         const {data, error} = await supabase
-          .from('user_follows')
-          .select('follower_id')
-          .eq('follower_id', currentUserId)
-          .eq('following_id', profile.id)
+          .from("user_follows")
+          .select("follower_id")
+          .eq("follower_id", currentUserId)
+          .eq("following_id", profile.id)
           .limit(1);
 
         if (error) throw error;
         setIsFollowing((data ?? []).length > 0);
       } catch (error) {
-        console.error('Error checking follow status:', error);
+        console.error("Error checking follow status:", error);
       } finally {
         setIsCheckingFollow(false);
       }
@@ -179,54 +178,54 @@ export default function ProfileTab({
 
     try {
       if (nextFollowing) {
-        const {error} = await supabase.from('user_follows').insert({
+        const {error} = await supabase.from("user_follows").insert({
           follower_id: currentUserId,
-          following_id: profile.id
+          following_id: profile.id,
         });
         if (error) throw error;
         setIsFollowing(true);
-        setFollowerCount(prev => prev + 1);
+        setFollowerCount((prev) => prev + 1);
       } else {
         const {error} = await supabase
-          .from('user_follows')
+          .from("user_follows")
           .delete()
-          .eq('follower_id', currentUserId)
-          .eq('following_id', profile.id);
+          .eq("follower_id", currentUserId)
+          .eq("following_id", profile.id);
         if (error) throw error;
         setIsFollowing(false);
-        setFollowerCount(prev => Math.max(0, prev - 1));
+        setFollowerCount((prev) => Math.max(0, prev - 1));
       }
     } catch (error) {
-      console.error('Follow toggle error:', error);
-      showToast('error', 'Error', 'Unable to update follow status.');
+      console.error("Follow toggle error:", error);
+      showToast("error", "Error", "Unable to update follow status.");
     } finally {
       setFollowBusy(false);
     }
   };
-const handleLogout = async () => {
-  const result = await authService.signOut();
-  if (result.success) {
-    showToast('success', 'Success', 'Logged out successfully');
-    router.replace('/(auth)/get-started');
-  }
-};
+  const handleLogout = async () => {
+    const result = await authService.signOut();
+    if (result.success) {
+      showToast("success", "Success", "Logged out successfully");
+      router.replace("/(auth)/get-started");
+    }
+  };
 
   const handleSettings = () => {
     if (settingsButtonRef.current?.measureInWindow) {
       settingsButtonRef.current.measureInWindow((x, y, width, height) => {
         setSettingsAnchor({x, y, width, height});
-        setShowSettingsMenu(prev => !prev);
+        setShowSettingsMenu((prev) => !prev);
       });
       return;
     }
-    setShowSettingsMenu(prev => !prev);
+    setShowSettingsMenu((prev) => !prev);
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
@@ -301,7 +300,7 @@ const handleLogout = async () => {
                 style={styles.goPremiumButton}
                 onPress={() => {
                   setShowPremiumModal(false);
-                  router.push('/(app)/membership-subscription');
+                  router.push("/(app)/membership-subscription");
                 }}
               >
                 <Text style={styles.goPremiumButtonText}>Go Premium</Text>
@@ -337,8 +336,8 @@ const handleLogout = async () => {
                     : headerHeight > 0
                       ? headerHeight
                       : insets.top + FALLBACK_HEADER_HEIGHT,
-                paddingLeft: settingsAnchor?.x != null ? settingsAnchor.x : 16
-              }
+                paddingLeft: settingsAnchor?.x != null ? settingsAnchor.x : 16,
+              },
             ]}
           >
             <TouchableOpacity
@@ -352,7 +351,7 @@ const handleLogout = async () => {
                 style={styles.settingsMenuItem}
                 onPress={() => {
                   setShowSettingsMenu(false);
-                  router.push('/(app)/membership-subscription');
+                  router.push("/(app)/membership-subscription");
                 }}
               >
                 <Text style={styles.settingsMenuItemText}>
@@ -366,7 +365,7 @@ const handleLogout = async () => {
                 style={styles.settingsMenuItem}
                 onPress={() => {
                   setShowSettingsMenu(false);
-                  router.push('/(app)/privacy-and-safety');
+                  router.push("/(app)/privacy-and-safety");
                 }}
               >
                 <Text style={styles.settingsMenuItemText}>
@@ -382,7 +381,7 @@ const handleLogout = async () => {
       {showHeader && (
         <View
           style={styles.header}
-          onLayout={event => {
+          onLayout={(event) => {
             const {height} = event.nativeEvent.layout;
             if (height !== headerHeight) {
               setHeaderHeight(height);
@@ -448,21 +447,21 @@ const handleLogout = async () => {
       <View style={styles.profileHeader}>
         <View style={styles.profileTopRow}>
           {/* Profile Picture */}
-          {profile.profile_picture_url
-            ? renderImage(
-                {uri: profile.profile_picture_url},
-                styles.profilePicture,
-                'cover'
-              )
-            : (
-              <View style={[styles.profilePicture, styles.placeholderPicture]}>
-                <MaterialCommunityIcons
-                  name="account"
-                  size={60}
-                  color="#9CA3AF"
-                />
-              </View>
-            )}
+          {profile.profile_picture_url ? (
+            renderImage(
+              {uri: profile.profile_picture_url},
+              styles.profilePicture,
+              "cover",
+            )
+          ) : (
+            <View style={[styles.profilePicture, styles.placeholderPicture]}>
+              <MaterialCommunityIcons
+                name="account"
+                size={60}
+                color="#9CA3AF"
+              />
+            </View>
+          )}
 
           {/* Header Stats beside avatar */}
           <View style={styles.headerStatsColumn}>
@@ -474,9 +473,7 @@ const handleLogout = async () => {
                 <Text style={styles.headerStatLabel}>Posts</Text>
               </View>
               <View style={styles.headerStatItem}>
-                <Text style={styles.headerStatValue}>
-                  {followerCount}
-                </Text>
+                <Text style={styles.headerStatValue}>{followerCount}</Text>
                 <Text style={styles.headerStatLabel}>Followers</Text>
               </View>
               <View style={styles.headerStatItem}>
@@ -491,7 +488,7 @@ const handleLogout = async () => {
                 <TouchableOpacity
                   style={[
                     styles.headerActionButton,
-                    isFollowing && styles.headerActionButtonActive
+                    isFollowing && styles.headerActionButtonActive,
                   ]}
                   onPress={handleFollowToggle}
                   disabled={followBusy || isCheckingFollow}
@@ -499,10 +496,10 @@ const handleLogout = async () => {
                   <Text
                     style={[
                       styles.headerActionText,
-                      isFollowing && styles.headerActionTextActive
+                      isFollowing && styles.headerActionTextActive,
                     ]}
                   >
-                    {isFollowing ? 'Following' : 'Follow'}
+                    {isFollowing ? "Following" : "Follow"}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.headerActionButtonOutline}>
@@ -515,7 +512,7 @@ const handleLogout = async () => {
 
         {/* Name, gender, location, pronouns & nomad type */}
         <View style={styles.profileInfoContainer}>
-          <View style={{flexDirection: 'row', alignItems: 'center'}}>
+          <View style={{flexDirection: "row", alignItems: "center"}}>
             <Text style={styles.nameText}>
               {profile.display_name}, {profile.age}
             </Text>
@@ -532,11 +529,11 @@ const handleLogout = async () => {
           <View style={styles.genderRow}>
             <MaterialCommunityIcons
               name={
-                profile.gender?.toLowerCase() === 'male'
-                  ? 'gender-male'
-                  : profile.gender?.toLowerCase() === 'female'
-                    ? 'gender-female'
-                    : 'gender-male-female'
+                profile.gender?.toLowerCase() === "male"
+                  ? "gender-male"
+                  : profile.gender?.toLowerCase() === "female"
+                    ? "gender-female"
+                    : "gender-male-female"
               }
               size={14}
               color="#6B7280"
@@ -562,9 +559,7 @@ const handleLogout = async () => {
           </View>
 
           {(isOwnProfile || profile.bio) && (
-            <Text style={styles.bioText}>
-              {profile.bio || 'No bio yet.'}
-            </Text>
+            <Text style={styles.bioText}>{profile.bio || "No bio yet."}</Text>
           )}
         </View>
       </View>
@@ -576,12 +571,12 @@ const handleLogout = async () => {
         <View style={[styles.section, styles.photoGallerySection]}>
           <Text style={styles.sectionTitle}>Photo Gallery</Text>
           <View style={styles.galleryGrid}>
-            {profile.gallery_photos.map(photo => (
+            {profile.gallery_photos.map((photo) => (
               <View key={photo.id} style={styles.galleryImageContainer}>
                 {renderImage(
                   {uri: photo.photo_url},
                   styles.galleryImage,
-                  'cover'
+                  "cover",
                 )}
                 <View style={styles.photoTypeLabel}>
                   <Text style={styles.photoTypeLabelText}>
@@ -745,211 +740,211 @@ const handleLogout = async () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F9F8'
+    backgroundColor: "#F7F9F8",
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#F7F9F8',
-    alignItems: 'center',
-    justifyContent: 'center'
+    backgroundColor: "#F7F9F8",
+    alignItems: "center",
+    justifyContent: "center",
   },
   scrollContent: {
-    paddingBottom: 48
+    paddingBottom: 48,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingTop: 48,
-    paddingBottom: 12
+    paddingBottom: 12,
   },
   headerTitle: {
     fontSize: 22,
-    fontWeight: '700',
-    color: '#0F172A',
+    fontWeight: "700",
+    color: "#0F172A",
     flex: 1,
-    textAlign: 'center'
+    textAlign: "center",
   },
   headerIconButton: {
     padding: 8,
-    borderRadius: 10
+    borderRadius: 10,
   },
   headerIconSpacer: {
-    width: 40
+    width: 40,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center'
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   settingsOverlay: {
     flex: 1,
-    justifyContent: 'flex-start',
-    alignItems: 'flex-start',
-    paddingLeft: 16
+    justifyContent: "flex-start",
+    alignItems: "flex-start",
+    paddingLeft: 16,
   },
   settingsMenu: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 14,
     minWidth: 240,
-    overflow: 'hidden',
+    overflow: "hidden",
     borderWidth: 1,
-    borderColor: '#E6ECE9',
-    shadowColor: '#0F172A',
+    borderColor: "#E6ECE9",
+    shadowColor: "#0F172A",
     shadowOffset: {width: 0, height: 8},
     shadowOpacity: 0.12,
     shadowRadius: 16,
-    elevation: 8
+    elevation: 8,
   },
   settingsMenuItem: {
     paddingVertical: 14,
-    paddingHorizontal: 16
+    paddingHorizontal: 16,
   },
   settingsMenuItemText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#111827'
+    fontWeight: "600",
+    color: "#111827",
   },
   settingsMenuDivider: {
     height: 1,
-    backgroundColor: '#E5E7EB'
+    backgroundColor: "#E5E7EB",
   },
   premiumModalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 20,
     padding: 24,
-    width: '85%',
-    alignItems: 'center'
+    width: "85%",
+    alignItems: "center",
   },
   modalCloseButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 16,
     right: 16,
     padding: 8,
-    zIndex: 10
+    zIndex: 10,
   },
   premiumIcon: {
     marginTop: 16,
-    marginBottom: 16
+    marginBottom: 16,
   },
   premiumModalTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1F2937',
+    fontWeight: "bold",
+    color: "#1F2937",
     marginBottom: 12,
-    textAlign: 'center'
+    textAlign: "center",
   },
   premiumModalDescription: {
     fontSize: 14,
-    color: '#6B7280',
-    textAlign: 'center',
-    marginBottom: 24
+    color: "#6B7280",
+    textAlign: "center",
+    marginBottom: 24,
   },
   premiumFeatures: {
-    width: '100%',
+    width: "100%",
     marginBottom: 24,
-    gap: 12
+    gap: 12,
   },
   featureItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
   },
   featureText: {
     fontSize: 14,
-    color: '#374151',
-    fontWeight: '500'
+    color: "#374151",
+    fontWeight: "500",
   },
   goPremiumButton: {
-    width: '100%',
-    backgroundColor: '#2e7d64',
+    width: "100%",
+    backgroundColor: "#2e7d64",
     paddingVertical: 14,
     borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 12
+    alignItems: "center",
+    marginBottom: 12,
   },
   goPremiumButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '600'
+    fontWeight: "600",
   },
   maybeLaterText: {
-    color: '#9CA3AF',
+    color: "#9CA3AF",
     fontSize: 14,
-    fontWeight: '500'
+    fontWeight: "500",
   },
   premiumCard: {
     marginHorizontal: 16,
     marginTop: 12,
     marginBottom: 20,
-    backgroundColor: '#EAF7F0',
+    backgroundColor: "#EAF7F0",
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: '#2e7d64',
-    shadowColor: '#0F172A',
+    borderColor: "#2e7d64",
+    shadowColor: "#0F172A",
     shadowOffset: {width: 0, height: 4},
     shadowOpacity: 0.06,
     shadowRadius: 10,
-    elevation: 2
+    elevation: 2,
   },
   premiumCardContent: {
-    flexDirection: 'column',
-    alignItems: 'stretch',
+    flexDirection: "column",
+    alignItems: "stretch",
     padding: 14,
-    rowGap: 10
+    rowGap: 10,
   },
   premiumCardLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
     flex: 1,
-    minWidth: 0
+    minWidth: 0,
   },
   premiumCardText: {
     gap: 4,
     flexShrink: 1,
-    minWidth: 0
+    minWidth: 0,
   },
   premiumCardTitle: {
     fontSize: 15,
-    fontWeight: '700',
-    color: '#0F172A',
-    flexShrink: 1
+    fontWeight: "700",
+    color: "#0F172A",
+    flexShrink: 1,
   },
   premiumCardSubtitle: {
     fontSize: 12,
-    color: '#5B6B61',
-    flexShrink: 1
+    color: "#5B6B61",
+    flexShrink: 1,
   },
   premiumCardButton: {
-    backgroundColor: '#2e7d64',
+    backgroundColor: "#2e7d64",
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 12,
-    alignSelf: 'stretch',
-    alignItems: 'center'
+    alignSelf: "stretch",
+    alignItems: "center",
   },
   premiumCardButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 12,
-    fontWeight: '600'
+    fontWeight: "600",
   },
   profileHeader: {
     paddingHorizontal: 16,
     marginBottom: 16,
-    marginTop: 8
+    marginTop: 8,
   },
   profileTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
     gap: 16,
-    marginBottom: 10
+    marginBottom: 10,
   },
   profileInfoContainer: {
-    width: '100%'
+    width: "100%",
   },
   profilePicture: {
     width: 112,
@@ -957,375 +952,375 @@ const styles = StyleSheet.create({
     borderRadius: 56,
     marginBottom: 5,
     borderWidth: 2,
-    borderColor: '#2e7d64'
+    borderColor: "#2e7d64",
   },
   placeholderPicture: {
-    backgroundColor: '#F3F4F6',
-    justifyContent: 'center',
-    alignItems: 'center'
+    backgroundColor: "#F3F4F6",
+    justifyContent: "center",
+    alignItems: "center",
   },
   nameText: {
     fontSize: 22,
-    fontWeight: '800',
-    color: '#0F172A',
+    fontWeight: "800",
+    color: "#0F172A",
     marginBottom: 4,
-    textAlign: 'left',
-    letterSpacing: 0.2
+    textAlign: "left",
+    letterSpacing: 0.2,
   },
   genderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
-    marginBottom: 4
+    marginBottom: 4,
   },
   genderText: {
     fontSize: 13,
-    color: '#64748B',
-    textAlign: 'left',
-    fontWeight: '500'
+    color: "#64748B",
+    textAlign: "left",
+    fontWeight: "500",
   },
   locationRowCentered: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
     gap: 5,
-    marginBottom: 8
+    marginBottom: 8,
   },
   locationCentered: {
     fontSize: 13,
-    color: '#64748B',
-    textAlign: 'left',
-    fontWeight: '500'
+    color: "#64748B",
+    textAlign: "left",
+    fontWeight: "500",
   },
   headerStatsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flex: 1
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    flex: 1,
   },
   headerStatsColumn: {
     flex: 1,
-    gap: 0
+    gap: 0,
   },
   headerStatItem: {
-    alignItems: 'center',
-    minWidth: 60
+    alignItems: "center",
+    minWidth: 60,
   },
   headerStatValue: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#0F172A'
+    fontWeight: "700",
+    color: "#0F172A",
   },
   headerStatLabel: {
     fontSize: 12,
-    color: '#64748B'
+    color: "#64748B",
   },
   headerActionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
     marginTop: -20,
-    marginBottom: 10
+    marginBottom: 10,
   },
   headerBioRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
     gap: 6,
     marginTop: -16,
-    marginBottom: 10
+    marginBottom: 10,
   },
   headerBioLabel: {
     fontSize: 12,
-    fontWeight: '700',
-    color: '#0F172A'
+    fontWeight: "700",
+    color: "#0F172A",
   },
   headerBioText: {
     fontSize: 12,
-    fontWeight: '500',
-    color: '#475569',
-    flexShrink: 1
+    fontWeight: "500",
+    color: "#475569",
+    flexShrink: 1,
   },
   headerActionButton: {
     flex: 1,
-    backgroundColor: '#2e7d64',
+    backgroundColor: "#2e7d64",
     paddingVertical: 8,
     borderRadius: 10,
-    alignItems: 'center'
+    alignItems: "center",
   },
   headerActionButtonActive: {
-    backgroundColor: '#F3F4F6'
+    backgroundColor: "#F3F4F6",
   },
   headerActionText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#FFFFFF'
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
   headerActionTextActive: {
-    color: '#2e7d64'
+    color: "#2e7d64",
   },
   headerActionButtonOutline: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     paddingVertical: 8,
     borderRadius: 10,
-    alignItems: 'center',
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: '#2e7d64'
+    borderColor: "#2e7d64",
   },
   headerActionTextOutline: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#2e7d64'
+    fontWeight: "600",
+    color: "#2e7d64",
   },
   profileMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
-    marginBottom: 8
+    marginBottom: 8,
   },
   statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 16,
-    marginTop: 6
+    marginTop: 6,
   },
   statItem: {
-    alignItems: 'center'
+    alignItems: "center",
   },
   statValue: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#1F2937'
+    fontWeight: "700",
+    color: "#1F2937",
   },
   statLabel: {
     fontSize: 12,
-    color: '#6B7280'
+    color: "#6B7280",
   },
   nomadPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: '#ECFDF5',
+    backgroundColor: "#ECFDF5",
     borderWidth: 1,
-    borderColor: '#A7F3D0'
+    borderColor: "#A7F3D0",
   },
   nomadPillText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#2e7d64'
+    fontWeight: "600",
+    color: "#2e7d64",
   },
   verifiedStatus: {
     fontSize: 12,
-    color: '#2e7d64',
-    fontWeight: '600',
-    textAlign: 'left',
-    marginTop: 4
+    color: "#2e7d64",
+    fontWeight: "600",
+    textAlign: "left",
+    marginTop: 4,
   },
   section: {
     paddingHorizontal: 16,
-    marginBottom: 24
+    marginBottom: 24,
   },
   sectionDivider: {
     height: 2,
-    backgroundColor: '#E6ECE9',
+    backgroundColor: "#E6ECE9",
     marginHorizontal: 16,
     marginTop: 8,
-    marginBottom: 4
+    marginBottom: 4,
   },
   photoGallerySection: {
-    marginTop: 12
+    marginTop: 12,
   },
   nomadLifeSection: {
     paddingHorizontal: 16,
     marginBottom: 20,
-    marginTop: 6
+    marginTop: 6,
   },
   nomadLifeTitle: {
     fontSize: 15,
-    fontWeight: '700',
-    color: '#2e7d64',
+    fontWeight: "700",
+    color: "#2e7d64",
     marginBottom: 10,
-    textAlign: 'left',
-    letterSpacing: 0.3
+    textAlign: "left",
+    letterSpacing: 0.3,
   },
   nomadCardsContainer: {
-    flexDirection: 'row',
-    alignItems: 'stretch',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: 12
+    flexDirection: "row",
+    alignItems: "stretch",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    gap: 12,
   },
   nomadCard: {
-    width: '48%',
+    width: "48%",
     minHeight: 64,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    backgroundColor: '#FFFFFF',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    backgroundColor: "#FFFFFF",
     borderRadius: 14,
     paddingVertical: 12,
     paddingHorizontal: 12,
     gap: 8,
     borderWidth: 1,
-    borderColor: '#E6ECE9',
-    shadowColor: '#0F172A',
+    borderColor: "#E6ECE9",
+    shadowColor: "#0F172A",
     shadowOffset: {width: 0, height: 6},
     shadowOpacity: 0.06,
     shadowRadius: 12,
-    elevation: 2
+    elevation: 2,
   },
   nomadCardValue: {
     flexShrink: 1,
     fontSize: 12,
-    fontWeight: '600',
-    color: '#0F172A',
-    textAlign: 'left'
+    fontWeight: "600",
+    color: "#0F172A",
+    textAlign: "left",
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#2e7d64',
+    fontWeight: "700",
+    color: "#2e7d64",
     marginBottom: 10,
-    letterSpacing: 0.3
+    letterSpacing: 0.3,
   },
   bioText: {
     fontSize: 14,
-    color: '#475569',
-    fontWeight: '500',
+    color: "#475569",
+    fontWeight: "500",
     marginTop: 4,
-    lineHeight: 20
+    lineHeight: 20,
   },
   tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
   },
   intentTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEE2E2',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FEE2E2",
     paddingHorizontal: 13,
     paddingVertical: 8,
     borderRadius: 22,
     gap: 6,
     borderWidth: 1,
-    borderColor: '#FECACA'
+    borderColor: "#FECACA",
   },
   intentTagText: {
     fontSize: 13,
-    color: '#991B1B',
-    fontWeight: '600'
+    color: "#991B1B",
+    fontWeight: "600",
   },
   hobbyTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#DBEAFE',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#DBEAFE",
     paddingHorizontal: 13,
     paddingVertical: 8,
     borderRadius: 22,
     gap: 6,
     borderWidth: 1,
-    borderColor: '#BAE6FD'
+    borderColor: "#BAE6FD",
   },
   hobbyTagText: {
     fontSize: 13,
-    color: '#0C4A6E',
-    fontWeight: '600'
+    color: "#0C4A6E",
+    fontWeight: "600",
   },
   skillTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEF3C7',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FEF3C7",
     paddingHorizontal: 13,
     paddingVertical: 8,
     borderRadius: 22,
     gap: 5,
     borderWidth: 1,
-    borderColor: '#FDE68A'
+    borderColor: "#FDE68A",
   },
   skillTagText: {
     fontSize: 13,
-    color: '#B45309',
-    fontWeight: '600'
+    color: "#B45309",
+    fontWeight: "600",
   },
   lifestyleTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E0E7FF',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#E0E7FF",
     paddingHorizontal: 13,
     paddingVertical: 8,
     borderRadius: 22,
     gap: 6,
     borderWidth: 1,
-    borderColor: '#C7D2FE'
+    borderColor: "#C7D2FE",
   },
   lifestyleTagText: {
     fontSize: 13,
-    color: '#4338CA',
-    fontWeight: '600'
+    color: "#4338CA",
+    fontWeight: "600",
   },
   activityTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#D1FAE5',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#D1FAE5",
     paddingHorizontal: 13,
     paddingVertical: 8,
     borderRadius: 22,
     gap: 6,
     borderWidth: 1,
-    borderColor: '#A7F3D0'
+    borderColor: "#A7F3D0",
   },
   activityTagText: {
     fontSize: 13,
-    color: '#047857',
-    fontWeight: '600'
+    color: "#047857",
+    fontWeight: "600",
   },
   galleryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
   },
   galleryImageContainer: {
-    position: 'relative'
+    position: "relative",
   },
   galleryImage: {
     width: GALLERY_IMAGE_SIZE,
     height: GALLERY_IMAGE_SIZE,
-    borderRadius: 14
+    borderRadius: 14,
   },
   photoTypeLabel: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 6,
     left: 6,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: "rgba(0,0,0,0.6)",
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 6
+    borderRadius: 6,
   },
   photoTypeLabelText: {
     fontSize: 10,
-    color: '#fff',
-    fontWeight: '500'
+    color: "#fff",
+    fontWeight: "500",
   },
   imagePlaceholder: {
-    backgroundColor: '#E5E7EB'
+    backgroundColor: "#E5E7EB",
   },
   memberSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: '#E6ECE9',
-    marginHorizontal: 16
+    borderTopColor: "#E6ECE9",
+    marginHorizontal: 16,
   },
   memberSince: {
     fontSize: 13,
-    color: '#9CA3AF'
-  }
+    color: "#9CA3AF",
+  },
 });

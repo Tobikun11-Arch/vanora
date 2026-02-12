@@ -1,21 +1,21 @@
-import {showToast} from "@/components/Toast";
-import {styles} from "@/features/app/dashboard/style";
-import {TabType, UserProfile} from "@/features/app/dashboard/types";
+import { showToast } from "@/components/Toast";
+import { styles } from "@/features/app/dashboard/style";
+import { TabType, UserProfile } from "@/features/app/dashboard/types";
 import {
-  ExploreTab,
-  FindTechTab,
-  HomeTab,
-  NotificationsTab,
-  ProfileTab,
+    ExploreTab,
+    FindTechTab,
+    HomeTab,
+    NotificationsTab,
+    ProfileTab,
 } from "@/features/tabs/index";
-import {supabase} from "@/services/supabase";
-import {useUserStore} from "@/store/userStore";
-import {Feather} from "@expo/vector-icons";
-import {useRouter} from "expo-router";
-import React, {useEffect, useMemo, useState} from "react";
+import { supabase } from "@/services/supabase";
+import { useUserStore } from "@/store/userStore";
+import { Feather } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import React, { useEffect, useMemo, useState } from "react";
 
-import {Image, Text, TouchableOpacity, View, ViewStyle} from "react-native";
-import {useSafeAreaInsets} from "react-native-safe-area-context";
+import { Image, Text, TouchableOpacity, View, ViewStyle } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function DashboardScreen() {
   const router = useRouter();

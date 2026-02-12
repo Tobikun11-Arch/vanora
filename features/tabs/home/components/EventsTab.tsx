@@ -1,32 +1,32 @@
-import {MaterialCommunityIcons} from '@expo/vector-icons';
-import React, {useEffect, useMemo, useState} from 'react';
+import JoinEventModal from "@/components/JoinEventModal";
+import {showToast} from "@/components/Toast";
+import LocationSearchModal from "@/features/newpost/LocationSearchModal";
+import {useRevenueCatSubscription} from "@/hooks/use-revenuecat-subscription";
+import {useAppMutation} from "@/hooks/useAppMutation";
+import {supabase} from "@/services/supabase";
+import {useUserStore} from "@/store/userStore";
+import {MaterialCommunityIcons} from "@expo/vector-icons";
+import {useQuery, useQueryClient} from "@tanstack/react-query";
+import * as FileSystem from "expo-file-system";
+import * as ImagePicker from "expo-image-picker";
+import {useRouter} from "expo-router";
+import React, {useEffect, useMemo, useState} from "react";
 import {
   ActivityIndicator,
   Dimensions,
   FlatList,
-  InteractionManager,
   Image,
+  InteractionManager,
   Modal,
   Pressable,
-  Share,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View
-} from 'react-native';
-import {useRouter} from 'expo-router';
-import JoinEventModal from '../../JoinEventModal';
-import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system';
-import {supabase} from '../../../services/supabase';
-import {useUserStore} from '../../../store/userStore';
-import LocationSearchModal from '../../newpost/LocationSearchModal';
-import {showToast} from '../../Toast';
-import {useRevenueCatSubscription} from '@/hooks/use-revenuecat-subscription';
-import {useAppMutation} from '@/hooks/useAppMutation';
-import {useQuery, useQueryClient} from '@tanstack/react-query';
+  View,
+} from "react-native";
 
 interface Event {
   id: string;
@@ -43,7 +43,7 @@ interface Event {
   image: any;
   attendees: string;
   isJoined: boolean;
-  eventType: 'Public' | 'Private';
+  eventType: "Public" | "Private";
   description?: string | null;
   hostId?: string;
   hostName?: string;
@@ -62,7 +62,7 @@ type CreateEventPayload = {
   location: string | null;
   startAt: string;
   endAt: string;
-  visibility: 'private' | 'public';
+  visibility: "private" | "public";
   inviteeIds: string[];
 };
 
@@ -72,30 +72,30 @@ type CreateEventResult = {
 };
 
 const CACHE_TTL_MS = 60 * 1000;
-const {width: WINDOW_WIDTH, height: WINDOW_HEIGHT} = Dimensions.get('window');
+const {width: WINDOW_WIDTH, height: WINDOW_HEIGHT} = Dimensions.get("window");
 const SAFE_H_PADDING = Math.max(16, Math.round(WINDOW_WIDTH * 0.045));
 const SAFE_V_SPACING = Math.max(12, Math.round(WINDOW_HEIGHT * 0.016));
 
 export default function EventsTab() {
-  const [eventSubtab, setEventSubtab] = useState('upcoming');
+  const [eventSubtab, setEventSubtab] = useState("upcoming");
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
-  const [eventTypeFilter, setEventTypeFilter] = useState<'Private' | 'Public'>(
-    'Private'
+  const [eventTypeFilter, setEventTypeFilter] = useState<"Private" | "Public">(
+    "Private",
   );
   const router = useRouter();
   const queryClient = useQueryClient();
   const [currentUserId, setCurrentUserId] = useState<string | null | undefined>(
-    undefined
+    undefined,
   );
-  const profile = useUserStore(state => state.profile);
+  const profile = useUserStore((state) => state.profile);
   const [eventImageUri, setEventImageUri] = useState<string | null>(null);
-  const [eventTitle, setEventTitle] = useState('');
-  const [startDateLabel, setStartDateLabel] = useState('');
-  const [startTimeLabel, setStartTimeLabel] = useState('');
-  const [endDateLabel, setEndDateLabel] = useState('');
-  const [endTimeLabel, setEndTimeLabel] = useState('');
+  const [eventTitle, setEventTitle] = useState("");
+  const [startDateLabel, setStartDateLabel] = useState("");
+  const [startTimeLabel, setStartTimeLabel] = useState("");
+  const [endDateLabel, setEndDateLabel] = useState("");
+  const [endTimeLabel, setEndTimeLabel] = useState("");
   const [startDateValue, setStartDateValue] = useState<Date | null>(null);
   const [endDateValue, setEndDateValue] = useState<Date | null>(null);
   const [startTimeValue, setStartTimeValue] = useState<{
@@ -106,22 +106,22 @@ export default function EventsTab() {
     hours: number;
     minutes: number;
   } | null>(null);
-  const [eventLocation, setEventLocation] = useState('');
-  const [eventDescription, setEventDescription] = useState('');
+  const [eventLocation, setEventLocation] = useState("");
+  const [eventDescription, setEventDescription] = useState("");
   const descriptionInputRef = React.useRef<TextInput>(null);
-  const [inviteSearch, setInviteSearch] = useState('');
+  const [inviteSearch, setInviteSearch] = useState("");
   const [followers, setFollowers] = useState<
     {id: string; name: string; avatar: string | null}[]
   >([]);
   const [followersLoading, setFollowersLoading] = useState(false);
   const [followersError, setFollowersError] = useState<string | null>(null);
   const [selectedInvitees, setSelectedInvitees] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
   const [locationModalVisible, setLocationModalVisible] = useState(false);
   const [pickerVisible, setPickerVisible] = useState(false);
   const [pickerType, setPickerType] = useState<
-    'startDate' | 'startTime' | 'endDate' | 'endTime' | null
+    "startDate" | "startTime" | "endDate" | "endTime" | null
   >(null);
   const [showAttendeesList, setShowAttendeesList] = useState(false);
   const {isSubscribed} = useRevenueCatSubscription();
@@ -134,12 +134,12 @@ export default function EventsTab() {
       const next = new Date(now);
       next.setDate(now.getDate() + i);
       options.push({
-        label: next.toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric'
+        label: next.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
         }),
-        value: next
+        value: next,
       });
     }
     return options;
@@ -152,12 +152,12 @@ export default function EventsTab() {
         const date = new Date();
         date.setHours(hour, minute, 0, 0);
         options.push({
-          label: date.toLocaleTimeString('en-US', {
-            hour: 'numeric',
-            minute: '2-digit'
+          label: date.toLocaleTimeString("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
           }),
           hours: hour,
-          minutes: minute
+          minutes: minute,
         });
       }
     }
@@ -167,7 +167,7 @@ export default function EventsTab() {
   useEffect(() => {
     const init = async () => {
       const {
-        data: {user}
+        data: {user},
       } = await supabase.auth.getUser();
       setCurrentUserId(user?.id ?? null);
     };
@@ -187,7 +187,7 @@ export default function EventsTab() {
   const renderImage = (
     source: any,
     style: any,
-    resizeMode: 'cover' | 'contain' | 'stretch' | 'center' = 'cover'
+    resizeMode: "cover" | "contain" | "stretch" | "center" = "cover",
   ) => {
     if (!imagesReady) {
       return <View style={[style, styles.imagePlaceholder]} />;
@@ -196,7 +196,7 @@ export default function EventsTab() {
   };
 
   const openPicker = (
-    type: 'startDate' | 'startTime' | 'endDate' | 'endTime'
+    type: "startDate" | "startTime" | "endDate" | "endTime",
   ) => {
     setPickerType(type);
     setPickerVisible(true);
@@ -205,18 +205,18 @@ export default function EventsTab() {
   const handleSelectPickerValue = (
     value:
       | {label: string; value: Date}
-      | {label: string; hours: number; minutes: number}
+      | {label: string; hours: number; minutes: number},
   ) => {
-    if (pickerType === 'startDate' && 'value' in value) {
+    if (pickerType === "startDate" && "value" in value) {
       setStartDateLabel(value.label);
       setStartDateValue(value.value);
-    } else if (pickerType === 'startTime' && 'hours' in value) {
+    } else if (pickerType === "startTime" && "hours" in value) {
       setStartTimeLabel(value.label);
       setStartTimeValue({hours: value.hours, minutes: value.minutes});
-    } else if (pickerType === 'endDate' && 'value' in value) {
+    } else if (pickerType === "endDate" && "value" in value) {
       setEndDateLabel(value.label);
       setEndDateValue(value.value);
-    } else if (pickerType === 'endTime' && 'hours' in value) {
+    } else if (pickerType === "endTime" && "hours" in value) {
       setEndTimeLabel(value.label);
       setEndTimeValue({hours: value.hours, minutes: value.minutes});
     }
@@ -228,11 +228,11 @@ export default function EventsTab() {
   };
 
   const clearEventLocation = () => {
-    setEventLocation('');
+    setEventLocation("");
   };
 
   const toggleInvitee = (inviteeId: string) => {
-    setSelectedInvitees(prev => {
+    setSelectedInvitees((prev) => {
       const next = new Set(prev);
       if (next.has(inviteeId)) {
         next.delete(inviteeId);
@@ -245,10 +245,10 @@ export default function EventsTab() {
 
   const resolveCoverImageUrl = (value: string | null | undefined) => {
     if (!value) return null;
-    if (value.startsWith('http://') || value.startsWith('https://')) {
+    if (value.startsWith("http://") || value.startsWith("https://")) {
       return value;
     }
-    const {data} = supabase.storage.from('profiles').getPublicUrl(value);
+    const {data} = supabase.storage.from("profiles").getPublicUrl(value);
     return data?.publicUrl ?? null;
   };
 
@@ -257,24 +257,26 @@ export default function EventsTab() {
     const end = row.end_at ? new Date(row.end_at) : null;
 
     const startDate = start
-      ? start.toLocaleDateString('en-US', {month: 'short'})
-      : '';
+      ? start.toLocaleDateString("en-US", {month: "short"})
+      : "";
     const startDay = start ? start.getDate() : 0;
     const startTime = start
-      ? start.toLocaleTimeString('en-US', {
-          hour: 'numeric',
-          minute: '2-digit'
+      ? start.toLocaleTimeString("en-US", {
+          hour: "numeric",
+          minute: "2-digit",
         })
-      : '';
+      : "";
 
-    const endDate = end ? end.toLocaleDateString('en-US', {month: 'short'}) : '';
+    const endDate = end
+      ? end.toLocaleDateString("en-US", {month: "short"})
+      : "";
     const endDay = end ? end.getDate() : 0;
     const endTime = end
-      ? end.toLocaleTimeString('en-US', {
-          hour: 'numeric',
-          minute: '2-digit'
+      ? end.toLocaleTimeString("en-US", {
+          hour: "numeric",
+          minute: "2-digit",
         })
-      : '';
+      : "";
 
     const participantCount =
       row.event_participants?.[0]?.count ?? row.event_participants?.count ?? 0;
@@ -291,7 +293,7 @@ export default function EventsTab() {
 
     return {
       id: row.id,
-      title: row.title ?? 'Untitled Event',
+      title: row.title ?? "Untitled Event",
       startAt: start,
       endAt: end,
       startDay,
@@ -300,33 +302,35 @@ export default function EventsTab() {
       endDay,
       endDate,
       endTime,
-      location: row.location ?? 'TBA',
+      location: row.location ?? "TBA",
       image: coverUrl
         ? {uri: coverUrl}
-        : require('../../../assets/images/vanora.png'),
+        : require("../../../../assets/images/vanora.png"),
       attendees: `${participantCount}`,
       isJoined,
-      eventType: row.visibility === 'private' ? 'Private' : 'Public',
+      eventType: row.visibility === "private" ? "Private" : "Public",
       description: row.description,
       hostId: row.host_id,
       hostName:
         hostProfile?.display_name ||
         hostProfile?.username ||
         fallbackHostName ||
-        'Organizer',
-      hostAvatar: hostProfile?.profile_picture_url ?? fallbackHostAvatar ?? null,
-      coverImageUrl: coverUrl
+        "Organizer",
+      hostAvatar:
+        hostProfile?.profile_picture_url ?? fallbackHostAvatar ?? null,
+      coverImageUrl: coverUrl,
     };
   };
 
-
-  const fetchEvents = async (userId: string | null): Promise<EventsQueryData> => {
+  const fetchEvents = async (
+    userId: string | null,
+  ): Promise<EventsQueryData> => {
     const {data: visibleEvents, error: visibleError} = await supabase
-      .from('events')
+      .from("events")
       .select(
-        'id, title, description, location, start_at, end_at, cover_image_url, visibility, host_id, host_profile:profiles!events_host_id_fkey ( id, username, display_name, profile_picture_url ), event_participants(count)'
+        "id, title, description, location, start_at, end_at, cover_image_url, visibility, host_id, host_profile:profiles!events_host_id_fkey ( id, username, display_name, profile_picture_url ), event_participants(count)",
       )
-      .order('start_at', {ascending: true});
+      .order("start_at", {ascending: true});
 
     if (visibleError) {
       throw visibleError;
@@ -338,17 +342,17 @@ export default function EventsTab() {
 
     if (userId) {
       const {data: joinedRows, error: joinedError} = await supabase
-        .from('event_participants')
+        .from("event_participants")
         .select(
-          'event_id, events ( id, title, description, location, start_at, end_at, cover_image_url, visibility, host_id, host_profile:profiles!events_host_id_fkey ( id, username, display_name, profile_picture_url ), event_participants(count) )'
+          "event_id, events ( id, title, description, location, start_at, end_at, cover_image_url, visibility, host_id, host_profile:profiles!events_host_id_fkey ( id, username, display_name, profile_picture_url ), event_participants(count) )",
         )
-        .eq('user_id', userId);
+        .eq("user_id", userId);
 
       if (joinedError) {
         throw joinedError;
       }
 
-      (joinedRows ?? []).forEach(row => {
+      (joinedRows ?? []).forEach((row) => {
         if ((row as any).event_id) joinedIds.add((row as any).event_id);
         const event = (row as any).events;
         if (event) {
@@ -357,51 +361,51 @@ export default function EventsTab() {
       });
 
       const {data: inviteRows, error: inviteError} = await supabase
-        .from('event_invites')
-        .select('event_id')
-        .eq('invitee_id', userId);
+        .from("event_invites")
+        .select("event_id")
+        .eq("invitee_id", userId);
 
       if (inviteError) {
         throw inviteError;
       }
 
-      (inviteRows ?? []).forEach(row => {
+      (inviteRows ?? []).forEach((row) => {
         if ((row as any).event_id) invitedIds.add((row as any).event_id);
       });
     }
 
     const mappedVisible = (visibleEvents ?? [])
-      .filter(row => {
-        if (row.visibility !== 'private') return true;
+      .filter((row) => {
+        if (row.visibility !== "private") return true;
         if (!userId) return false;
         if (row.host_id === userId) return true;
         if (joinedIds.has(row.id)) return true;
         return invitedIds.has(row.id);
       })
-      .map(row => mapEventRow(row, joinedIds.has(row.id)));
+      .map((row) => mapEventRow(row, joinedIds.has(row.id)));
 
     return {
       eventList: mappedVisible,
-      joinedEvents: joinedEventRows
+      joinedEvents: joinedEventRows,
     };
   };
 
   const {
     data: eventsData,
     isLoading: eventsLoading,
-    error: eventsError
+    error: eventsError,
   } = useQuery({
-    queryKey: ['events', currentUserId],
+    queryKey: ["events", currentUserId],
     queryFn: () => fetchEvents(currentUserId ?? null),
     enabled: currentUserId !== undefined,
     staleTime: CACHE_TTL_MS,
-    gcTime: CACHE_TTL_MS * 5
+    gcTime: CACHE_TTL_MS * 5,
   });
 
   const eventList = eventsData?.eventList ?? [];
   const joinedEvents = eventsData?.joinedEvents ?? [];
   const eventsErrorMessage = eventsError
-    ? 'Unable to load events right now.'
+    ? "Unable to load events right now."
     : null;
 
   const todayStart = new Date();
@@ -414,7 +418,7 @@ export default function EventsTab() {
   };
 
   const filteredEvents = (
-    eventSubtab === 'upcoming' ? eventList : joinedEvents
+    eventSubtab === "upcoming" ? eventList : joinedEvents
   ).filter(isEventCurrentOrFuture);
 
   const handleViewEvent = (event: Event) => {
@@ -434,7 +438,7 @@ export default function EventsTab() {
 
   useEffect(() => {
     const loadFollowers = async () => {
-      if (!showCreateModal || eventTypeFilter !== 'Private') {
+      if (!showCreateModal || eventTypeFilter !== "Private") {
         return;
       }
 
@@ -446,44 +450,44 @@ export default function EventsTab() {
           profile?.id ?? (await supabase.auth.getUser()).data?.user?.id;
         if (!userId) {
           setFollowers([]);
-          setFollowersError('Unable to load followers right now.');
+          setFollowersError("Unable to load followers right now.");
           return;
         }
 
         const {data: followRows, error: followsError} = await supabase
-          .from('user_follows')
-          .select('follower_id')
-          .eq('following_id', userId);
+          .from("user_follows")
+          .select("follower_id")
+          .eq("following_id", userId);
 
         if (followsError) {
           throw followsError;
         }
 
-        const followerIds = (followRows ?? []).map(row => row.follower_id);
+        const followerIds = (followRows ?? []).map((row) => row.follower_id);
         if (followerIds.length === 0) {
           setFollowers([]);
           return;
         }
 
         const {data: profilesData, error: profilesError} = await supabase
-          .from('profiles')
-          .select('id, username, display_name, profile_picture_url')
-          .in('id', followerIds);
+          .from("profiles")
+          .select("id, username, display_name, profile_picture_url")
+          .in("id", followerIds);
 
         if (profilesError) {
           throw profilesError;
         }
 
-        const mappedFollowers = (profilesData ?? []).map(user => ({
+        const mappedFollowers = (profilesData ?? []).map((user) => ({
           id: user.id,
-          name: user.display_name || user.username || 'Unnamed user',
-          avatar: user.profile_picture_url
+          name: user.display_name || user.username || "Unnamed user",
+          avatar: user.profile_picture_url,
         }));
 
         setFollowers(mappedFollowers);
       } catch {
         setFollowers([]);
-        setFollowersError('Unable to load followers right now.');
+        setFollowersError("Unable to load followers right now.");
       } finally {
         setFollowersLoading(false);
       }
@@ -493,39 +497,39 @@ export default function EventsTab() {
   }, [eventTypeFilter, profile?.id, showCreateModal]);
 
   const handleShareEvent = async (
-    visibility: 'public' | 'private',
-    eventId: string
+    visibility: "public" | "private",
+    eventId: string,
   ) => {
     const eventLink = `https://vanora.app/events/${eventId}`;
     const shareMessage =
-      visibility === 'private'
+      visibility === "private"
         ? `You are invited! Join my private event here: ${eventLink}`
         : `Check out this event on Vanora: ${eventLink}`;
 
     await Share.share({
       message: shareMessage,
       url: eventLink,
-      title: 'Share Event'
+      title: "Share Event",
     });
   };
 
   const handleJoinEvent = async (event: Event) => {
     try {
       const {
-        data: {user}
+        data: {user},
       } = await supabase.auth.getUser();
 
       if (!user?.id) {
-        showToast('error', 'Error', 'Please sign in again.');
+        showToast("error", "Error", "Please sign in again.");
         return;
       }
 
       const {error: joinError} = await supabase
-        .from('event_participants')
+        .from("event_participants")
         .insert({
           event_id: event.id,
           user_id: user.id,
-          role: 'attendee'
+          role: "attendee",
         });
 
       if (joinError) {
@@ -534,35 +538,35 @@ export default function EventsTab() {
 
       if (currentUserId !== undefined) {
         queryClient.setQueryData<EventsQueryData>(
-          ['events', currentUserId],
-          previous => {
+          ["events", currentUserId],
+          (previous) => {
             if (!previous) return previous;
-            const updatedEventList = previous.eventList.map(item =>
-              item.id === event.id ? {...item, isJoined: true} : item
+            const updatedEventList = previous.eventList.map((item) =>
+              item.id === event.id ? {...item, isJoined: true} : item,
             );
             const alreadyJoined = previous.joinedEvents.some(
-              item => item.id === event.id
+              (item) => item.id === event.id,
             );
             const updatedJoinedEvents = alreadyJoined
               ? previous.joinedEvents
               : [...previous.joinedEvents, {...event, isJoined: true}];
             return {
               eventList: updatedEventList,
-              joinedEvents: updatedJoinedEvents
+              joinedEvents: updatedJoinedEvents,
             };
-          }
+          },
         );
-        queryClient.invalidateQueries({queryKey: ['events', currentUserId]});
+        queryClient.invalidateQueries({queryKey: ["events", currentUserId]});
       }
 
-      setSelectedEvent(prev =>
-        prev && prev.id === event.id ? {...prev, isJoined: true} : prev
+      setSelectedEvent((prev) =>
+        prev && prev.id === event.id ? {...prev, isJoined: true} : prev,
       );
 
-      showToast('success', 'Joined', 'You joined this event.');
+      showToast("success", "Joined", "You joined this event.");
     } catch (error) {
-      console.error('Error joining event:', error);
-      showToast('error', 'Error', 'Unable to join event right now.');
+      console.error("Error joining event:", error);
+      showToast("error", "Error", "Unable to join event right now.");
     }
   };
 
@@ -576,7 +580,7 @@ export default function EventsTab() {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [16, 9],
-      quality: 0.8
+      quality: 0.8,
     });
 
     if (!result.canceled && result.assets?.length) {
@@ -584,14 +588,14 @@ export default function EventsTab() {
       if (!asset?.uri) return;
 
       let resolvedUri = asset.uri;
-      if (resolvedUri.startsWith('content://')) {
+      if (resolvedUri.startsWith("content://")) {
         try {
           const safeName = asset.fileName || `event-${Date.now()}.jpg`;
-          const cacheUri = `${FileSystem.cacheDirectory ?? ''}${safeName}`;
+          const cacheUri = `${FileSystem.cacheDirectory ?? ""}${safeName}`;
           await FileSystem.copyAsync({from: resolvedUri, to: cacheUri});
           resolvedUri = cacheUri;
         } catch (error) {
-          console.warn('Failed to cache selected image:', error);
+          console.warn("Failed to cache selected image:", error);
         }
       }
 
@@ -603,22 +607,22 @@ export default function EventsTab() {
     if (!eventImageUri) return null;
 
     try {
-      const fileExt = eventImageUri.split('.').pop()?.toLowerCase() || 'jpg';
+      const fileExt = eventImageUri.split(".").pop()?.toLowerCase() || "jpg";
       const fileName = `${userId}/events/${eventId}/cover.${fileExt}`;
       const response = await fetch(eventImageUri);
       const blob = await response.blob();
       const arrayBuffer = await new Response(blob).arrayBuffer();
 
-      let contentType = 'image/jpeg';
-      if (fileExt === 'png') contentType = 'image/png';
-      if (fileExt === 'gif') contentType = 'image/gif';
-      if (fileExt === 'webp') contentType = 'image/webp';
+      let contentType = "image/jpeg";
+      if (fileExt === "png") contentType = "image/png";
+      if (fileExt === "gif") contentType = "image/gif";
+      if (fileExt === "webp") contentType = "image/webp";
 
       const {error: uploadError} = await supabase.storage
-        .from('profiles')
+        .from("profiles")
         .upload(fileName, arrayBuffer, {
           contentType,
-          upsert: true
+          upsert: true,
         });
 
       if (uploadError) {
@@ -626,46 +630,48 @@ export default function EventsTab() {
       }
 
       const {data: urlData} = supabase.storage
-        .from('profiles')
+        .from("profiles")
         .getPublicUrl(fileName);
 
       return urlData.publicUrl;
     } catch (error) {
-      console.error('Error uploading event cover:', error);
+      console.error("Error uploading event cover:", error);
       return null;
     }
   };
 
   const resetCreateForm = () => {
-    setEventTitle('');
-    setStartDateLabel('');
-    setStartTimeLabel('');
-    setEndDateLabel('');
-    setEndTimeLabel('');
+    setEventTitle("");
+    setStartDateLabel("");
+    setStartTimeLabel("");
+    setEndDateLabel("");
+    setEndTimeLabel("");
     setStartDateValue(null);
     setEndDateValue(null);
     setStartTimeValue(null);
     setEndTimeValue(null);
-    setEventLocation('');
-    setEventDescription('');
+    setEventLocation("");
+    setEventDescription("");
     setEventImageUri(null);
     setSelectedInvitees(new Set());
     setShowCreateModal(false);
   };
-  
 
-  const createEventMutation = useAppMutation<CreateEventPayload, CreateEventResult>({
-    mutationFn: async payload => {
+  const createEventMutation = useAppMutation<
+    CreateEventPayload,
+    CreateEventResult
+  >({
+    mutationFn: async (payload) => {
       const {
-        data: {user}
+        data: {user},
       } = await supabase.auth.getUser();
 
       if (!user) {
-        throw new Error('You must be logged in to create an event.');
+        throw new Error("You must be logged in to create an event.");
       }
 
       const {data: eventData, error: eventError} = await supabase
-        .from('events')
+        .from("events")
         .insert({
           host_id: user.id,
           title: payload.title,
@@ -673,7 +679,7 @@ export default function EventsTab() {
           location: payload.location,
           start_at: payload.startAt,
           end_at: payload.endAt,
-          visibility: payload.visibility
+          visibility: payload.visibility,
         })
         .select()
         .single();
@@ -685,9 +691,9 @@ export default function EventsTab() {
       const coverUrl = await uploadEventCover(eventData.id, user.id);
       if (coverUrl) {
         const {error: coverError} = await supabase
-          .from('events')
+          .from("events")
           .update({cover_image_url: coverUrl})
-          .eq('id', eventData.id);
+          .eq("id", eventData.id);
         if (coverError) {
           throw coverError;
         }
@@ -695,43 +701,43 @@ export default function EventsTab() {
       }
 
       const {error: hostError} = await supabase
-        .from('event_participants')
+        .from("event_participants")
         .insert({
           event_id: eventData.id,
           user_id: user.id,
-          role: 'host'
+          role: "host",
         });
       if (hostError) {
         throw hostError;
       }
 
-      if (payload.visibility === 'private' && payload.inviteeIds.length > 0) {
-        const inviteRows = payload.inviteeIds.map(inviteeId => ({
+      if (payload.visibility === "private" && payload.inviteeIds.length > 0) {
+        const inviteRows = payload.inviteeIds.map((inviteeId) => ({
           event_id: eventData.id,
           inviter_id: user.id,
           invitee_id: inviteeId,
-          status: 'pending'
+          status: "pending",
         }));
         const {error: invitesError} = await supabase
-          .from('event_invites')
+          .from("event_invites")
           .insert(inviteRows);
         if (invitesError) {
-          console.error('Error creating invites:', invitesError);
+          console.error("Error creating invites:", invitesError);
         } else {
           const organizerName =
-            profile?.display_name || profile?.username || 'An organizer';
-          const notificationRows = inviteRows.map(invite => ({
+            profile?.display_name || profile?.username || "An organizer";
+          const notificationRows = inviteRows.map((invite) => ({
             recipient_id: invite.invitee_id,
             actor_id: user.id,
-            type: 'general',
-            title: 'Event Invite',
-            message: `${organizerName} invited you to "${eventData.title}".`
+            type: "general",
+            title: "Event Invite",
+            message: `${organizerName} invited you to "${eventData.title}".`,
           }));
           const {error: notifError} = await supabase
-            .from('notifications')
+            .from("notifications")
             .insert(notificationRows);
           if (notifError) {
-            console.error('Error creating notifications:', notifError);
+            console.error("Error creating notifications:", notifError);
           }
         }
       }
@@ -739,29 +745,29 @@ export default function EventsTab() {
       return {
         eventRow: {
           ...eventData,
-          event_participants: [{count: 1}]
+          event_participants: [{count: 1}],
         },
-        userId: user.id
+        userId: user.id,
       };
     },
-    successMessage: 'Event posted successfully.',
-    errorMessage: 'Failed to create event. Please try again.',
+    successMessage: "Event posted successfully.",
+    errorMessage: "Failed to create event. Please try again.",
     resetForm: resetCreateForm,
-    onSuccessExtra: result => {
+    onSuccessExtra: (result) => {
       if (!result) return;
       const {eventRow, userId} = result;
       setCurrentUserId(userId);
       const mappedEvent = mapEventRow(eventRow, true);
 
       queryClient.setQueryData<EventsQueryData>(
-        ['events', userId],
-        previous => {
+        ["events", userId],
+        (previous) => {
           const safePrevious = previous ?? {eventList: [], joinedEvents: []};
           const alreadyUpcoming = safePrevious.eventList.some(
-            item => item.id === mappedEvent.id
+            (item) => item.id === mappedEvent.id,
           );
           const alreadyJoined = safePrevious.joinedEvents.some(
-            item => item.id === mappedEvent.id
+            (item) => item.id === mappedEvent.id,
           );
 
           return {
@@ -770,30 +776,25 @@ export default function EventsTab() {
               : [mappedEvent, ...safePrevious.eventList],
             joinedEvents: alreadyJoined
               ? safePrevious.joinedEvents
-              : [mappedEvent, ...safePrevious.joinedEvents]
+              : [mappedEvent, ...safePrevious.joinedEvents],
           };
-        }
+        },
       );
 
-      queryClient.invalidateQueries({queryKey: ['events', userId]});
-    }
+      queryClient.invalidateQueries({queryKey: ["events", userId]});
+    },
   });
 
   const isPosting = createEventMutation.isPending;
 
   const handlePostEvent = async () => {
     if (!eventTitle.trim()) {
-      showToast('error', 'Required', 'Please enter an event title.');
+      showToast("error", "Required", "Please enter an event title.");
       return;
     }
 
-    if (
-      !startDateValue ||
-      !startTimeValue ||
-      !endDateValue ||
-      !endTimeValue
-    ) {
-        showToast('error', 'Required', 'Please select start and end date/time.');
+    if (!startDateValue || !startTimeValue || !endDateValue || !endTimeValue) {
+      showToast("error", "Required", "Please select start and end date/time.");
       return;
     }
 
@@ -804,12 +805,16 @@ export default function EventsTab() {
     endAt.setHours(endTimeValue.hours, endTimeValue.minutes, 0, 0);
 
     if (Number.isNaN(startAt.getTime()) || Number.isNaN(endAt.getTime())) {
-      showToast('error', 'Invalid date', 'Please choose valid dates and times.');
+      showToast(
+        "error",
+        "Invalid date",
+        "Please choose valid dates and times.",
+      );
       return;
     }
 
     if (endAt < startAt) {
-      showToast('error', 'Invalid time', 'End time must be after start time.');
+      showToast("error", "Invalid time", "End time must be after start time.");
       return;
     }
 
@@ -819,8 +824,8 @@ export default function EventsTab() {
       location: eventLocation.trim() || null,
       startAt: startAt.toISOString(),
       endAt: endAt.toISOString(),
-      visibility: eventTypeFilter.toLowerCase() as 'private' | 'public',
-      inviteeIds: Array.from(selectedInvitees)
+      visibility: eventTypeFilter.toLowerCase() as "private" | "public",
+      inviteeIds: Array.from(selectedInvitees),
     });
   };
 
@@ -839,12 +844,12 @@ export default function EventsTab() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.eventSubtabs}>
-            {['Upcoming', 'Joined'].map(tab => (
+            {["Upcoming", "Joined"].map((tab) => (
               <TouchableOpacity
                 key={tab}
                 style={[
                   styles.eventSubtab,
-                  eventSubtab === tab.toLowerCase() && styles.eventSubtabActive
+                  eventSubtab === tab.toLowerCase() && styles.eventSubtabActive,
                 ]}
                 onPress={() => setEventSubtab(tab.toLowerCase())}
               >
@@ -852,7 +857,7 @@ export default function EventsTab() {
                   style={[
                     styles.eventSubtabText,
                     eventSubtab === tab.toLowerCase() &&
-                      styles.eventSubtabTextActive
+                      styles.eventSubtabTextActive,
                   ]}
                 >
                   {tab}
@@ -862,9 +867,9 @@ export default function EventsTab() {
           </View>
 
           <Text style={styles.sectionTitle}>
-            {eventSubtab === 'upcoming'
-              ? 'Upcoming Gatherings'
-              : 'My Gatherings'}
+            {eventSubtab === "upcoming"
+              ? "Upcoming Gatherings"
+              : "My Gatherings"}
           </Text>
           {eventsLoading ? (
             <Text style={styles.placeholderText}>Loading events...</Text>
@@ -873,10 +878,10 @@ export default function EventsTab() {
           ) : filteredEvents.length === 0 ? (
             <Text style={styles.placeholderText}>No events yet.</Text>
           ) : (
-            filteredEvents.map(event => (
+            filteredEvents.map((event) => (
               <View key={event.id} style={styles.eventCard}>
                 <View style={styles.cardImageContainer}>
-                  {renderImage(event.image, styles.eventImage, 'cover')}
+                  {renderImage(event.image, styles.eventImage, "cover")}
                 </View>
 
                 <View style={styles.eventInfo}>
@@ -888,7 +893,9 @@ export default function EventsTab() {
                         size={12}
                         color="#2E7D64"
                       />
-                      <Text style={styles.eventAttendees}>{event.attendees}</Text>
+                      <Text style={styles.eventAttendees}>
+                        {event.attendees}
+                      </Text>
                     </View>
                   </View>
 
@@ -936,8 +943,8 @@ export default function EventsTab() {
                     style={styles.shareButton}
                     onPress={() =>
                       handleShareEvent(
-                        event.eventType === 'Private' ? 'private' : 'public',
-                        event.id
+                        event.eventType === "Private" ? "private" : "public",
+                        event.id,
                       )
                     }
                   >
@@ -958,7 +965,7 @@ export default function EventsTab() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <View style={styles.modalImageContainer}>
-              {renderImage(selectedEvent.image, styles.modalImage, 'cover')}
+              {renderImage(selectedEvent.image, styles.modalImage, "cover")}
 
               <View style={styles.eventTagContainer}>
                 <Text style={styles.eventTag}>{selectedEvent.eventType}</Text>
@@ -978,8 +985,10 @@ export default function EventsTab() {
                 style={styles.modalShareButton}
                 onPress={() =>
                   handleShareEvent(
-                    selectedEvent.eventType === 'Private' ? 'private' : 'public',
-                    selectedEvent.id
+                    selectedEvent.eventType === "Private"
+                      ? "private"
+                      : "public",
+                    selectedEvent.id,
                   )
                 }
               >
@@ -1066,93 +1075,107 @@ export default function EventsTab() {
                 {(() => {
                   const attendeeSamples = [
                     {
-                      name: 'Raya Peak',
-                      meta: 'Weekend hiker · 2y on the road',
-                      avatar: require('../../../assets/images/aria.jpg')
+                      name: "Raya Peak",
+                      meta: "Weekend hiker · 2y on the road",
+                      avatar: require("../../../../assets/images/aria.jpg"),
                     },
                     {
-                      name: 'Maya Trail',
-                      meta: 'Remote dev · Loves forest roads',
-                      avatar: require('../../../assets/images/solo_camper.jpg')
+                      name: "Maya Trail",
+                      meta: "Remote dev · Loves forest roads",
+                      avatar: require("../../../../assets/images/solo_camper.jpg"),
                     },
                     {
-                      name: 'Liam Nomad',
-                      meta: 'Photographer · Mountain routes',
-                      avatar: require('../../../assets/images/Noah.jpg')
+                      name: "Liam Nomad",
+                      meta: "Photographer · Mountain routes",
+                      avatar: require("../../../../assets/images/Noah.jpg"),
                     },
                     {
-                      name: 'Duo Camper',
-                      meta: 'Couple · Sunrise chasers',
-                      avatar: require('../../../assets/images/duo_camper.jpg')
-                    }
+                      name: "Duo Camper",
+                      meta: "Couple · Sunrise chasers",
+                      avatar: require("../../../../assets/images/duo_camper.jpg"),
+                    },
                   ];
                   const attendeeCount = Math.max(
                     0,
-                    Number.parseInt(selectedEvent.attendees, 10) || 0
+                    Number.parseInt(selectedEvent.attendees, 10) || 0,
                   );
                   const attendeeList =
                     attendeeCount > 0
-                      ? Array.from({length: attendeeCount}, (_, i) =>
-                          attendeeSamples[i % attendeeSamples.length]
+                      ? Array.from(
+                          {length: attendeeCount},
+                          (_, i) => attendeeSamples[i % attendeeSamples.length],
                         )
                       : attendeeSamples;
                   const avatarList = attendeeList;
 
                   return (
                     <>
-                <View style={styles.whosGoingHeader}>
-                  <Text style={styles.sectionHeader}>Who&apos;s Going</Text>
-                  <TouchableOpacity
-                    onPress={() => setShowAttendeesList(prev => !prev)}
-                  >
-                    <Text style={styles.seeAllLink}>
-                      {showAttendeesList ? 'Hide' : 'See all'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-                <View style={styles.modalAttendeesRow}>
-                  <MaterialCommunityIcons
-                    name="account-multiple"
-                    size={14}
-                    color="#999999"
-                  />
-                  <Text style={styles.modalAttendees}>
-                    {attendeeCount} Nomads attending
-                  </Text>
-                </View>
-                <View style={styles.avatarContainer}>
-                  {avatarList.map((attendee, index) => (
-                    <View
-                      key={`${attendee.name}-${index}`}
-                      style={[
-                        styles.avatarSmall,
-                        {marginLeft: index > 0 ? -8 : 0, overflow: 'hidden'}
-                      ]}
-                    >
-                      {renderImage(attendee.avatar, styles.avatarSmall, 'cover')}
-                    </View>
-                  ))}
-                </View>
-                {showAttendeesList && (
-                  <View style={styles.attendeesList}>
-                    {attendeeList.map((attendee, index) => (
-                      <View
-                        key={`${attendee.name}-${index}`}
-                        style={styles.attendeeRow}
-                      >
-                        {renderImage(attendee.avatar, styles.attendeeAvatar, 'cover')}
-                        <View style={styles.attendeeText}>
-                          <Text style={styles.attendeeName}>
-                            {attendee.name}
+                      <View style={styles.whosGoingHeader}>
+                        <Text style={styles.sectionHeader}>
+                          Who&apos;s Going
+                        </Text>
+                        <TouchableOpacity
+                          onPress={() => setShowAttendeesList((prev) => !prev)}
+                        >
+                          <Text style={styles.seeAllLink}>
+                            {showAttendeesList ? "Hide" : "See all"}
                           </Text>
-                          <Text style={styles.attendeeMeta}>
-                            {attendee.meta}
-                          </Text>
-                        </View>
+                        </TouchableOpacity>
                       </View>
-                    ))}
-                  </View>
-                )}
+                      <View style={styles.modalAttendeesRow}>
+                        <MaterialCommunityIcons
+                          name="account-multiple"
+                          size={14}
+                          color="#999999"
+                        />
+                        <Text style={styles.modalAttendees}>
+                          {attendeeCount} Nomads attending
+                        </Text>
+                      </View>
+                      <View style={styles.avatarContainer}>
+                        {avatarList.map((attendee, index) => (
+                          <View
+                            key={`${attendee.name}-${index}`}
+                            style={[
+                              styles.avatarSmall,
+                              {
+                                marginLeft: index > 0 ? -8 : 0,
+                                overflow: "hidden",
+                              },
+                            ]}
+                          >
+                            {renderImage(
+                              attendee.avatar,
+                              styles.avatarSmall,
+                              "cover",
+                            )}
+                          </View>
+                        ))}
+                      </View>
+                      {showAttendeesList && (
+                        <View style={styles.attendeesList}>
+                          {attendeeList.map((attendee, index) => (
+                            <View
+                              key={`${attendee.name}-${index}`}
+                              style={styles.attendeeRow}
+                            >
+                              {renderImage(
+                                attendee.avatar,
+                                styles.attendeeAvatar,
+                                "cover",
+                              )}
+                              <View style={styles.attendeeText}>
+                                <Text style={styles.attendeeName}>
+                                  {attendee.name}
+                                </Text>
+                                <Text style={styles.attendeeMeta}>
+                                  {attendee.meta}
+                                </Text>
+                              </View>
+                            </View>
+                          ))}
+                        </View>
+                      )}
                     </>
                   );
                 })()}
@@ -1165,7 +1188,7 @@ export default function EventsTab() {
               <TouchableOpacity
                 style={[
                   styles.modalJoinButton,
-                  selectedEvent.isJoined && styles.modalJoinButtonActive
+                  selectedEvent.isJoined && styles.modalJoinButtonActive,
                 ]}
                 onPress={() => {
                   if (!selectedEvent.isJoined) {
@@ -1177,10 +1200,10 @@ export default function EventsTab() {
                 <Text
                   style={[
                     styles.modalJoinButtonText,
-                    selectedEvent.isJoined && styles.modalJoinButtonTextActive
+                    selectedEvent.isJoined && styles.modalJoinButtonTextActive,
                   ]}
                 >
-                  {selectedEvent.isJoined ? 'View Updates' : 'Join Event'}
+                  {selectedEvent.isJoined ? "View Updates" : "Join Event"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -1215,7 +1238,11 @@ export default function EventsTab() {
                   activeOpacity={0.8}
                 >
                   {eventImageUri ? (
-                    renderImage({uri: eventImageUri}, styles.imagePreview, 'cover')
+                    renderImage(
+                      {uri: eventImageUri},
+                      styles.imagePreview,
+                      "cover",
+                    )
                   ) : (
                     <>
                       <MaterialCommunityIcons
@@ -1249,7 +1276,7 @@ export default function EventsTab() {
                   <Text style={styles.formLabel}>START DATE</Text>
                   <TouchableOpacity
                     style={styles.formInput}
-                    onPress={() => openPicker('startDate')}
+                    onPress={() => openPicker("startDate")}
                     activeOpacity={0.8}
                   >
                     <MaterialCommunityIcons
@@ -1260,10 +1287,10 @@ export default function EventsTab() {
                     <Text
                       style={[
                         styles.inputText,
-                        !startDateLabel && styles.placeholderTextLight
+                        !startDateLabel && styles.placeholderTextLight,
                       ]}
                     >
-                      {startDateLabel || 'Select date'}
+                      {startDateLabel || "Select date"}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -1271,7 +1298,7 @@ export default function EventsTab() {
                   <Text style={styles.formLabel}>START TIME</Text>
                   <TouchableOpacity
                     style={styles.formInput}
-                    onPress={() => openPicker('startTime')}
+                    onPress={() => openPicker("startTime")}
                     activeOpacity={0.8}
                   >
                     <MaterialCommunityIcons
@@ -1282,10 +1309,10 @@ export default function EventsTab() {
                     <Text
                       style={[
                         styles.inputText,
-                        !startTimeLabel && styles.placeholderTextLight
+                        !startTimeLabel && styles.placeholderTextLight,
                       ]}
                     >
-                      {startTimeLabel || 'Select time'}
+                      {startTimeLabel || "Select time"}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -1296,7 +1323,7 @@ export default function EventsTab() {
                   <Text style={styles.formLabel}>END DATE</Text>
                   <TouchableOpacity
                     style={styles.formInput}
-                    onPress={() => openPicker('endDate')}
+                    onPress={() => openPicker("endDate")}
                     activeOpacity={0.8}
                   >
                     <MaterialCommunityIcons
@@ -1307,10 +1334,10 @@ export default function EventsTab() {
                     <Text
                       style={[
                         styles.inputText,
-                        !endDateLabel && styles.placeholderTextLight
+                        !endDateLabel && styles.placeholderTextLight,
                       ]}
                     >
-                      {endDateLabel || 'Select date'}
+                      {endDateLabel || "Select date"}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -1318,7 +1345,7 @@ export default function EventsTab() {
                   <Text style={styles.formLabel}>END TIME</Text>
                   <TouchableOpacity
                     style={styles.formInput}
-                    onPress={() => openPicker('endTime')}
+                    onPress={() => openPicker("endTime")}
                     activeOpacity={0.8}
                   >
                     <MaterialCommunityIcons
@@ -1329,10 +1356,10 @@ export default function EventsTab() {
                     <Text
                       style={[
                         styles.inputText,
-                        !endTimeLabel && styles.placeholderTextLight
+                        !endTimeLabel && styles.placeholderTextLight,
                       ]}
                     >
-                      {endTimeLabel || 'Select time'}
+                      {endTimeLabel || "Select time"}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -1353,10 +1380,10 @@ export default function EventsTab() {
                   <Text
                     style={[
                       styles.inputText,
-                      !eventLocation && styles.placeholderTextLight
+                      !eventLocation && styles.placeholderTextLight,
                     ]}
                   >
-                    {eventLocation || 'Search for a location'}
+                    {eventLocation || "Search for a location"}
                   </Text>
                   {eventLocation ? (
                     <TouchableOpacity
@@ -1398,22 +1425,23 @@ export default function EventsTab() {
                   Choose who can discover and request to join
                 </Text>
                 <View style={styles.eventTypeToggle}>
-                  {['Private', 'Public'].map(type => (
+                  {["Private", "Public"].map((type) => (
                     <TouchableOpacity
                       key={type}
                       style={[
                         styles.eventTypeButton,
-                        eventTypeFilter === type && styles.eventTypeButtonActive
+                        eventTypeFilter === type &&
+                          styles.eventTypeButtonActive,
                       ]}
                       onPress={() =>
-                        setEventTypeFilter(type as 'Private' | 'Public')
+                        setEventTypeFilter(type as "Private" | "Public")
                       }
                     >
                       <Text
                         style={[
                           styles.eventTypeButtonText,
                           eventTypeFilter === type &&
-                            styles.eventTypeButtonTextActive
+                            styles.eventTypeButtonTextActive,
                         ]}
                       >
                         {type}
@@ -1423,7 +1451,7 @@ export default function EventsTab() {
                 </View>
               </View>
 
-              {eventTypeFilter === 'Private' && (
+              {eventTypeFilter === "Private" && (
                 <>
                   <View style={styles.privateEventInfo}>
                     <MaterialCommunityIcons
@@ -1451,20 +1479,20 @@ export default function EventsTab() {
                         {selectedInvitees.size} Selected
                       </Text>
                     </View>
-                  <View style={styles.searchInput}>
-                    <MaterialCommunityIcons
-                      name="magnify"
-                      size={18}
-                      color="#cbd5e0"
-                    />
-                    <TextInput
-                      placeholder="Search followers..."
-                      placeholderTextColor="#cbd5e0"
-                      value={inviteSearch}
-                      onChangeText={setInviteSearch}
-                      style={styles.inputText}
-                    />
-                  </View>
+                    <View style={styles.searchInput}>
+                      <MaterialCommunityIcons
+                        name="magnify"
+                        size={18}
+                        color="#cbd5e0"
+                      />
+                      <TextInput
+                        placeholder="Search followers..."
+                        placeholderTextColor="#cbd5e0"
+                        value={inviteSearch}
+                        onChangeText={setInviteSearch}
+                        style={styles.inputText}
+                      />
+                    </View>
 
                     <View style={styles.friendList}>
                       {followersLoading ? (
@@ -1482,52 +1510,52 @@ export default function EventsTab() {
                         </Text>
                       ) : (
                         followers
-                          .filter(friend =>
+                          .filter((friend) =>
                             friend.name
                               .toLowerCase()
-                              .includes(inviteSearch.toLowerCase())
+                              .includes(inviteSearch.toLowerCase()),
                           )
-                          .map(friend => {
+                          .map((friend) => {
                             const isSelected = selectedInvitees.has(friend.id);
                             return (
-                            <TouchableOpacity
-                              key={friend.id}
-                              style={styles.friendItem}
-                              onPress={() => toggleInvitee(friend.id)}
-                            >
-                              {renderImage(
-                                friend.avatar
-                                  ? {uri: friend.avatar}
-                                  : require('../../../assets/images/vanora.png'),
-                                styles.friendAvatar,
-                                'cover'
-                              )}
-                              <Text style={styles.friendName}>
-                                {friend.name}
-                              </Text>
-                              <View
-                                style={[
-                                  styles.checkbox,
-                                  isSelected && styles.checkboxSelected
-                                ]}
+                              <TouchableOpacity
+                                key={friend.id}
+                                style={styles.friendItem}
+                                onPress={() => toggleInvitee(friend.id)}
                               >
-                                {isSelected && (
-                                  <MaterialCommunityIcons
-                                    name="check"
-                                    size={14}
-                                    color="#ffffff"
-                                  />
+                                {renderImage(
+                                  friend.avatar
+                                    ? {uri: friend.avatar}
+                                    : require("../../../../assets/images/vanora.png"),
+                                  styles.friendAvatar,
+                                  "cover",
                                 )}
-                              </View>
-                            </TouchableOpacity>
-                          );
+                                <Text style={styles.friendName}>
+                                  {friend.name}
+                                </Text>
+                                <View
+                                  style={[
+                                    styles.checkbox,
+                                    isSelected && styles.checkboxSelected,
+                                  ]}
+                                >
+                                  {isSelected && (
+                                    <MaterialCommunityIcons
+                                      name="check"
+                                      size={14}
+                                      color="#ffffff"
+                                    />
+                                  )}
+                                </View>
+                              </TouchableOpacity>
+                            );
                           })
                       )}
                     </View>
 
                     <TouchableOpacity
                       style={styles.shareInviteButton}
-                      onPress={() => handleShareEvent('private', 'event-id')}
+                      onPress={() => handleShareEvent("private", "event-id")}
                     >
                       <MaterialCommunityIcons
                         name="share-variant"
@@ -1557,7 +1585,7 @@ export default function EventsTab() {
                       <TouchableOpacity
                         style={styles.upgradeButton}
                         onPress={() =>
-                          router.push('/(app)/membership-subscription')
+                          router.push("/(app)/membership-subscription")
                         }
                       >
                         <Text style={styles.upgradeButtonText}>Upgrade</Text>
@@ -1567,7 +1595,7 @@ export default function EventsTab() {
                 </>
               )}
 
-              {eventTypeFilter === 'Public' && (
+              {eventTypeFilter === "Public" && (
                 <>
                   <View style={styles.publicEventInfo}>
                     <MaterialCommunityIcons
@@ -1586,16 +1614,14 @@ export default function EventsTab() {
 
                   <TouchableOpacity
                     style={styles.shareInviteButton}
-                    onPress={() => handleShareEvent('public', 'event-id')}
+                    onPress={() => handleShareEvent("public", "event-id")}
                   >
                     <MaterialCommunityIcons
                       name="share-variant"
                       size={16}
                       color="#2E7D64"
                     />
-                    <Text style={styles.shareInviteText}>
-                      Share event link
-                    </Text>
+                    <Text style={styles.shareInviteText}>Share event link</Text>
                   </TouchableOpacity>
 
                   {!isSubscribed && (
@@ -1615,7 +1641,7 @@ export default function EventsTab() {
                       <TouchableOpacity
                         style={styles.upgradeButton}
                         onPress={() =>
-                          router.push('/(app)/membership-subscription')
+                          router.push("/(app)/membership-subscription")
                         }
                       >
                         <Text style={styles.upgradeButtonText}>Upgrade</Text>
@@ -1632,7 +1658,7 @@ export default function EventsTab() {
               <TouchableOpacity
                 style={[
                   styles.createButton,
-                  isPosting && styles.createButtonDisabled
+                  isPosting && styles.createButtonDisabled,
                 ]}
                 onPress={handlePostEvent}
                 disabled={isPosting}
@@ -1642,7 +1668,7 @@ export default function EventsTab() {
                     <ActivityIndicator size="small" color="#ffffff" />
                   ) : null}
                   <Text style={styles.createButtonText}>
-                    {isPosting ? 'Posting...' : 'Post'}
+                    {isPosting ? "Posting..." : "Post"}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -1679,10 +1705,10 @@ export default function EventsTab() {
           <View style={styles.pickerSheet}>
             <View style={styles.pickerHeader}>
               <Text style={styles.pickerTitle}>
-                {pickerType === 'startDate' && 'Start Date'}
-                {pickerType === 'startTime' && 'Start Time'}
-                {pickerType === 'endDate' && 'End Date'}
-                {pickerType === 'endTime' && 'End Time'}
+                {pickerType === "startDate" && "Start Date"}
+                {pickerType === "startTime" && "Start Time"}
+                {pickerType === "endDate" && "End Date"}
+                {pickerType === "endTime" && "End Time"}
               </Text>
               <TouchableOpacity onPress={() => setPickerVisible(false)}>
                 <MaterialCommunityIcons
@@ -1694,11 +1720,11 @@ export default function EventsTab() {
             </View>
             <FlatList
               data={
-                pickerType === 'startDate' || pickerType === 'endDate'
+                pickerType === "startDate" || pickerType === "endDate"
                   ? dateOptions
                   : timeOptions
               }
-              keyExtractor={item => item.label}
+              keyExtractor={(item) => item.label}
               showsVerticalScrollIndicator={false}
               renderItem={({item}) => (
                 <TouchableOpacity
@@ -1719,842 +1745,842 @@ export default function EventsTab() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7FAF9'
+    backgroundColor: "#F7FAF9",
   },
   contentWrapper: {
     flex: 1,
-    position: 'relative'
+    position: "relative",
   },
   contentContainer: {
     flex: 1,
     paddingHorizontal: SAFE_H_PADDING,
-    paddingVertical: SAFE_V_SPACING
+    paddingVertical: SAFE_V_SPACING,
   },
   addEventButton: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 35,
     right: 24,
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#2E7D64',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
+    backgroundColor: "#2E7D64",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: {width: 0, height: 4},
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
-    zIndex: 100
+    zIndex: 100,
   },
   eventSubtabs: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: SAFE_V_SPACING,
-    gap: 6
+    gap: 6,
   },
   eventSubtab: {
     paddingVertical: 6,
     paddingHorizontal: 14,
     borderRadius: 16,
-    backgroundColor: '#f0f0f0',
-    alignItems: 'center'
+    backgroundColor: "#f0f0f0",
+    alignItems: "center",
   },
   eventSubtabActive: {
-    backgroundColor: '#2E7D64'
+    backgroundColor: "#2E7D64",
   },
   eventSubtabText: {
     fontSize: 11,
-    fontWeight: '600',
-    color: '#999999'
+    fontWeight: "600",
+    color: "#999999",
   },
   eventSubtabTextActive: {
-    color: '#ffffff'
+    color: "#ffffff",
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#1a1a1a',
-    marginBottom: SAFE_V_SPACING
+    fontWeight: "700",
+    color: "#1a1a1a",
+    marginBottom: SAFE_V_SPACING,
   },
   eventCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderRadius: 16,
-    overflow: 'hidden',
+    overflow: "hidden",
     marginBottom: SAFE_V_SPACING,
     borderWidth: 1,
-    borderColor: '#E6ECE9',
-    shadowColor: '#0F172A',
+    borderColor: "#E6ECE9",
+    shadowColor: "#0F172A",
     shadowOpacity: 0.06,
     shadowRadius: 10,
     shadowOffset: {width: 0, height: 6},
-    elevation: 2
+    elevation: 2,
   },
   cardImageContainer: {
-    position: 'relative',
-    height: 160
+    position: "relative",
+    height: 160,
   },
   eventImage: {
-    width: '100%',
-    height: '100%'
+    width: "100%",
+    height: "100%",
   },
   dateBadge: {
-    position: 'absolute',
+    position: "absolute",
     top: 12,
     left: 12,
-    backgroundColor: '#0F172A',
+    backgroundColor: "#0F172A",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 4
+    justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 4,
   },
   dateMonth: {
     fontSize: 18,
-    fontWeight: '300',
-    color: '#10B981'
+    fontWeight: "300",
+    color: "#10B981",
   },
   dateDay: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#2E7D64'
+    fontWeight: "700",
+    color: "#2E7D64",
   },
   dateSeparator: {
     fontSize: 14,
-    fontWeight: '700',
-    color: '#2E7D64'
+    fontWeight: "700",
+    color: "#2E7D64",
   },
   eventInfo: {
-    padding: 14
+    padding: 14,
   },
   titleAttendeeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: 8,
-    gap: 8
+    gap: 8,
   },
   eventTitle: {
     fontSize: 14,
-    fontWeight: '700',
-    color: '#1a1a1a',
-    flex: 1
+    fontWeight: "700",
+    color: "#1a1a1a",
+    flex: 1,
   },
   attendeesBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
-    backgroundColor: '#EAF7F0',
+    backgroundColor: "#EAF7F0",
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#CDEBDD'
+    borderColor: "#CDEBDD",
   },
   eventMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 6,
-    gap: 6
+    gap: 6,
   },
   eventLocation: {
     fontSize: 12,
-    fontWeight: '500',
-    color: '#666666',
-    flex: 1
+    fontWeight: "500",
+    color: "#666666",
+    flex: 1,
   },
   eventAttendees: {
     fontSize: 11,
-    fontWeight: '600',
-    color: '#2E7D64'
+    fontWeight: "600",
+    color: "#2E7D64",
   },
   dateTimeColumn: {
     marginVertical: 8,
-    gap: 8
+    gap: 8,
   },
   dateTimeBlock: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
   dateTimeLabel: {
     fontSize: 10,
-    fontWeight: '600',
-    color: '#999999',
-    marginBottom: 2
+    fontWeight: "600",
+    color: "#999999",
+    marginBottom: 2,
   },
   dateTimeValue: {
     fontSize: 12,
-    fontWeight: '500',
-    color: '#666666'
+    fontWeight: "500",
+    color: "#666666",
   },
   actionButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     paddingHorizontal: 12,
     paddingBottom: 12,
     gap: 8,
-    alignItems: 'center'
+    alignItems: "center",
   },
   viewButton: {
     flex: 1,
-    backgroundColor: '#2E7D64',
+    backgroundColor: "#2E7D64",
     paddingVertical: 12,
     borderRadius: 10,
-    alignItems: 'center'
+    alignItems: "center",
   },
   viewButtonText: {
     fontSize: 12,
-    fontWeight: '700',
-    color: '#ffffff'
+    fontWeight: "700",
+    color: "#ffffff",
   },
   shareButton: {
     width: 40,
     height: 40,
     borderRadius: 10,
-    backgroundColor: '#F1F5F9',
-    justifyContent: 'center',
-    alignItems: 'center'
+    backgroundColor: "#F1F5F9",
+    justifyContent: "center",
+    alignItems: "center",
   },
   placeholderText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#999999',
-    textAlign: 'center',
-    marginTop: 40
+    fontWeight: "600",
+    color: "#999999",
+    textAlign: "center",
+    marginTop: 40,
   },
   imagePlaceholder: {
-    backgroundColor: '#E5E7EB'
+    backgroundColor: "#E5E7EB",
   },
   modalOverlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-    zIndex: 1000
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+    zIndex: 1000,
   },
   modalContainer: {
     flex: 0.9,
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    overflow: 'hidden'
+    overflow: "hidden",
   },
   modalImageContainer: {
-    position: 'relative',
-    height: 250
+    position: "relative",
+    height: 250,
   },
   modalImage: {
-    width: '100%',
-    height: '100%'
+    width: "100%",
+    height: "100%",
   },
   eventTagContainer: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 12,
-    left: 12
+    left: 12,
   },
   eventTag: {
     fontSize: 10,
-    fontWeight: '600',
-    color: '#2E7D64',
-    backgroundColor: '#e8faf6',
+    fontWeight: "600",
+    color: "#2E7D64",
+    backgroundColor: "#e8faf6",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#a7f3d0'
+    borderColor: "#a7f3d0",
   },
   modalBackButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 40,
     left: 16,
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    justifyContent: 'center',
-    alignItems: 'center'
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   modalShareButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 40,
     right: 16,
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    justifyContent: 'center',
-    alignItems: 'center'
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   modalContent: {
     flex: 1,
     paddingHorizontal: SAFE_H_PADDING,
-    paddingVertical: SAFE_V_SPACING
+    paddingVertical: SAFE_V_SPACING,
   },
   modalHeader: {
-    marginBottom: SAFE_V_SPACING
+    marginBottom: SAFE_V_SPACING,
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: '700',
-    color: '#1a1a1a',
-    marginBottom: 8
+    fontWeight: "700",
+    color: "#1a1a1a",
+    marginBottom: 8,
   },
   modalAttendeesRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
   modalAttendees: {
     fontSize: 12,
-    fontWeight: '500',
-    color: '#999999'
+    fontWeight: "500",
+    color: "#999999",
   },
   dateTimeCardsContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 10,
-    marginBottom: SAFE_V_SPACING
+    marginBottom: SAFE_V_SPACING,
   },
   dateTimeCard: {
     flex: 1,
-    flexDirection: 'row',
-    backgroundColor: '#f9f9f9',
+    flexDirection: "row",
+    backgroundColor: "#f9f9f9",
     borderRadius: 12,
-    padding: 12
+    padding: 12,
   },
   cardContent: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center'
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
   },
   cardLabel: {
     fontSize: 11,
-    fontWeight: '600',
-    color: '#999999',
-    marginHorizontal: 3
+    fontWeight: "600",
+    color: "#999999",
+    marginHorizontal: 3,
   },
   cardValue: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    paddingLeft: 5
+    fontWeight: "600",
+    color: "#1a1a1a",
+    paddingLeft: 5,
   },
   locationCard: {
-    flexDirection: 'row',
-    backgroundColor: '#f9f9f9',
+    flexDirection: "row",
+    backgroundColor: "#f9f9f9",
     borderRadius: 12,
     padding: 12,
     gap: 12,
-    marginBottom: SAFE_V_SPACING
+    marginBottom: SAFE_V_SPACING,
   },
   locationContent: {
-    flex: 1
+    flex: 1,
   },
   locationTitle: {
     fontSize: 11,
-    fontWeight: '600',
-    color: '#999999',
-    marginBottom: 4
+    fontWeight: "600",
+    color: "#999999",
+    marginBottom: 4,
   },
   locationAddress: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: 6
+    fontWeight: "600",
+    color: "#1a1a1a",
+    marginBottom: 6,
   },
   openMapsLink: {
     fontSize: 11,
-    fontWeight: '600',
-    color: '#2E7D64'
+    fontWeight: "600",
+    color: "#2E7D64",
   },
   aboutSection: {
-    marginBottom: SAFE_V_SPACING
+    marginBottom: SAFE_V_SPACING,
   },
   sectionHeader: {
     fontSize: 14,
-    fontWeight: '700',
-    color: '#1a1a1a'
+    fontWeight: "700",
+    color: "#1a1a1a",
   },
   aboutText: {
     fontSize: 12,
-    fontWeight: '400',
-    color: '#666666',
-    lineHeight: 18
+    fontWeight: "400",
+    color: "#666666",
+    lineHeight: 18,
   },
   whosGoingSection: {
-    marginBottom: SAFE_V_SPACING
+    marginBottom: SAFE_V_SPACING,
   },
   whosGoingHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 1
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 1,
   },
   seeAllLink: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#2E7D64'
+    fontWeight: "600",
+    color: "#2E7D64",
   },
   avatarContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 5
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 5,
   },
   avatarSmall: {
     width: 40,
     height: 40,
     borderRadius: 20,
     borderWidth: 2,
-    borderColor: '#ffffff'
+    borderColor: "#ffffff",
   },
   attendeesList: {
     marginTop: 12,
-    gap: 10
+    gap: 10,
   },
   attendeeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: "#f9f9f9",
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: '#f0f0f0'
+    borderColor: "#f0f0f0",
   },
   attendeeAvatar: {
     width: 40,
     height: 40,
-    borderRadius: 20
+    borderRadius: 20,
   },
   attendeeText: {
-    flex: 1
+    flex: 1,
   },
   attendeeName: {
     fontSize: 12,
-    fontWeight: '700',
-    color: '#1a1a1a'
+    fontWeight: "700",
+    color: "#1a1a1a",
   },
   attendeeMeta: {
     fontSize: 11,
-    color: '#6B7280',
-    marginTop: 2
+    color: "#6B7280",
+    marginTop: 2,
   },
   modalButtonContainer: {
     paddingHorizontal: SAFE_H_PADDING,
     paddingVertical: SAFE_V_SPACING,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0'
+    borderTopColor: "#f0f0f0",
   },
   modalJoinButton: {
-    backgroundColor: '#2E7D64',
+    backgroundColor: "#2E7D64",
     paddingVertical: 14,
     borderRadius: 12,
-    alignItems: 'center'
+    alignItems: "center",
   },
   modalJoinButtonActive: {
-    backgroundColor: '#f0f0f0'
+    backgroundColor: "#f0f0f0",
   },
   modalJoinButtonText: {
     fontSize: 14,
-    fontWeight: '700',
-    color: '#ffffff'
+    fontWeight: "700",
+    color: "#ffffff",
   },
   modalJoinButtonTextActive: {
-    color: '#2E7D64'
+    color: "#2E7D64",
   },
   createModalOverlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-    zIndex: 2000
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+    zIndex: 2000,
   },
   createModalContainer: {
     flex: 0.9,
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    overflow: 'hidden'
+    overflow: "hidden",
   },
   createModalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: SAFE_H_PADDING,
     paddingVertical: SAFE_V_SPACING,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0'
+    borderBottomColor: "#f0f0f0",
   },
   createModalTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#1a1a1a'
+    fontWeight: "700",
+    color: "#1a1a1a",
   },
   imageUploadSection: {
-    paddingVertical: 16
+    paddingVertical: 16,
   },
   imageUploadBox: {
-    backgroundColor: '#e8f4f1',
+    backgroundColor: "#e8f4f1",
     borderRadius: 12,
     paddingVertical: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginTop: 8,
-    overflow: 'hidden',
-    height: 180
+    overflow: "hidden",
+    height: 180,
   },
   imagePreview: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover'
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
   },
   imageUploadText: {
     fontSize: 12,
-    fontWeight: '500',
-    color: '#a0aec0',
-    marginTop: 8
+    fontWeight: "500",
+    color: "#a0aec0",
+    marginTop: 8,
   },
   createModalContent: {
     flex: 1,
     paddingHorizontal: SAFE_H_PADDING,
-    paddingVertical: SAFE_V_SPACING
+    paddingVertical: SAFE_V_SPACING,
   },
   createModalLabel: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#718096',
-    marginBottom: 8
+    fontWeight: "600",
+    color: "#718096",
+    marginBottom: 8,
   },
   formSection: {
     marginBottom: 16,
-    flex: 1
+    flex: 1,
   },
   formLabel: {
     fontSize: 11,
-    fontWeight: '700',
-    color: '#4a5568',
-    textTransform: 'uppercase',
-    marginBottom: 8
+    fontWeight: "700",
+    color: "#4a5568",
+    textTransform: "uppercase",
+    marginBottom: 8,
   },
   formInput: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f7fafc',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f7fafc",
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 12,
     borderWidth: 1,
-    borderColor: '#e2e8f0'
+    borderColor: "#e2e8f0",
   },
   inputText: {
     flex: 1,
     fontSize: 12,
-    fontWeight: '400',
-    color: '#1a1a1a',
+    fontWeight: "400",
+    color: "#1a1a1a",
     marginLeft: 8,
-    paddingVertical: 0
+    paddingVertical: 0,
   },
   placeholderTextLight: {
-    color: '#cbd5e0'
+    color: "#cbd5e0",
   },
   textArea: {
     minHeight: 100,
     paddingTop: 12,
-    alignItems: 'flex-start'
+    alignItems: "flex-start",
   },
   textAreaInput: {
     marginLeft: 0,
-    width: '100%'
+    width: "100%",
   },
   dateTimeRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
-    width: '100%'
+    width: "100%",
   },
   clearLocationButton: {
-    paddingLeft: 8
+    paddingLeft: 8,
   },
   eventTypeSubtitle: {
     fontSize: 12,
-    fontWeight: '400',
-    color: '#718096',
-    marginBottom: 12
+    fontWeight: "400",
+    color: "#718096",
+    marginBottom: 12,
   },
   eventTypeToggle: {
-    flexDirection: 'row',
-    gap: 8
+    flexDirection: "row",
+    gap: 8,
   },
   eventTypeButton: {
     flex: 1,
     paddingVertical: 10,
     borderRadius: 8,
-    backgroundColor: '#f7fafc',
+    backgroundColor: "#f7fafc",
     borderWidth: 1,
-    borderColor: '#cbd5e0',
-    alignItems: 'center'
+    borderColor: "#cbd5e0",
+    alignItems: "center",
   },
   eventTypeButtonActive: {
-    backgroundColor: '#2E7D64',
-    borderColor: '#2E7D64'
+    backgroundColor: "#2E7D64",
+    borderColor: "#2E7D64",
   },
   eventTypeButtonText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#718096'
+    fontWeight: "600",
+    color: "#718096",
   },
   eventTypeButtonTextActive: {
-    color: '#ffffff'
+    color: "#ffffff",
   },
   privateEventInfo: {
-    flexDirection: 'row',
-    backgroundColor: '#e8faf6',
+    flexDirection: "row",
+    backgroundColor: "#e8faf6",
     borderRadius: 12,
     padding: 12,
     marginBottom: 16,
-    gap: 10
+    gap: 10,
   },
   privateEventTextContainer: {
-    flex: 1
+    flex: 1,
   },
   privateEventTitle: {
     fontSize: 12,
-    fontWeight: '700',
-    color: '#2E7D64',
-    marginBottom: 2
+    fontWeight: "700",
+    color: "#2E7D64",
+    marginBottom: 2,
   },
   privateEventSubtitle: {
     fontSize: 11,
-    fontWeight: '600',
-    color: '#718096',
-    marginBottom: 4
+    fontWeight: "600",
+    color: "#718096",
+    marginBottom: 4,
   },
   privateEventDescription: {
     fontSize: 11,
-    fontWeight: '400',
-    color: '#718096'
+    fontWeight: "400",
+    color: "#718096",
   },
   publicEventInfo: {
-    flexDirection: 'row',
-    backgroundColor: '#f7fafc',
+    flexDirection: "row",
+    backgroundColor: "#f7fafc",
     borderRadius: 12,
     padding: 12,
     marginBottom: 16,
-    gap: 10
+    gap: 10,
   },
   publicEventTextContainer: {
-    flex: 1
+    flex: 1,
   },
   publicEventTitle: {
     fontSize: 12,
-    fontWeight: '700',
-    color: '#718096',
-    marginBottom: 4
+    fontWeight: "700",
+    color: "#718096",
+    marginBottom: 4,
   },
   publicEventDescription: {
     fontSize: 11,
-    fontWeight: '400',
-    color: '#a0aec0'
+    fontWeight: "400",
+    color: "#a0aec0",
   },
   inviteHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
   },
   inviteCount: {
     fontSize: 11,
-    fontWeight: '600',
-    color: '#2E7D64'
+    fontWeight: "600",
+    color: "#2E7D64",
   },
   searchInput: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f7fafc',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f7fafc",
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    marginBottom: 12
+    borderColor: "#e2e8f0",
+    marginBottom: 12,
   },
   friendList: {
-    gap: 10
+    gap: 10,
   },
   friendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 10,
-    gap: 10
+    gap: 10,
   },
   friendAvatar: {
     width: 40,
     height: 40,
-    borderRadius: 20
+    borderRadius: 20,
   },
   friendName: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#2d3748',
-    flex: 1
+    fontWeight: "600",
+    color: "#2d3748",
+    flex: 1,
   },
   emptyFollowersText: {
     fontSize: 12,
-    fontWeight: '500',
-    color: '#a0aec0',
-    textAlign: 'center',
-    paddingVertical: 12
+    fontWeight: "500",
+    color: "#a0aec0",
+    textAlign: "center",
+    paddingVertical: 12,
   },
   checkbox: {
     width: 20,
     height: 20,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: '#cbd5e0'
+    borderColor: "#cbd5e0",
   },
   checkboxSelected: {
-    backgroundColor: '#2E7D64',
-    borderColor: '#2E7D64',
-    alignItems: 'center',
-    justifyContent: 'center'
+    backgroundColor: "#2E7D64",
+    borderColor: "#2E7D64",
+    alignItems: "center",
+    justifyContent: "center",
   },
   shareInviteButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
     marginBottom: 10,
     paddingVertical: 10,
     paddingHorizontal: 12,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    backgroundColor: '#f7fafc',
-    marginTop: 12
+    borderColor: "#e2e8f0",
+    backgroundColor: "#f7fafc",
+    marginTop: 12,
   },
   shareInviteText: {
     fontSize: 12,
-    fontWeight: '700',
-    color: '#2E7D64'
+    fontWeight: "700",
+    color: "#2E7D64",
   },
   premiumCard: {
-    flexDirection: 'row',
-    backgroundColor: '#f7fafc',
+    flexDirection: "row",
+    backgroundColor: "#f7fafc",
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
     gap: 12,
-    alignItems: 'center'
+    alignItems: "center",
   },
   premiumContent: {
-    flex: 1
+    flex: 1,
   },
   premiumTitle: {
     fontSize: 12,
-    fontWeight: '700',
-    color: '#2d3748',
-    marginBottom: 4
+    fontWeight: "700",
+    color: "#2d3748",
+    marginBottom: 4,
   },
   premiumDescription: {
     fontSize: 11,
-    fontWeight: '400',
-    color: '#718096',
-    lineHeight: 16
+    fontWeight: "400",
+    color: "#718096",
+    lineHeight: 16,
   },
   upgradeButton: {
-    backgroundColor: '#2E7D64',
+    backgroundColor: "#2E7D64",
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 6
+    borderRadius: 6,
   },
   upgradeButtonText: {
     fontSize: 11,
-    fontWeight: '700',
-    color: '#ffffff'
+    fontWeight: "700",
+    color: "#ffffff",
   },
   createModalButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
     paddingHorizontal: SAFE_H_PADDING,
     paddingVertical: SAFE_V_SPACING,
     borderTopWidth: 1,
-    borderTopColor: '#e2e8f0'
+    borderTopColor: "#e2e8f0",
   },
   cancelButton: {
     flex: 1,
     paddingVertical: 12,
     borderRadius: 8,
-    backgroundColor: '#f7fafc',
+    backgroundColor: "#f7fafc",
     borderWidth: 1,
-    borderColor: '#cbd5e0',
-    alignItems: 'center'
+    borderColor: "#cbd5e0",
+    alignItems: "center",
   },
   cancelButtonText: {
     fontSize: 12,
-    fontWeight: '700',
-    color: '#718096'
+    fontWeight: "700",
+    color: "#718096",
   },
   createButton: {
     flex: 1.2,
     paddingVertical: 12,
     borderRadius: 8,
-    backgroundColor: '#2E7D64',
-    alignItems: 'center'
+    backgroundColor: "#2E7D64",
+    alignItems: "center",
   },
   createButtonDisabled: {
-    opacity: 0.7
+    opacity: 0.7,
   },
   createButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   createButtonText: {
     fontSize: 12,
-    fontWeight: '700',
-    color: '#ffffff'
+    fontWeight: "700",
+    color: "#ffffff",
   },
   pickerOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    justifyContent: 'flex-end'
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
+    justifyContent: "flex-end",
   },
   pickerSheet: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingBottom: 20,
-    maxHeight: '70%'
+    maxHeight: "70%",
   },
   pickerHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: SAFE_H_PADDING,
     paddingVertical: SAFE_V_SPACING,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0'
+    borderBottomColor: "#f0f0f0",
   },
   pickerTitle: {
     fontSize: 14,
-    fontWeight: '700',
-    color: '#1a1a1a'
+    fontWeight: "700",
+    color: "#1a1a1a",
   },
   pickerOption: {
     paddingHorizontal: SAFE_H_PADDING,
     paddingVertical: SAFE_V_SPACING,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0'
+    borderBottomColor: "#f0f0f0",
   },
   pickerOptionText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#1a1a1a'
-  }
+    fontWeight: "600",
+    color: "#1a1a1a",
+  },
 });
