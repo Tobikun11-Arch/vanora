@@ -1,36 +1,42 @@
 {
   "expo": {
-    "name": "Vandora",
-    "slug": "vandora",
-    "version": "1.0.0",
+    "name": "Vanora",
+    "slug": "vanora",
+    "version": "4.0.0",
     "orientation": "portrait",
-    "icon": "@/assets/images/icon.png",
+    "icon": "./assets/images/official_logo.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "@/assets/images/splash.png",
+      "image": "./assets/images/vanora.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
-    "ios": {
-    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {},
     "android": {
+      "package": "com.shipyard.vanora",
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
-        "foregroundImage": "@/assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
-      "favicon": "@/assets/favicon.png"
+      "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
       "expo-image-picker"
     ],
-    "scheme": "vandora",
+    "scheme": "vanora",
     "extra": {
       "eas": {
-        "projectId": "YOUR_EAS_PROJECT_ID"
+        "projectId": "35661859-94d7-4c00-9f96-7fb5c4f412df"
       }
-    }
+    },
+    "owner": "tobikun11"
   }
 }

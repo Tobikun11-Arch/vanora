@@ -1,6 +1,6 @@
-import {MaterialCommunityIcons} from '@expo/vector-icons';
-import React, {useState} from 'react';
-import {StyleSheet, TextInput, TouchableOpacity, View} from 'react-native';
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import React, { useState } from "react";
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 interface InputFieldProps {
   placeholder: string;
@@ -11,7 +11,8 @@ interface InputFieldProps {
   rightIcon?: string;
   onRightIconPress?: () => void;
   error?: string;
-  keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad';
+  keyboardType?: "default" | "email-address" | "numeric" | "phone-pad";
+  compact?: boolean;
 }
 
 export const InputField: React.FC<InputFieldProps> = ({
@@ -23,23 +24,30 @@ export const InputField: React.FC<InputFieldProps> = ({
   rightIcon,
   onRightIconPress,
   error,
-  keyboardType = 'default'
+  keyboardType = "default",
+  compact = false,
 }) => {
   const [isSecure, setIsSecure] = useState(secureTextEntry);
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.inputWrapper, error && styles.errorBorder]}>
+    <View style={[styles.container, compact && styles.containerCompact]}>
+      <View
+        style={[
+          styles.inputWrapper,
+          compact && styles.inputWrapperCompact,
+          error && styles.errorBorder,
+        ]}
+      >
         {leftIcon && (
           <MaterialCommunityIcons
             name={leftIcon}
-            size={20}
+            size={compact ? 18 : 20}
             color="#999"
             style={styles.leftIcon}
           />
         )}
         <TextInput
-          style={styles.input}
+          style={[styles.input, compact && styles.inputCompact]}
           placeholder={placeholder}
           placeholderTextColor="#999"
           value={value}
@@ -50,7 +58,7 @@ export const InputField: React.FC<InputFieldProps> = ({
         {rightIcon && (
           <TouchableOpacity
             onPress={() => {
-              if (rightIcon === 'eye' || rightIcon === 'eye-off') {
+              if (rightIcon === "eye" || rightIcon === "eye-off") {
                 setIsSecure(!isSecure);
               }
               onRightIconPress?.();
@@ -58,8 +66,8 @@ export const InputField: React.FC<InputFieldProps> = ({
             style={styles.rightIconButton}
           >
             <MaterialCommunityIcons
-              name={isSecure ? 'eye-off' : 'eye'}
-              size={20}
+              name={isSecure ? "eye-off" : "eye"}
+              size={compact ? 18 : 20}
               color="#999"
             />
           </TouchableOpacity>
@@ -72,35 +80,50 @@ export const InputField: React.FC<InputFieldProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16
+    marginBottom: 18,
+    width: "100%",
+  },
+  containerCompact: {
+    marginBottom: 10,
   },
   inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#f9f9f9'
+    borderColor: "#eef2ef",
+    borderRadius: 28,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "#f4f8f5",
+  },
+  inputWrapperCompact: {
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: "#f7f9f8",
   },
   errorBorder: {
-    borderColor: '#ff4444'
+    borderColor: "#ff4444",
   },
   input: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: "#000",
+  },
+  inputCompact: {
+    paddingVertical: 6,
     fontSize: 14,
-    color: '#000'
   },
   leftIcon: {
-    marginRight: 8
+    marginRight: 8,
   },
   rightIconButton: {
-    padding: 8
+    padding: 8,
   },
   errorText: {
-    color: '#ff4444',
+    color: "#ff4444",
     fontSize: 12,
-    marginTop: 4
-  }
+    marginTop: 4,
+  },
 });

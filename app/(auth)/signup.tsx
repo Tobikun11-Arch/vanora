@@ -1,12 +1,15 @@
 import {MaterialCommunityIcons} from '@expo/vector-icons';
 import {useRouter} from 'expo-router';
-import {useState} from 'react';
+import React, {useState} from 'react';
 import {
+  Image,
+  ImageBackground,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
+  Dimensions
 } from 'react-native';
 import {Button} from '../../components/Button';
 import {InputField} from '../../components/InputField';
@@ -90,157 +93,234 @@ export default function SignupScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color="#4a90e2" />
-        </TouchableOpacity>
-        <Text style={styles.title}>Create Account</Text>
-      </View>
-
-      <View style={styles.form}>
-        <InputField
-          placeholder="Full Name"
-          value={fullName}
-          onChangeText={setFullName}
-          leftIcon="account-outline"
-          error={errors.fullName}
-        />
-
-        <InputField
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          leftIcon="email-outline"
-          keyboardType="email-address"
-          error={errors.email}
-        />
-
-        <InputField
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          leftIcon="lock-outline"
-          rightIcon="eye"
-          error={errors.password}
-        />
-
-        <Button
-          title="Sign Up"
-          onPress={handleSignup}
-          loading={loading}
-          disabled={loading}
-        />
-      </View>
-
-      <View style={styles.divider}>
-        <View style={styles.line} />
-        <Text style={styles.dividerText}>Or sign up with</Text>
-        <View style={styles.line} />
-      </View>
-
-      <View style={styles.oauthContainer}>
-        <TouchableOpacity
-          style={styles.oauthButton}
-          onPress={handleGoogleSignup}
-          disabled={loading}
+    <View style={styles.screen}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <ImageBackground
+          source={{
+            uri: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=1000&auto=format&fit=crop'
+          }}
+          style={styles.topBackground}
         >
-          <MaterialCommunityIcons name="google" size={24} color="#EA4335" />
-          <Text style={styles.oauthText}>Google</Text>
-        </TouchableOpacity>
+          <View style={styles.topOverlay} />
+          <View style={styles.headerRow}>
+            <Image
+              source={require('../../assets/images/vanora-logo-only.png')}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
+            <Text style={styles.appName}>anora</Text>
+          </View>
+        </ImageBackground>
 
-        <TouchableOpacity
-          style={styles.oauthButton}
-          onPress={handleAzureSignup}
-          disabled={loading}
-        >
-          <MaterialCommunityIcons name="microsoft" size={24} color="#0078D4" />
-          <Text style={styles.oauthText}>Azure</Text>
-        </TouchableOpacity>
-      </View>
+        <View style={styles.cardContainer}>
+          <View style={styles.pullBar} />
+          <Text style={styles.cardTitle}>Create Account</Text>
+          <Text style={styles.cardSubtitle}>Start your nomadic journey</Text>
 
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>Already have an account? </Text>
-        <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
-          <Text style={styles.loginLink}>Login</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+          <View style={styles.inputsWrap}>
+            <InputField
+              placeholder="Full Name"
+              value={fullName}
+              onChangeText={setFullName}
+              leftIcon="account-outline"
+              error={errors.fullName}
+            />
+
+            <InputField
+              placeholder="Email"
+              value={email}
+              onChangeText={setEmail}
+              leftIcon="email-outline"
+              keyboardType="email-address"
+              error={errors.email}
+            />
+
+            <InputField
+              placeholder="Password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              leftIcon="lock-outline"
+              rightIcon="eye"
+              error={errors.password}
+            />
+
+            <View style={styles.signupButtonWrap}>
+              <Button
+                title="Sign Up"
+                onPress={handleSignup}
+                loading={loading}
+                disabled={loading}
+              />
+            </View>
+          </View>
+
+          <View style={styles.dividerRow}>
+            <View style={styles.line} />
+            <Text style={styles.dividerText}>OR SIGN UP WITH</Text>
+            <View style={styles.line} />
+          </View>
+
+          <View style={styles.socialRow}>
+            <TouchableOpacity
+              style={styles.socialBtn}
+              onPress={handleGoogleSignup}
+              disabled={loading}
+            >
+              <MaterialCommunityIcons name="google" size={18} color="#EA4335" />
+              <Text style={styles.socialText}>Google</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.socialBtn}
+              onPress={handleAzureSignup}
+              disabled={loading}
+            >
+              <MaterialCommunityIcons name="apple" size={18} color="#000" />
+              <Text style={styles.socialText}>Apple</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.loginRow}>
+            <Text style={styles.haveText}>Already have an account? </Text>
+            <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
+              <Text style={styles.loginLink}>Log In</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
-
+const {width} = Dimensions.get('window');
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
+    backgroundColor: '#fff'
+  },
+  scrollContent: {
+    paddingBottom: 24
+  },
+  topBackground: {
+    paddingTop: 40,
+    paddingBottom: 70,
+    alignItems: 'center'
+  },
+  topOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.28)'
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10
+  },
+  logoImage: {
+    width: width * 0.35, // scales to ~28% of screen width
+    height: width * 0.35, // keeps square ratio
+    tintColor: '#fff',
+    resizeMode: 'contain',
+    marginRight: -25 // tuck text closer
+  },
+  appName: {
+    fontSize: width * 0.1, // scales with screen width
+    fontWeight: '900',
+    color: '#fff',
+    letterSpacing: 1,
+    marginLeft: -8, // small overlap for “Vanora” look
+    marginTop: 15 // vertical alignment tweak
+  },
+  cardContainer: {
     backgroundColor: '#fff',
-    paddingHorizontal: 20
+    borderRadius: 28,
+    paddingVertical: 30,
+    paddingHorizontal: 24,
+    marginTop: -46,
+    alignItems: 'stretch',
+    paddingBottom: 40
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 40,
-    marginBottom: 32
+  pullBar: {
+    width: 48,
+    height: 6,
+    borderRadius: 4,
+    backgroundColor: '#ececec',
+    alignSelf: 'center',
+    marginBottom: 18
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    flex: 1,
+  cardTitle: {
+    fontSize: 22,
+    fontWeight: '700',
     textAlign: 'center',
-    marginRight: 24
+    marginTop: 2,
+    marginBottom: 4,
+    color: '#2e7d64'
   },
-  form: {
-    marginBottom: 24
+  cardSubtitle: {
+    textAlign: 'center',
+    color: '#777',
+    marginBottom: 18
   },
-  divider: {
+  inputsWrap: {
+    marginTop: 12,
+    width: '100%'
+  },
+  dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 24
+    marginTop: 16,
+    marginBottom: 8
   },
   line: {
     flex: 1,
     height: 1,
-    backgroundColor: '#ddd'
+    backgroundColor: '#eee'
   },
   dividerText: {
     marginHorizontal: 12,
     color: '#999',
     fontSize: 12
   },
-  oauthContainer: {
+  socialRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 18,
     gap: 12
   },
-  oauthButton: {
+  socialBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
+    borderColor: '#eee',
     paddingVertical: 12,
+    borderRadius: 10,
     gap: 8
   },
-  oauthText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#333'
+  socialText: {
+    marginLeft: 8,
+    fontWeight: '600'
   },
-  footer: {
+  signupButtonWrap: {
+    marginTop: 16
+  },
+  loginRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 32,
-    marginBottom: 40
+    marginTop: 10,
+    paddingBottom: 12
   },
-  footerText: {
-    color: '#666',
-    fontSize: 14
+  haveText: {
+    color: '#777'
   },
   loginLink: {
-    color: '#4a90e2',
-    fontSize: 14,
-    fontWeight: '600'
+    color: '#2e7d64',
+    fontWeight: '700',
+    marginLeft: 6
   }
 });

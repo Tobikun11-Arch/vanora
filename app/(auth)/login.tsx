@@ -1,13 +1,15 @@
 import {supabase} from '@/services/supabase';
 import {MaterialCommunityIcons} from '@expo/vector-icons';
 import {useRouter} from 'expo-router';
-import {useState} from 'react';
+import React, {useState} from 'react';
 import {
-  ScrollView,
+  Image,
+  ImageBackground,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
+  Dimensions
 } from 'react-native';
 import {Button} from '../../components/Button';
 import {InputField} from '../../components/InputField';
@@ -107,150 +109,239 @@ export default function LoginScreen() {
     setLoading(false);
   };
 
+  const handleForgotPassword = () => {
+    showToast('info', 'Coming Soon', 'Password reset is being configured');
+  };
+
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.appName}>Vanora</Text>
-        <Text style={styles.welcomeText}>Welcome back</Text>
+    <View style={styles.screen}>
+      <ImageBackground
+        source={{
+          uri: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=1000&auto=format&fit=crop'
+        }}
+        style={styles.topBackground}
+      >
+        <View style={styles.topOverlay} />
+        <View style={styles.headerRow}>
+          <Image
+            source={require('../../assets/images/vanora-logo-only.png')}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
+          <Text style={styles.appName}>anora</Text>
+        </View>
+        {/* <Text style={styles.appSubtitle}>Connect. Roam. Belong.</Text> */}
+      </ImageBackground>
+
+      <View style={styles.cardContainer}>
+        <View style={styles.pullBar} />
+        <Text style={styles.cardTitle}>Welcome Back</Text>
+        <Text style={styles.cardSubtitle}>Log in to continue your journey</Text>
+
+        <View style={styles.inputsWrap}>
+          <InputField
+            placeholder="Email"
+            value={email}
+            onChangeText={setEmail}
+            leftIcon="email-outline"
+            keyboardType="email-address"
+            error={errors.email}
+          />
+
+          <InputField
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            leftIcon="lock-outline"
+            rightIcon="eye"
+            error={errors.password}
+          />
+
+          <TouchableOpacity onPress={handleForgotPassword}>
+            <Text style={styles.forgot}>Forgot Password?</Text>
+          </TouchableOpacity>
+
+          <View style={styles.loginButtonWrap}>
+            <Button
+              title="Log In"
+              onPress={handleLogin}
+              loading={loading}
+              disabled={loading}
+            />
+          </View>
+        </View>
+
+        <View style={styles.dividerRow}>
+          <View style={styles.line} />
+          <Text style={styles.dividerText}>OR LOGIN WITH</Text>
+          <View style={styles.line} />
+        </View>
+
+        <View style={styles.socialRow}>
+          <TouchableOpacity
+            style={styles.socialBtn}
+            onPress={handleGoogleLogin}
+            disabled={loading}
+          >
+            <MaterialCommunityIcons name="google" size={18} color="#EA4335" />
+            <Text style={styles.socialText}>Google</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.socialBtn}
+            onPress={handleAzureLogin}
+            disabled={loading}
+          >
+            <MaterialCommunityIcons name="apple" size={18} color="#000" />
+            <Text style={styles.socialText}>Apple</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.signupRow}>
+          <Text style={styles.newText}>New to Vanora? </Text>
+          <TouchableOpacity onPress={() => router.push('/(auth)/signup')}>
+            <Text style={styles.signupLink}>Sign Up</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-
-      <View style={styles.form}>
-        <InputField
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          leftIcon="email-outline"
-          keyboardType="email-address"
-          error={errors.email}
-        />
-
-        <InputField
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          leftIcon="lock-outline"
-          rightIcon="eye"
-          error={errors.password}
-        />
-
-        <Button
-          title="Login"
-          onPress={handleLogin}
-          loading={loading}
-          disabled={loading}
-        />
-      </View>
-
-      <View style={styles.divider}>
-        <View style={styles.line} />
-        <Text style={styles.dividerText}>Or login with</Text>
-        <View style={styles.line} />
-      </View>
-
-      <View style={styles.oauthContainer}>
-        <TouchableOpacity
-          style={styles.oauthButton}
-          onPress={handleGoogleLogin}
-          disabled={loading}
-        >
-          <MaterialCommunityIcons name="google" size={24} color="#EA4335" />
-          <Text style={styles.oauthText}>Google</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.oauthButton}
-          onPress={handleAzureLogin}
-          disabled={loading}
-        >
-          <MaterialCommunityIcons name="microsoft" size={24} color="#0078D4" />
-          <Text style={styles.oauthText}>Azure</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>Don&apos;t have an account? </Text>
-        <TouchableOpacity onPress={() => router.push('/(auth)/signup')}>
-          <Text style={styles.signupLink}>Sign up</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+    </View>
   );
 }
-
+const {width} = Dimensions.get('window');
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
-    backgroundColor: '#fff',
-    paddingHorizontal: 20
+    backgroundColor: '#fff'
   },
-  header: {
-    marginTop: 60,
-    marginBottom: 40,
+  topBackground: {
+    paddingTop: 40,
+    paddingBottom: 70,
     alignItems: 'center'
   },
-  appName: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#4a90e2',
-    marginBottom: 8
+  topOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.28)'
   },
-  welcomeText: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#333'
-  },
-  form: {
-    marginBottom: 24
-  },
-  divider: {
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 24
+    justifyContent: 'center',
+    marginTop: 10
+  },
+  logoImage: {
+    width: width * 0.35, // scales to ~28% of screen width
+    height: width * 0.35, // keeps square ratio
+    tintColor: '#fff',
+    resizeMode: 'contain',
+    marginRight: -25 // tuck text closer
+  },
+  appName: {
+    fontSize: width * 0.1, // scales with screen width
+    fontWeight: '900',
+    color: '#fff',
+    letterSpacing: 1,
+    marginLeft: -8, // small overlap for “Vanora” look
+    marginTop: 15 // vertical alignment tweak
+  },
+  appSubtitle: {
+    color: 'rgba(255,255,255,0.9)',
+    marginTop: 6
+  },
+  cardContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 28,
+    paddingVertical: 30,
+    paddingHorizontal: 24,
+    marginTop: -46,
+    alignItems: 'stretch'
+  },
+  pullBar: {
+    width: 48,
+    height: 6,
+    borderRadius: 4,
+    backgroundColor: '#ececec',
+    alignSelf: 'center',
+    marginBottom: 18
+  },
+  cardTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginTop: 2,
+    marginBottom: 4,
+    color: '#2e7d64'
+  },
+  cardSubtitle: {
+    textAlign: 'center',
+    color: '#777',
+    marginBottom: 18
+  },
+  inputsWrap: {
+    marginTop: 12,
+    width: '100%'
+  },
+
+  socialRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 18,
+    gap: 12
+  },
+  socialBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#eee',
+    paddingVertical: 12,
+    borderRadius: 10,
+    gap: 8
+  },
+  socialText: {
+    marginLeft: 8,
+    fontWeight: '600'
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 8
   },
   line: {
     flex: 1,
     height: 1,
-    backgroundColor: '#ddd'
+    backgroundColor: '#eee'
   },
   dividerText: {
     marginHorizontal: 12,
     color: '#999',
     fontSize: 12
   },
-  oauthContainer: {
-    flexDirection: 'row',
-    gap: 12
+  loginButtonWrap: {
+    marginTop: 16
   },
-  oauthButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingVertical: 12,
-    gap: 8
+  forgot: {
+    textAlign: 'right',
+    color: '#2e7d64',
+    marginTop: 6,
+    marginBottom: 6,
+    fontWeight: '600'
   },
-  oauthText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#333'
-  },
-  footer: {
+  signupRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 32,
-    marginBottom: 40
+    marginTop: 20,
+    paddingBottom: 12
   },
-  footerText: {
-    color: '#666',
-    fontSize: 14
+  newText: {
+    color: '#777'
   },
   signupLink: {
-    color: '#4a90e2',
-    fontSize: 14,
-    fontWeight: '600'
+    color: '#2e7d64',
+    fontWeight: '700',
+    marginLeft: 6
   }
 });

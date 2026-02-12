@@ -10,6 +10,9 @@ import {useColorScheme} from '@/hooks/use-color-scheme';
 import {ToastContainer} from '../components/Toast';
 import {authService} from '../services/auth.service';
 import {profileService} from '../services/profile.service';
+import {revenueCatService} from '../services/revenuecat.service';
+import {ReactQueryProvider} from '@/lib/provider/ReactQueryProvider';
+import {supabase} from '../services/supabase';
 
 export const unstable_settings = {
   anchor: '(tabs)'
@@ -26,13 +29,26 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
+    if (Platform.OS === 'android') {
+      // Make nav bar transparent
+      NavigationBar.setBackgroundColorAsync('transparent');
+      // Hide nav bar completely
+      NavigationBar.setVisibilityAsync('hidden');
+      // Optional: control button style (light/dark icons)
+      NavigationBar.setButtonStyleAsync('light');
+    }
+  }, []);
+
+  useEffect(() => {
     const bootstrapAsync = async () => {
       try {
         const session = await authService.getSession();
         if (session?.user) {
-          const profileResult = await profileService.getProfile(
-            session.user.id
-          );
+          const profileResult = await profileService.getProfile(session.user.id);
+
+          // Initialize RevenueCat with user ID
+          void revenueCatService.initialize(session.user.id);
+
           dispatch(prev => ({
             ...prev,
             userToken: session.access_token,
@@ -41,6 +57,9 @@ export default function RootLayout() {
             isLoading: false
           }));
         } else {
+          // Initialize RevenueCat without a user (anonymous)
+          void revenueCatService.initialize();
+
           dispatch(prev => ({
             ...prev,
             isLoading: false
@@ -58,21 +77,27 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    if (Platform.OS === 'android') {
-      // Make nav bar transparent
-      NavigationBar.setBackgroundColorAsync('transparent');
-      // Hide nav bar completely
-      NavigationBar.setVisibilityAsync('hidden');
-      // Optional: control button style (light/dark icons)
-      NavigationBar.setButtonStyleAsync('light');
-    }
+    const {data: {subscription}} = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (session?.user) {
+          void revenueCatService.initialize(session.user.id);
+        } else {
+          void revenueCatService.initialize();
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
 
+
   return (
+    <ReactQueryProvider>
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack screenOptions={{headerShown: false}} />
       <ToastContainer />
       <StatusBar style="auto" />
     </ThemeProvider>
+    </ReactQueryProvider>
   );
 }

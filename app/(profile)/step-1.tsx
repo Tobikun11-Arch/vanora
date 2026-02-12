@@ -1,21 +1,27 @@
 import {MaterialCommunityIcons} from '@expo/vector-icons';
-import * as Location from 'expo-location';
 import {useRouter} from 'expo-router';
-import {useState} from 'react';
 import {
-  ActivityIndicator,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
+  SafeAreaView,
   StyleSheet,
+  StatusBar,
   Text,
+  TextInput,
   TouchableOpacity,
-  View
+  TouchableWithoutFeedback,
+  View,
+  Dimensions
 } from 'react-native';
 import {Button} from '../../components/Button';
 import {showToast} from '../../components/Toast';
 import {useProfileStore} from '../../store/profileStore';
 import {
   MOVEMENT_PATTERNS,
-  NOMAD_TYPES,
+  LIFESTYLE_TYPES,
+  NOMAD_TYPE_MECHANIC,
   RELATIONSHIP_INTENTS,
   TRAVEL_STYLES
 } from '../../utils/constants';
@@ -23,7 +29,8 @@ import {
 export default function Step1Screen() {
   const router = useRouter();
   const {step1: data, setStep1} = useProfileStore();
-  const [loadingLocation, setLoadingLocation] = useState(false);
+  const displayLifestyleType = (type: string) =>
+    type === 'Digital Nomad' ? 'Nomad' : type;
 
   const toggleRelationshipIntent = (intent: string) => {
     setStep1({
@@ -32,56 +39,6 @@ export default function Step1Screen() {
         ? data.relationship_intent.filter(i => i !== intent)
         : [...data.relationship_intent, intent]
     });
-  };
-
-  const getLocationName = async (latitude: number, longitude: number) => {
-    try {
-      const result = await Location.reverseGeocodeAsync({
-        latitude,
-        longitude
-      });
-      if (result[0]) {
-        const {city, region, country} = result[0];
-        return `${city || region}, ${country}`;
-      }
-      return `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
-    } catch (error) {
-      console.error('Reverse geocoding error:', error);
-      return `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
-    }
-  };
-
-  const handleGetCurrentLocation = async () => {
-    setLoadingLocation(true);
-    try {
-      const {status} = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        showToast(
-          'error',
-          'Permission Denied',
-          'Location permission is required'
-        );
-        setLoadingLocation(false);
-        return;
-      }
-
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced
-      });
-
-      const locationName = await getLocationName(
-        location.coords.latitude,
-        location.coords.longitude
-      );
-
-      setStep1({...data, current_location: locationName});
-      showToast('success', 'Location Found', locationName);
-    } catch (error) {
-      console.error('Location error:', error);
-      showToast('error', 'Location Error', 'Failed to get current location');
-    } finally {
-      setLoadingLocation(false);
-    }
   };
 
   const handleNext = () => {
@@ -101,33 +58,67 @@ export default function Step1Screen() {
       );
       return;
     }
-    if (!data.current_location.trim()) {
-      showToast('error', 'Required', 'Please enter current location');
-      return;
-    }
     if (!data.movement_pattern) {
       showToast('error', 'Required', 'Please select movement pattern');
       return;
+    }
+    if (data.nomad_type === NOMAD_TYPE_MECHANIC) {
+      if (!data.mechanic_whatsapp.trim()) {
+        showToast('error', 'Required', 'Please enter WhatsApp number');
+        return;
+      }
+      if (!data.mechanic_email.trim()) {
+        showToast('error', 'Required', 'Please enter email address');
+        return;
+      }
+      if (!data.mechanic_instagram.trim()) {
+        showToast('error', 'Required', 'Please enter Instagram handle');
+        return;
+      }
     }
 
     router.push('/(profile)/step-2');
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color="#4a90e2" />
-        </TouchableOpacity>
-        <Text style={styles.stepIndicator}>Step 1 of 4</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+          >
+      <View style={styles.headerBlock}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <MaterialCommunityIcons
+              name="arrow-left"
+              size={22}
+              color={COLORS.primary}
+            />
+          </TouchableOpacity>
+          <View style={styles.progressArea}>
+            <View style={styles.progressRow}>
+              <Text style={styles.progressStep}>Step 1 of 4</Text>
+              <Text style={styles.progressPercent}>25% Complete</Text>
+            </View>
+            <View style={styles.progressTrack}>
+              <View style={[styles.progressFill, {width: '25%'}]} />
+            </View>
+          </View>
+        </View>
       </View>
 
       <View style={styles.content}>
-        <Text style={styles.sectionTitle}>🧍 Identity & Lifestyle</Text>
+        <Text style={styles.sectionTitle}>Identity & Lifestyle</Text>
+        <View style={styles.sectionDivider} />
 
-        <Text style={styles.label}>Nomad Type</Text>
+        <Text style={styles.label}>Lifestyle type</Text>
         <View style={styles.grid}>
-          {NOMAD_TYPES.map(type => (
+          {LIFESTYLE_TYPES.map(type => (
             <TouchableOpacity
               key={type}
               style={[
@@ -142,11 +133,73 @@ export default function Step1Screen() {
                   data.nomad_type === type && styles.chipTextSelected
                 ]}
               >
-                {type}
+                {displayLifestyleType(type)}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
+
+        {data.nomad_type === NOMAD_TYPE_MECHANIC && (
+          <View>
+            <Text style={styles.label}>Builder Contact</Text>
+
+            <View style={styles.inputWrapper}>
+              <MaterialCommunityIcons
+                name="whatsapp"
+                size={20}
+                color={COLORS.muted}
+                style={styles.inputIcon}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Whatsapp number"
+                placeholderTextColor={COLORS.muted}
+                keyboardType="phone-pad"
+                value={data.mechanic_whatsapp}
+                onChangeText={text =>
+                  setStep1({...data, mechanic_whatsapp: text})
+                }
+              />
+            </View>
+
+            <View style={styles.inputWrapper}>
+              <MaterialCommunityIcons
+                name="email-outline"
+                size={20}
+                color={COLORS.muted}
+                style={styles.inputIcon}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Email address"
+                placeholderTextColor={COLORS.muted}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={data.mechanic_email}
+                onChangeText={text => setStep1({...data, mechanic_email: text})}
+              />
+            </View>
+
+            <View style={styles.inputWrapper}>
+              <MaterialCommunityIcons
+                name="instagram"
+                size={20}
+                color={COLORS.muted}
+                style={styles.inputIcon}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="username"
+                placeholderTextColor={COLORS.muted}
+                autoCapitalize="none"
+                value={data.mechanic_instagram}
+                onChangeText={text =>
+                  setStep1({...data, mechanic_instagram: text})
+                }
+              />
+            </View>
+          </View>
+        )}
 
         <Text style={styles.label}>Travel Style</Text>
         <View style={styles.grid}>
@@ -166,6 +219,29 @@ export default function Step1Screen() {
                 ]}
               >
                 {style}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Text style={styles.label}>Movement Pattern</Text>
+        <View style={styles.grid}>
+          {MOVEMENT_PATTERNS.map(pattern => (
+            <TouchableOpacity
+              key={pattern}
+              style={[
+                styles.chip,
+                data.movement_pattern === pattern && styles.chipSelected
+              ]}
+              onPress={() => setStep1({...data, movement_pattern: pattern})}
+            >
+              <Text
+                style={[
+                  styles.chipText,
+                  data.movement_pattern === pattern && styles.chipTextSelected
+                ]}
+              >
+                {pattern}
               </Text>
             </TouchableOpacity>
           ))}
@@ -194,143 +270,194 @@ export default function Step1Screen() {
             </TouchableOpacity>
           ))}
         </View>
-
-        <Text style={styles.label}>Current Location (City/Region)</Text>
-        <TouchableOpacity
-          onPress={handleGetCurrentLocation}
-          disabled={loadingLocation}
-        >
-          <View style={styles.locationInputWrapper}>
-            {loadingLocation ? (
-              <ActivityIndicator size="small" color="#4a90e2" />
-            ) : (
-              <MaterialCommunityIcons
-                name="map-marker-outline"
-                size={20}
-                color="#999"
-                style={styles.locationIcon}
-              />
-            )}
-            <Text style={styles.locationPlaceholder}>
-              {data.current_location || 'Tap to select location'}
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        <Text style={styles.label}>Movement Pattern</Text>
-        <View style={styles.grid}>
-          {MOVEMENT_PATTERNS.map(pattern => (
-            <TouchableOpacity
-              key={pattern}
-              style={[
-                styles.chip,
-                data.movement_pattern === pattern && styles.chipSelected
-              ]}
-              onPress={() => setStep1({...data, movement_pattern: pattern})}
-            >
-              <Text
-                style={[
-                  styles.chipText,
-                  data.movement_pattern === pattern && styles.chipTextSelected
-                ]}
-              >
-                {pattern}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
       </View>
 
       <View style={styles.buttonContainer}>
         <Button title="Next" onPress={handleNext} />
       </View>
-    </ScrollView>
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
+const {width, height} = Dimensions.get('window');
+const scale = (size: number) =>
+  Math.round((Math.min(width, height) / 375) * size);
+const STATUS_BAR_HEIGHT =
+  Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0;
+const SAFE_TOP_PADDING = Math.max(0, STATUS_BAR_HEIGHT);
+const IS_IOS = Platform.OS === 'ios';
+
+const SPACING = {
+  xs: scale(6),
+  sm: scale(10),
+  md: scale(14),
+  lg: scale(18),
+  xl: scale(24)
+};
+
+const COLORS = {
+  primary: '#2e7d64',
+  bg: '#f6f8f7',
+  card: '#ffffff',
+  text: '#0f1a15',
+  sub: '#5e6b65',
+  muted: '#8b9591',
+  border: '#e3e9e6',
+  chipBg: '#f1f5f3'
+};
+
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.bg,
+    paddingTop: SAFE_TOP_PADDING
+  },
   container: {
     flex: 1,
-    backgroundColor: '#fff'
+    backgroundColor: COLORS.bg
+  },
+  scrollContent: {
+    flexGrow: 1
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 40,
-    paddingBottom: 20
+    paddingHorizontal: SPACING.sm,
+    paddingRight: SPACING.md,
+    paddingTop: IS_IOS ? 0 : SPACING.xl,
+    paddingBottom: SPACING.md
   },
-  stepIndicator: {
+  headerBlock: {
+    marginHorizontal: SPACING.sm,
+    marginBottom: SPACING.sm
+  },
+  backButton: {
+    width: scale(36),
+    height: scale(36),
+    borderRadius: scale(18),
+    backgroundColor: COLORS.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border
+  },
+  progressArea: {
     flex: 1,
-    textAlign: 'center',
-    fontSize: 14,
-    color: '#999',
-    marginRight: 24
+    marginLeft: SPACING.md
+  },
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SPACING.xs
+  },
+  progressStep: {
+    fontSize: scale(12),
+    color: COLORS.sub,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase'
+  },
+  progressPercent: {
+    fontSize: scale(12),
+    color: COLORS.primary,
+    fontWeight: '700'
+  },
+  progressTrack: {
+    height: scale(6),
+    backgroundColor: COLORS.border,
+    borderRadius: scale(999),
+    overflow: 'hidden'
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: COLORS.primary
   },
   content: {
-    paddingHorizontal: 20,
-    paddingVertical: 20
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.lg,
+    backgroundColor: COLORS.card,
+    marginHorizontal: SPACING.lg,
+    borderRadius: scale(20),
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: {width: 0, height: 6},
+    elevation: 2
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 24
+    fontSize: scale(20),
+    fontWeight: '700',
+    color: COLORS.text,
+    marginBottom: SPACING.sm,
+    letterSpacing: 0.2
+  },
+  sectionDivider: {
+    height: 1,
+    backgroundColor: COLORS.border,
+    marginBottom: SPACING.lg
   },
   label: {
-    fontSize: 14,
+    fontSize: scale(13),
     fontWeight: '600',
-    color: '#333',
-    marginBottom: 12,
-    marginTop: 16
+    color: COLORS.sub,
+    marginBottom: SPACING.sm,
+    marginTop: SPACING.md,
+    letterSpacing: 0.2
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 16
+    gap: SPACING.xs,
+    marginBottom: SPACING.md
   },
   chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs,
+    borderRadius: scale(18),
     borderWidth: 1,
-    borderColor: '#ddd',
-    backgroundColor: '#f9f9f9'
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.chipBg
   },
   chipSelected: {
-    backgroundColor: '#4a90e2',
-    borderColor: '#4a90e2'
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary
   },
   chipText: {
-    fontSize: 12,
-    color: '#666',
-    fontWeight: '500'
+    fontSize: scale(12),
+    color: COLORS.sub,
+    fontWeight: '600'
   },
   chipTextSelected: {
     color: '#fff'
   },
-  locationInputWrapper: {
+  inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#f9f9f9',
-    minHeight: 48,
-    marginBottom: 16
+    borderColor: COLORS.border,
+    borderRadius: scale(12),
+    paddingHorizontal: SPACING.md,
+    backgroundColor: '#fff',
+    minHeight: scale(48),
+    marginBottom: SPACING.sm
   },
-  locationIcon: {
-    marginRight: 8
+  inputIcon: {
+    marginRight: SPACING.xs
   },
-  locationPlaceholder: {
+  input: {
     flex: 1,
-    fontSize: 14,
-    color: '#999'
+    fontSize: scale(13),
+    color: COLORS.text
   },
   buttonContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 40
+    paddingHorizontal: SPACING.lg,
+    paddingBottom: SPACING.xl,
+    paddingTop: SPACING.md
   }
 });
