@@ -82,7 +82,7 @@ export default function SupplierResourcesScreen() {
                   {supplier.verifiedReview.user}
                 </Text>
                 <Text style={styles.verifiedReviewText}>
-                  &ldquo;{supplier.verifiedReview.text}"
+                  &ldquo;{supplier.verifiedReview.text}&quot;
                 </Text>
               </View>
 

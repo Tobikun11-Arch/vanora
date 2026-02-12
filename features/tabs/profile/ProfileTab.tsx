@@ -1,11 +1,11 @@
-import {showToast} from "@/components/Toast";
-import {useRevenueCatSubscription} from "@/hooks/use-revenuecat-subscription";
-import {supabase} from "@/services/supabase";
-import {useUserStore} from "@/store/userStore";
-import {MaterialCommunityIcons} from "@expo/vector-icons";
-import {useFocusEffect} from "@react-navigation/native";
-import {useRouter} from "expo-router";
-import React, {useCallback, useEffect, useRef, useState} from "react";
+import { showToast } from "@/components/Toast";
+import { useRevenueCatSubscription } from "@/hooks/use-revenuecat-subscription";
+import { supabase } from "@/services/supabase";
+import { useUserStore } from "@/store/userStore";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
+import { useRouter } from "expo-router";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -18,8 +18,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import {useSafeAreaInsets} from "react-native-safe-area-context";
-import {authService} from "../../../services/auth.service";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { authService } from "../../../services/auth.service";
 
 const {width} = Dimensions.get("window");
 const GALLERY_IMAGE_SIZE = (width - 60) / 3;
