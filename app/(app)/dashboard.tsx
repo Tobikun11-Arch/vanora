@@ -1,78 +1,38 @@
-import {showToast} from '@/components/Toast';
+import {showToast} from "@/components/Toast";
+import {styles} from "@/features/app/dashboard/style";
+import {TabType, UserProfile} from "@/features/app/dashboard/types";
 import {
   ExploreTab,
   FindTechTab,
   HomeTab,
   NotificationsTab,
-  ProfileTab
-} from '@/components/tabs/index';
-import {supabase} from '@/services/supabase';
-import {useUserStore} from '@/store/userStore';
-import {Feather} from '@expo/vector-icons';
-import {useRouter} from 'expo-router';
-import {useEffect, useMemo, useState} from 'react';
-import {
-  ActivityIndicator,
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  ViewStyle
-} from 'react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+  ProfileTab,
+} from "@/features/tabs/index";
+import {supabase} from "@/services/supabase";
+import {useUserStore} from "@/store/userStore";
+import {Feather} from "@expo/vector-icons";
+import {useRouter} from "expo-router";
+import React, {useEffect, useMemo, useState} from "react";
 
-type TabType = 'findtech' | 'explore' | 'home' | 'notifications' | 'profile';
-
-interface GalleryPhoto {
-  id: string;
-  photo_url: string;
-  photo_type: string;
-  created_at: string;
-}
-
-interface UserProfile {
-  id: string;
-  username: string | null;
-  nomad_type: string;
-  travel_style: string;
-  relationship_intent: string[];
-  current_location: string;
-  movement_pattern: string;
-  age: number;
-  gender: string;
-  pronouns: string | null;
-  bio: string;
-  profile_picture_url: string | null;
-  years_in_van_life: number;
-  hobbies: string[];
-  skills: string[];
-  lifestyle_tags: string[];
-  favorite_activities: string[];
-  created_at: string;
-  updated_at: string;
-  gallery_photos?: GalleryPhoto[];
-  display_name: string;
-  followers_count?: number;
-  following_count?: number;
-}
+import {Image, Text, TouchableOpacity, View, ViewStyle} from "react-native";
+import {useSafeAreaInsets} from "react-native-safe-area-context";
 
 export default function DashboardScreen() {
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<TabType>('home');
-  const setUserProfile = useUserStore(state => state.setProfile);
+  const [activeTab, setActiveTab] = useState<TabType>("home");
+  const setUserProfile = useUserStore((state) => state.setProfile);
   const insets = useSafeAreaInsets();
   const bottomInset = Math.max(insets.bottom, 8);
   const bottomBarHeight = 64;
   const contentPaddingBottom = useMemo(
     () => bottomBarHeight + bottomInset + 12,
-    [bottomInset]
+    [bottomInset],
   );
   const tabVisibilityStyle = (tab: TabType): ViewStyle => ({
-    display: activeTab === tab ? 'flex' : 'none',
-    flex: 1
+    display: activeTab === tab ? "flex" : "none",
+    flex: 1,
   });
 
   const findTechTab = useMemo(() => <FindTechTab />, []);
@@ -80,35 +40,35 @@ export default function DashboardScreen() {
   const notificationsTab = useMemo(() => <NotificationsTab />, []);
   const homeTab = useMemo(
     () => (profile ? <HomeTab profile={profile} /> : null),
-    [profile]
+    [profile],
   );
   const profileTab = useMemo(
     () => (profile ? <ProfileTab profile={profile} /> : null),
-    [profile]
+    [profile],
   );
 
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
         const {
-          data: {user}
+          data: {user},
         } = await supabase.auth.getUser();
         if (!user) {
-          router.replace('/(auth)/get-started');
+          router.replace("/(auth)/get-started");
           return;
         }
 
         const {data: profileData, error: profileError} = await supabase
-          .from('profiles_with_stats')
-          .select('*')
-          .eq('id', user.id)
+          .from("profiles_with_stats")
+          .select("*")
+          .eq("id", user.id)
           .maybeSingle();
 
         if (profileError) throw profileError;
 
         // If no profile exists, redirect to profile setup
         if (!profileData) {
-          router.replace('/(profile)/step-1');
+          router.replace("/(profile)/step-1");
           return;
         }
 
@@ -130,34 +90,34 @@ export default function DashboardScreen() {
 
         // Fetch gallery photos to check step 4
         const {data: photosData} = await supabase
-          .from('profile_photos')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', {ascending: false});
+          .from("profile_photos")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", {ascending: false});
 
         const isStep4Complete = photosData && photosData.length >= 1;
 
         // Redirect to the appropriate step if profile is incomplete
         if (!isStep1Complete) {
-          router.replace('/(profile)/step-1');
+          router.replace("/(profile)/step-1");
           return;
         }
         if (!isStep2Complete) {
-          router.replace('/(profile)/step-2');
+          router.replace("/(profile)/step-2");
           return;
         }
         if (!isStep3Complete) {
-          router.replace('/(profile)/step-3');
+          router.replace("/(profile)/step-3");
           return;
         }
         if (!isStep4Complete) {
-          router.replace('/(profile)/step-4');
+          router.replace("/(profile)/step-4");
           return;
         }
 
         const nextProfile = {
           ...profileData,
-          gallery_photos: photosData || []
+          gallery_photos: photosData || [],
         };
 
         setProfile(nextProfile);
@@ -167,11 +127,11 @@ export default function DashboardScreen() {
           display_name: nextProfile.display_name ?? null,
           profile_picture_url: nextProfile.profile_picture_url ?? null,
           nomad_type: nextProfile.nomad_type ?? null,
-          current_location: nextProfile.current_location ?? null
+          current_location: nextProfile.current_location ?? null,
         });
       } catch (error: any) {
-        console.error('Error fetching profile:', error);
-        showToast('error', 'Error', 'Failed to load profile');
+        console.error("Error fetching profile:", error);
+        showToast("error", "Error", "Failed to load profile");
       } finally {
         setLoading(false);
       }
@@ -189,7 +149,7 @@ export default function DashboardScreen() {
     return (
       <View style={styles.loadingContainer}>
         <Image
-          source={require('../../assets/gif/busGif.gif')}
+          source={require("../../assets/gif/busGif.gif")}
           style={styles.loadingGif}
         />
       </View>
@@ -210,38 +170,38 @@ export default function DashboardScreen() {
       <View
         style={[styles.contentContainer, {paddingBottom: contentPaddingBottom}]}
       >
-        <View style={tabVisibilityStyle('findtech')}>{findTechTab}</View>
-        <View style={tabVisibilityStyle('explore')}>{exploreTab}</View>
-        <View style={tabVisibilityStyle('home')}>{homeTab}</View>
-        <View style={tabVisibilityStyle('notifications')}>
+        <View style={tabVisibilityStyle("findtech")}>{findTechTab}</View>
+        <View style={tabVisibilityStyle("explore")}>{exploreTab}</View>
+        <View style={tabVisibilityStyle("home")}>{homeTab}</View>
+        <View style={tabVisibilityStyle("notifications")}>
           {notificationsTab}
         </View>
-        <View style={tabVisibilityStyle('profile')}>{profileTab}</View>
+        <View style={tabVisibilityStyle("profile")}>{profileTab}</View>
       </View>
 
       {/* Bottom Navigation Bar */}
       <View
         style={[
           styles.bottomBar,
-          {bottom: bottomInset, minHeight: bottomBarHeight}
+          {bottom: bottomInset, minHeight: bottomBarHeight},
         ]}
       >
         <TouchableOpacity
           style={[
             styles.tabItem,
-            activeTab === 'findtech' && styles.activeTabItem
+            activeTab === "findtech" && styles.activeTabItem,
           ]}
-          onPress={() => handleTabPress('findtech')}
+          onPress={() => handleTabPress("findtech")}
         >
           <Feather
             name="tool"
             size={24}
-            color={activeTab === 'findtech' ? '#2E7D64' : '#9CA3AF'}
+            color={activeTab === "findtech" ? "#2E7D64" : "#9CA3AF"}
           />
           <Text
             style={[
               styles.tabLabel,
-              activeTab === 'findtech' && styles.activeTabLabel
+              activeTab === "findtech" && styles.activeTabLabel,
             ]}
           >
             Builder
@@ -251,19 +211,19 @@ export default function DashboardScreen() {
         <TouchableOpacity
           style={[
             styles.tabItem,
-            activeTab === 'explore' && styles.activeTabItem
+            activeTab === "explore" && styles.activeTabItem,
           ]}
-          onPress={() => handleTabPress('explore')}
+          onPress={() => handleTabPress("explore")}
         >
           <Feather
             name="compass"
             size={24}
-            color={activeTab === 'explore' ? '#2E7D64' : '#9CA3AF'}
+            color={activeTab === "explore" ? "#2E7D64" : "#9CA3AF"}
           />
           <Text
             style={[
               styles.tabLabel,
-              activeTab === 'explore' && styles.activeTabLabel
+              activeTab === "explore" && styles.activeTabLabel,
             ]}
           >
             Explore
@@ -271,18 +231,18 @@ export default function DashboardScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.tabItem, activeTab === 'home' && styles.activeTabItem]}
-          onPress={() => handleTabPress('home')}
+          style={[styles.tabItem, activeTab === "home" && styles.activeTabItem]}
+          onPress={() => handleTabPress("home")}
         >
           <Feather
             name="home"
             size={24}
-            color={activeTab === 'home' ? '#2E7D64' : '#9CA3AF'}
+            color={activeTab === "home" ? "#2E7D64" : "#9CA3AF"}
           />
           <Text
             style={[
               styles.tabLabel,
-              activeTab === 'home' && styles.activeTabLabel
+              activeTab === "home" && styles.activeTabLabel,
             ]}
           >
             Home
@@ -292,22 +252,22 @@ export default function DashboardScreen() {
         <TouchableOpacity
           style={[
             styles.tabItem,
-            activeTab === 'notifications' && styles.activeTabItem
+            activeTab === "notifications" && styles.activeTabItem,
           ]}
-          onPress={() => handleTabPress('notifications')}
+          onPress={() => handleTabPress("notifications")}
         >
           <View style={styles.notificationWrapper}>
             <Feather
               name="mail"
               size={24}
-              color={activeTab === 'notifications' ? '#2E7D64' : '#9CA3AF'}
+              color={activeTab === "notifications" ? "#2E7D64" : "#9CA3AF"}
             />
             <View style={styles.notificationBadge} />
           </View>
           <Text
             style={[
               styles.tabLabel,
-              activeTab === 'notifications' && styles.activeTabLabel
+              activeTab === "notifications" && styles.activeTabLabel,
             ]}
           >
             Inbox
@@ -317,19 +277,19 @@ export default function DashboardScreen() {
         <TouchableOpacity
           style={[
             styles.tabItem,
-            activeTab === 'profile' && styles.activeTabItem
+            activeTab === "profile" && styles.activeTabItem,
           ]}
-          onPress={() => handleTabPress('profile')}
+          onPress={() => handleTabPress("profile")}
         >
           <Feather
             name="user"
             size={24}
-            color={activeTab === 'profile' ? '#2E7D64' : '#9CA3AF'}
+            color={activeTab === "profile" ? "#2E7D64" : "#9CA3AF"}
           />
           <Text
             style={[
               styles.tabLabel,
-              activeTab === 'profile' && styles.activeTabLabel
+              activeTab === "profile" && styles.activeTabLabel,
             ]}
           >
             Profile
@@ -339,90 +299,3 @@ export default function DashboardScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  mainContainer: {
-    flex: 1,
-    backgroundColor: '#fff'
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff'
-  },
-  loadingGif: {
-    width: 140,
-    height: 140,
-    marginBottom: 12
-  },
-  errorText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333'
-  },
-  contentContainer: {
-    flex: 1
-  },
-  bottomBar: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    bottom: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    backgroundColor: '#fff',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-    borderRadius: 30,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: -2
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5
-  },
-  tabItem: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    gap: 4
-  },
-  activeTabItem: {
-    backgroundColor: '#F3F4F6'
-  },
-  tabLabel: {
-    fontSize: 10,
-    fontWeight: '500',
-    color: '#9CA3AF',
-    marginTop: 2
-  },
-  activeTabLabel: {
-    color: '#2E7D64',
-    fontWeight: '600'
-  },
-  notificationWrapper: {
-    position: 'relative',
-    alignItems: 'center'
-  },
-  notificationBadge: {
-    position: 'absolute',
-    top: -6,
-    right: -6,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#ef4444'
-  },
-  separator: {
-    display: 'none'
-  }
-});
