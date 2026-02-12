@@ -1,9 +1,9 @@
 import { homeTabStyles as styles } from "@/styles";
 import { useEffect, useMemo, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
-import EventsTab from "./home/EventsTab";
-import FeedTab from "./home/FeedTab";
-import FindMatchTab from "./home/FindMatchTab";
+import EventsTab from "./components/EventsTab";
+import FeedTab from "./components/FeedTab";
+import FindMatchTab from "./components/FindMatchTab";
 
 interface UserProfile {
   id: string;
