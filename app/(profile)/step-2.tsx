@@ -1,4 +1,4 @@
-import {styles} from "@/components/onboarding/step-2/style";
+import {COLORS, styles} from "@/components/onboarding/step-2/style";
 import {supabase} from "@/services/supabase";
 import {MaterialCommunityIcons} from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system/legacy";
